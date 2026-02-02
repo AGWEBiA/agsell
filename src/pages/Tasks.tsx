@@ -28,24 +28,15 @@ import {
   Calendar,
   Clock,
   User,
-  Phone,
-  Mail,
-  MessageSquare,
-  CheckCircle2,
-  Circle,
   AlertTriangle,
+  CheckCircle2,
   Loader2,
+  List,
+  CalendarDays,
 } from 'lucide-react';
 import { useTasks, useCreateTask, useCompleteTask, useUncompleteTask, type CreateTaskData, type Task } from '@/hooks/useTasks';
 import { useContacts } from '@/hooks/useContacts';
-
-const taskTypes = [
-  { value: 'call', label: 'Ligação', icon: Phone },
-  { value: 'meeting', label: 'Reunião', icon: MessageSquare },
-  { value: 'email', label: 'Email', icon: Mail },
-  { value: 'follow_up', label: 'Follow-up', icon: User },
-  { value: 'other', label: 'Outro', icon: Circle },
-];
+import { TaskCalendar } from '@/components/tasks/TaskCalendar';
 
 const priorityColors = {
   high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -60,7 +51,9 @@ const priorityLabels = {
 };
 
 export default function Tasks() {
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newTask, setNewTask] = useState<CreateTaskData & { type?: string }>({
     title: '',
     description: '',
@@ -106,6 +99,15 @@ export default function Tasks() {
     } else {
       await completeTask.mutateAsync(task.id);
     }
+  };
+
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
+    setNewTask((prev) => ({
+      ...prev,
+      due_date: date.toISOString().split('T')[0],
+    }));
+    setIsDialogOpen(true);
   };
 
   const TaskCard = ({ task }: { task: Task }) => {
@@ -165,97 +167,117 @@ export default function Tasks() {
           <h1 className="text-3xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Gerencie suas tarefas e lembretes</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Tarefa
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Tarefa</DialogTitle>
-              <DialogDescription>
-                Crie uma nova tarefa ou lembrete
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Título *</Label>
-                <Input
-                  id="title"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  placeholder="Título da tarefa"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="Descrição detalhada"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+            >
+              <CalendarDays className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Tarefa
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nova Tarefa</DialogTitle>
+                <DialogDescription>
+                  Crie uma nova tarefa ou lembrete
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="priority">Prioridade</Label>
+                  <Label htmlFor="title">Título *</Label>
+                  <Input
+                    id="title"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    placeholder="Título da tarefa"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    placeholder="Descrição detalhada"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="priority">Prioridade</Label>
+                    <Select
+                      value={newTask.priority}
+                      onValueChange={(value) => setNewTask({ ...newTask, priority: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Prioridade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">Alta</SelectItem>
+                        <SelectItem value="medium">Média</SelectItem>
+                        <SelectItem value="low">Baixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="dueDate">Data de Vencimento</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={newTask.due_date}
+                      onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="contact">Contato (opcional)</Label>
                   <Select
-                    value={newTask.priority}
-                    onValueChange={(value) => setNewTask({ ...newTask, priority: value })}
+                    value={newTask.contact_id}
+                    onValueChange={(value) => setNewTask({ ...newTask, contact_id: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Prioridade" />
+                      <SelectValue placeholder="Selecione um contato" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="medium">Média</SelectItem>
-                      <SelectItem value="low">Baixa</SelectItem>
+                      {contacts.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          {contact.first_name} {contact.last_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="dueDate">Data de Vencimento</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={newTask.due_date}
-                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-                  />
-                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="contact">Contato (opcional)</Label>
-                <Select
-                  value={newTask.contact_id}
-                  onValueChange={(value) => setNewTask({ ...newTask, contact_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um contato" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contacts.map((contact) => (
-                      <SelectItem key={contact.id} value={contact.id}>
-                        {contact.first_name} {contact.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateTask} disabled={createTask.isPending || !newTask.title}>
-                {createTask.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Tarefa
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateTask} disabled={createTask.isPending || !newTask.title}>
+                  {createTask.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar Tarefa
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
@@ -301,11 +323,13 @@ export default function Tasks() {
         </Card>
       </div>
 
-      {/* Tasks List */}
+      {/* Content based on view mode */}
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+      ) : viewMode === 'calendar' ? (
+        <TaskCalendar onDayClick={handleDayClick} />
       ) : (
         <Tabs defaultValue="pending" className="w-full">
           <TabsList>

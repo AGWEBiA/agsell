@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ import {
   CheckCircle2,
   Trash2,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,6 +41,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAutomations } from '@/hooks/useAutomations';
 import { AutomationActionsEditor, Action } from '@/components/automations/AutomationActionsEditor';
+import { AutomationTemplates, automationTemplates, type AutomationTemplate } from '@/components/automations/AutomationTemplates';
 import type { Json } from '@/integrations/supabase/types';
 
 const triggerTypes = [
@@ -56,6 +59,7 @@ export default function Automations() {
   const { automations, isLoading, createAutomation, updateAutomation, toggleAutomation, deleteAutomation } = useAutomations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [editingAutomation, setEditingAutomation] = useState<typeof automations[0] | null>(null);
   const [newAutomation, setNewAutomation] = useState({
     name: '',
@@ -100,6 +104,24 @@ export default function Automations() {
     setEditActions([]);
   };
 
+  const handleSelectTemplate = (template: AutomationTemplate) => {
+    // Convert template actions to Json-compatible format
+    const actionsJson = template.actions.map(action => ({
+      id: action.id,
+      type: action.type,
+      config: action.config as Record<string, Json>,
+    })) as Json;
+
+    createAutomation.mutate({
+      name: template.name,
+      trigger_type: template.trigger_type,
+      trigger_config: template.trigger_config as Record<string, Json>,
+      actions: actionsJson,
+      is_active: false,
+    });
+    setIsTemplatesOpen(false);
+  };
+
   const activeCount = automations.filter(a => a.is_active).length;
   const totalExecutions = automations.reduce((acc, a) => acc + (a.executions_count ?? 0), 0);
 
@@ -134,7 +156,12 @@ export default function Automations() {
           <h1 className="text-3xl font-bold text-foreground">Automações</h1>
           <p className="text-muted-foreground">Construa fluxos automatizados para seus leads</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
+            <Sparkles className="h-4 w-4 mr-2" />
+            Templates
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -185,6 +212,7 @@ export default function Automations() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
@@ -346,6 +374,22 @@ export default function Automations() {
               {updateAutomation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Templates Dialog */}
+      <Dialog open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Templates de Automação
+            </DialogTitle>
+            <DialogDescription>
+              Escolha um template pronto para começar rapidamente
+            </DialogDescription>
+          </DialogHeader>
+          <AutomationTemplates onSelectTemplate={handleSelectTemplate} />
         </DialogContent>
       </Dialog>
     </div>
