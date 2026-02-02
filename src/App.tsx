@@ -28,6 +28,7 @@ import Automations from "./pages/Automations";
 import LeadScoring from "./pages/LeadScoring";
 import Forms from "./pages/Forms";
 import Analytics from "./pages/Analytics";
+import Gamification from "./pages/Gamification";
 import Integrations from "./pages/Integrations";
 import AIAssistant from "./pages/AIAssistant";
 import Settings from "./pages/Settings";
@@ -67,6 +68,7 @@ const App = () => (
                   <Route path="lead-scoring" element={<LeadScoring />} />
                   <Route path="forms" element={<Forms />} />
                   <Route path="analytics" element={<Analytics />} />
+                  <Route path="gamification" element={<Gamification />} />
                   <Route path="integrations" element={<Integrations />} />
                   <Route path="ai-assistant" element={<AIAssistant />} />
                   <Route path="settings" element={<Settings />} />

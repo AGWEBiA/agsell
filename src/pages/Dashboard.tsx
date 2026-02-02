@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import {
   Users,
   DollarSign,
@@ -21,6 +22,8 @@ import {
   Calendar,
   Zap,
   UserPlus,
+  Trophy,
+  Flame,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -41,6 +44,7 @@ import {
   useRecentActivities,
   useTopLeads,
 } from '@/hooks/useDashboard';
+import { useGamification } from '@/hooks/useGamification';
 
 const activityIcons: Record<string, React.ElementType> = {
   email_sent: Mail,
@@ -61,6 +65,7 @@ export default function Dashboard() {
   const { data: pipelineData, isLoading: loadingPipeline } = useDealsByStage();
   const { data: activities, isLoading: loadingActivities } = useRecentActivities();
   const { data: topLeads, isLoading: loadingTopLeads } = useTopLeads();
+  const { stats: gamificationStats, getLevelTitle } = useGamification();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -70,6 +75,10 @@ export default function Dashboard() {
     }).format(value);
   };
 
+  const currentLevel = gamificationStats?.level || 1;
+  const currentPoints = gamificationStats?.total_points || 0;
+  const progressToNextLevel = ((currentPoints % 100) / 100) * 100;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
@@ -78,10 +87,32 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Visão geral do seu CRM</p>
         </div>
-        <Badge variant="outline" className="gap-1">
-          <Activity className="h-3 w-3" />
-          Atualizado agora
-        </Badge>
+        <div className="flex items-center gap-3">
+          {/* Gamification Mini Widget */}
+          {gamificationStats && (
+            <Card className="flex items-center gap-3 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm">
+                  {currentLevel}
+                </div>
+                <div className="hidden sm:block">
+                  <p className="text-xs font-medium">{getLevelTitle(currentLevel)}</p>
+                  <Progress value={progressToNextLevel} className="h-1 w-20" />
+                </div>
+              </div>
+              {gamificationStats.current_streak > 0 && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Flame className="h-3 w-3 text-orange-500" />
+                  {gamificationStats.current_streak}
+                </Badge>
+              )}
+            </Card>
+          )}
+          <Badge variant="outline" className="gap-1">
+            <Activity className="h-3 w-3" />
+            Atualizado agora
+          </Badge>
+        </div>
       </div>
 
       {/* KPI Cards */}

@@ -20,6 +20,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -47,6 +48,7 @@ const menuItems = [
   { label: 'Formulários', icon: FileText, path: '/forms' },
   { divider: true },
   { label: 'Analytics', icon: BarChart3, path: '/analytics' },
+  { label: 'Gamificação', icon: Trophy, path: '/gamification' },
   { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
   { label: 'Assistente IA', icon: Bot, path: '/ai-assistant' },
   { divider: true },

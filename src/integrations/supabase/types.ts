@@ -955,6 +955,50 @@ export type Database = {
           },
         ]
       }
+      organization_onboarding: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          step_first_contact_completed: boolean | null
+          step_pipeline_completed: boolean | null
+          step_profile_completed: boolean | null
+          step_team_completed: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          step_first_contact_completed?: boolean | null
+          step_pipeline_completed?: boolean | null
+          step_profile_completed?: boolean | null
+          step_team_completed?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          step_first_contact_completed?: boolean | null
+          step_pipeline_completed?: boolean | null
+          step_profile_completed?: boolean | null
+          step_team_completed?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_onboarding_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1161,6 +1205,109 @@ export type Database = {
           },
         ]
       }
+      user_achievements: {
+        Row: {
+          achievement_name: string
+          achievement_type: string
+          earned_at: string
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          points: number
+          user_id: string
+        }
+        Insert: {
+          achievement_name: string
+          achievement_type: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          points?: number
+          user_id: string
+        }
+        Update: {
+          achievement_name?: string
+          achievement_type?: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          points?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_gamification: {
+        Row: {
+          automations_created: number
+          contacts_created: number
+          created_at: string
+          current_streak: number
+          deals_won: number
+          emails_sent: number
+          id: string
+          last_activity_date: string | null
+          level: number
+          longest_streak: number
+          organization_id: string | null
+          tasks_completed: number
+          total_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          automations_created?: number
+          contacts_created?: number
+          created_at?: string
+          current_streak?: number
+          deals_won?: number
+          emails_sent?: number
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          organization_id?: string | null
+          tasks_completed?: number
+          total_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          automations_created?: number
+          contacts_created?: number
+          created_at?: string
+          current_streak?: number
+          deals_won?: number
+          emails_sent?: number
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          organization_id?: string | null
+          tasks_completed?: number
+          total_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_gamification_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1231,6 +1378,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: {
+          _action: string
+          _org_id: string
+          _points: number
+          _user_id: string
+        }
+        Returns: undefined
+      }
       create_organization_with_owner: {
         Args: { org_name: string; org_slug: string }
         Returns: string
