@@ -117,19 +117,17 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const handleSetCurrentOrganization = (org: Organization | null) => {
+  const handleSetCurrentOrganization = async (org: Organization | null) => {
     setCurrentOrganization(org);
-    if (org) {
-      // Update role when changing organization
-      supabase
-        .from('organization_members')
-        .select('role')
-        .eq('organization_id', org.id)
-        .eq('user_id', user?.id)
-        .single()
-        .then(({ data }) => {
-          setCurrentRole(data?.role || null);
-        });
+    if (org && user?.id) {
+      // Update role when changing organization using RPC
+      const { data } = await supabase.rpc('get_org_role', {
+        _org_id: org.id,
+        _user_id: user.id
+      });
+      setCurrentRole(data || null);
+    } else {
+      setCurrentRole(null);
     }
   };
 
