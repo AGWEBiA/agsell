@@ -29,6 +29,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Search,
   Plus,
   MoreHorizontal,
@@ -41,22 +48,27 @@ import {
   Filter,
   Download,
   Upload,
+  Loader2,
 } from 'lucide-react';
-
-// Mock data
-const mockContacts = [
-  { id: 1, name: 'João Silva', email: 'joao@techcorp.com', phone: '(11) 99999-1234', company: 'Tech Corp', status: 'lead', score: 92 },
-  { id: 2, name: 'Maria Santos', email: 'maria@digital.com', phone: '(21) 98888-5678', company: 'Digital Solutions', status: 'qualified', score: 85 },
-  { id: 3, name: 'Carlos Lima', email: 'carlos@inovacao.com', phone: '(31) 97777-9012', company: 'Inovação SA', status: 'customer', score: 78 },
-  { id: 4, name: 'Ana Oliveira', email: 'ana@startup.com', phone: '(41) 96666-3456', company: 'StartUp XYZ', status: 'lead', score: 72 },
-  { id: 5, name: 'Pedro Costa', email: 'pedro@empresa.com', phone: '(51) 95555-7890', company: 'Empresa ABC', status: 'churned', score: 45 },
-];
+import { useContacts, useCreateContact, useDeleteContact, type CreateContactData } from '@/hooks/useContacts';
+import { useCompanies } from '@/hooks/useCompanies';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const statusColors: Record<string, string> = {
   lead: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   qualified: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   customer: 'bg-primary/10 text-primary',
   churned: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
 };
 
 const statusLabels: Record<string, string> = {
@@ -64,24 +76,53 @@ const statusLabels: Record<string, string> = {
   qualified: 'Qualificado',
   customer: 'Cliente',
   churned: 'Inativo',
+  active: 'Ativo',
 };
 
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newContact, setNewContact] = useState({ name: '', email: '', phone: '', company: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [newContact, setNewContact] = useState<CreateContactData>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    company_id: '',
+    status: 'lead',
+  });
 
-  const filteredContacts = mockContacts.filter(
+  const { data: contacts = [], isLoading } = useContacts();
+  const { data: companies = [] } = useCompanies();
+  const createContact = useCreateContact();
+  const deleteContact = useDeleteContact();
+
+  const filteredContacts = contacts.filter(
     (contact) =>
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.company.toLowerCase().includes(searchTerm.toLowerCase())
+      `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (contact.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (contact.company?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateContact = () => {
-    console.log('Creating contact:', newContact);
+  const handleCreateContact = async () => {
+    if (!newContact.first_name) return;
+    await createContact.mutateAsync({
+      ...newContact,
+      company_id: newContact.company_id || undefined,
+    });
     setIsDialogOpen(false);
-    setNewContact({ name: '', email: '', phone: '', company: '' });
+    setNewContact({ first_name: '', last_name: '', email: '', phone: '', company_id: '', status: 'lead' });
+  };
+
+  const handleDelete = async () => {
+    if (deleteId) {
+      await deleteContact.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
+  };
+
+  const getInitials = (firstName: string, lastName?: string | null) => {
+    return `${firstName[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
 
   return (
@@ -116,14 +157,25 @@ export default function Contacts() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    value={newContact.name}
-                    onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                    placeholder="Nome completo"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="first_name">Nome *</Label>
+                    <Input
+                      id="first_name"
+                      value={newContact.first_name}
+                      onChange={(e) => setNewContact({ ...newContact, first_name: e.target.value })}
+                      placeholder="Nome"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="last_name">Sobrenome</Label>
+                    <Input
+                      id="last_name"
+                      value={newContact.last_name}
+                      onChange={(e) => setNewContact({ ...newContact, last_name: e.target.value })}
+                      placeholder="Sobrenome"
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
@@ -146,19 +198,47 @@ export default function Contacts() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="company">Empresa</Label>
-                  <Input
-                    id="company"
-                    value={newContact.company}
-                    onChange={(e) => setNewContact({ ...newContact, company: e.target.value })}
-                    placeholder="Nome da empresa"
-                  />
+                  <Select
+                    value={newContact.company_id}
+                    onValueChange={(value) => setNewContact({ ...newContact, company_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={newContact.status}
+                    onValueChange={(value) => setNewContact({ ...newContact, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lead">Lead</SelectItem>
+                      <SelectItem value="qualified">Qualificado</SelectItem>
+                      <SelectItem value="customer">Cliente</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateContact}>Criar Contato</Button>
+                <Button onClick={handleCreateContact} disabled={createContact.isPending || !newContact.first_name}>
+                  {createContact.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar Contato
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -191,88 +271,122 @@ export default function Contacts() {
           <CardTitle>Lista de Contatos ({filteredContacts.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Contato</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredContacts.map((contact) => (
-                <TableRow key={contact.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {contact.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{contact.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      {contact.email}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      {contact.phone}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Building2 className="h-4 w-4" />
-                      {contact.company}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[contact.status]} variant="secondary">
-                      {statusLabels[contact.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={contact.score >= 80 ? 'default' : contact.score >= 60 ? 'secondary' : 'outline'}>
-                      {contact.score}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Ver detalhes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredContacts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {contacts.length === 0 ? 'Nenhum contato cadastrado. Clique em "Novo Contato" para começar.' : 'Nenhum contato encontrado.'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredContacts.map((contact) => (
+                  <TableRow key={contact.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {getInitials(contact.first_name, contact.last_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{contact.first_name} {contact.last_name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {contact.email && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                          {contact.email}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {contact.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="h-4 w-4" />
+                          {contact.phone}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {contact.company && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-4 w-4" />
+                          {contact.company.name}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[contact.status || 'lead']} variant="secondary">
+                        {statusLabels[contact.status || 'lead']}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={contact.lead_score && contact.lead_score >= 80 ? 'default' : contact.lead_score && contact.lead_score >= 60 ? 'secondary' : 'outline'}>
+                        {contact.lead_score || 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(contact.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contato?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O contato será permanentemente removido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -34,16 +34,10 @@ import {
   CheckCircle2,
   Circle,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
-
-// Mock data
-const mockTasks = [
-  { id: 1, title: 'Follow-up com João Silva', description: 'Ligar para apresentar proposta comercial', type: 'call', contact: 'João Silva', dueDate: '2026-02-02', priority: 'high', status: 'pending' },
-  { id: 2, title: 'Enviar proposta para Digital Solutions', description: 'Enviar proposta comercial por email', type: 'email', contact: 'Maria Santos', dueDate: '2026-02-03', priority: 'medium', status: 'pending' },
-  { id: 3, title: 'Reunião de apresentação', description: 'Reunião online para demo do produto', type: 'meeting', contact: 'Carlos Lima', dueDate: '2026-02-04', priority: 'high', status: 'pending' },
-  { id: 4, title: 'Atualizar cadastro do cliente', description: 'Atualizar dados de contato', type: 'other', contact: 'Ana Oliveira', dueDate: '2026-02-01', priority: 'low', status: 'completed' },
-  { id: 5, title: 'Responder mensagem WhatsApp', description: 'Cliente aguardando resposta', type: 'follow_up', contact: 'Pedro Costa', dueDate: '2026-02-02', priority: 'medium', status: 'pending' },
-];
+import { useTasks, useCreateTask, useCompleteTask, useUncompleteTask, type CreateTaskData, type Task } from '@/hooks/useTasks';
+import { useContacts } from '@/hooks/useContacts';
 
 const taskTypes = [
   { value: 'call', label: 'Ligação', icon: Phone },
@@ -67,37 +61,56 @@ const priorityLabels = {
 
 export default function Tasks() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<CreateTaskData & { type?: string }>({
     title: '',
     description: '',
-    type: '',
-    contact: '',
-    dueDate: '',
+    due_date: '',
     priority: 'medium',
+    contact_id: '',
   });
 
-  const pendingTasks = mockTasks.filter((t) => t.status === 'pending');
-  const completedTasks = mockTasks.filter((t) => t.status === 'completed');
+  const { data: tasks = [], isLoading } = useTasks();
+  const { data: contacts = [] } = useContacts();
+  const createTask = useCreateTask();
+  const completeTask = useCompleteTask();
+  const uncompleteTask = useUncompleteTask();
+
+  const pendingTasks = tasks.filter((t) => t.status === 'pending');
+  const completedTasks = tasks.filter((t) => t.status === 'completed');
   const overdueTasks = pendingTasks.filter(
-    (t) => new Date(t.dueDate) < new Date()
+    (t) => t.due_date && new Date(t.due_date) < new Date()
   );
 
-  const handleCreateTask = () => {
-    console.log('Creating task:', newTask);
+  const handleCreateTask = async () => {
+    if (!newTask.title) return;
+    await createTask.mutateAsync({
+      title: newTask.title,
+      description: newTask.description,
+      due_date: newTask.due_date || undefined,
+      priority: newTask.priority,
+      contact_id: newTask.contact_id || undefined,
+    });
     setIsDialogOpen(false);
     setNewTask({
       title: '',
       description: '',
-      type: '',
-      contact: '',
-      dueDate: '',
+      due_date: '',
       priority: 'medium',
+      contact_id: '',
     });
   };
 
-  const TaskCard = ({ task }: { task: typeof mockTasks[0] }) => {
-    const TypeIcon = taskTypes.find((t) => t.value === task.type)?.icon || Circle;
-    const isOverdue = task.status === 'pending' && new Date(task.dueDate) < new Date();
+  const handleToggleComplete = async (task: Task) => {
+    if (task.status === 'completed') {
+      await uncompleteTask.mutateAsync(task.id);
+    } else {
+      await completeTask.mutateAsync(task.id);
+    }
+  };
+
+  const TaskCard = ({ task }: { task: Task }) => {
+    const isOverdue = task.status === 'pending' && task.due_date && new Date(task.due_date) < new Date();
+    const contactName = task.contact ? `${task.contact.first_name} ${task.contact.last_name || ''}` : null;
 
     return (
       <Card className={`hover:shadow-md transition-shadow ${isOverdue ? 'border-destructive' : ''}`}>
@@ -105,6 +118,7 @@ export default function Tasks() {
           <div className="flex items-start gap-3">
             <Checkbox
               checked={task.status === 'completed'}
+              onCheckedChange={() => handleToggleComplete(task)}
               className="mt-1"
             />
             <div className="flex-1 space-y-2">
@@ -112,25 +126,29 @@ export default function Tasks() {
                 <h3 className={`font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
                   {task.title}
                 </h3>
-                <Badge className={priorityColors[task.priority as keyof typeof priorityColors]} variant="secondary">
-                  {priorityLabels[task.priority as keyof typeof priorityLabels]}
-                </Badge>
+                {task.priority && (
+                  <Badge className={priorityColors[task.priority as keyof typeof priorityColors]} variant="secondary">
+                    {priorityLabels[task.priority as keyof typeof priorityLabels]}
+                  </Badge>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">{task.description}</p>
+              {task.description && (
+                <p className="text-sm text-muted-foreground">{task.description}</p>
+              )}
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <TypeIcon className="h-3 w-3" />
-                  {taskTypes.find((t) => t.value === task.type)?.label}
-                </div>
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  {task.contact}
-                </div>
-                <div className={`flex items-center gap-1 ${isOverdue ? 'text-destructive' : ''}`}>
-                  {isOverdue && <AlertTriangle className="h-3 w-3" />}
-                  <Calendar className="h-3 w-3" />
-                  {new Date(task.dueDate).toLocaleDateString('pt-BR')}
-                </div>
+                {contactName && (
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {contactName}
+                  </div>
+                )}
+                {task.due_date && (
+                  <div className={`flex items-center gap-1 ${isOverdue ? 'text-destructive' : ''}`}>
+                    {isOverdue && <AlertTriangle className="h-3 w-3" />}
+                    <Calendar className="h-3 w-3" />
+                    {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -163,7 +181,7 @@ export default function Tasks() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">Título *</Label>
                 <Input
                   id="title"
                   value={newTask.title}
@@ -183,24 +201,6 @@ export default function Tasks() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="type">Tipo</Label>
-                  <Select
-                    value={newTask.type}
-                    onValueChange={(value) => setNewTask({ ...newTask, type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {taskTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
                   <Label htmlFor="priority">Prioridade</Label>
                   <Select
                     value={newTask.priority}
@@ -216,33 +216,43 @@ export default function Tasks() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="contact">Contato</Label>
-                  <Input
-                    id="contact"
-                    value={newTask.contact}
-                    onChange={(e) => setNewTask({ ...newTask, contact: e.target.value })}
-                    placeholder="Nome do contato"
-                  />
-                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="dueDate">Data de Vencimento</Label>
                   <Input
                     id="dueDate"
                     type="date"
-                    value={newTask.dueDate}
-                    onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                    value={newTask.due_date}
+                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contact">Contato (opcional)</Label>
+                <Select
+                  value={newTask.contact_id}
+                  onValueChange={(value) => setNewTask({ ...newTask, contact_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um contato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contacts.map((contact) => (
+                      <SelectItem key={contact.id} value={contact.id}>
+                        {contact.first_name} {contact.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateTask}>Criar Tarefa</Button>
+              <Button onClick={handleCreateTask} disabled={createTask.isPending || !newTask.title}>
+                {createTask.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar Tarefa
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -292,26 +302,44 @@ export default function Tasks() {
       </div>
 
       {/* Tasks List */}
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList>
-          <TabsTrigger value="pending">
-            Pendentes ({pendingTasks.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Concluídas ({completedTasks.length})
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="pending" className="space-y-3 mt-4">
-          {pendingTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </TabsContent>
-        <TabsContent value="completed" className="space-y-3 mt-4">
-          {completedTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </TabsContent>
-      </Tabs>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <Tabs defaultValue="pending" className="w-full">
+          <TabsList>
+            <TabsTrigger value="pending">
+              Pendentes ({pendingTasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed">
+              Concluídas ({completedTasks.length})
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="pending" className="space-y-3 mt-4">
+            {pendingTasks.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6 text-center py-8">
+                  <p className="text-muted-foreground">Nenhuma tarefa pendente. Clique em "Nova Tarefa" para criar.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              pendingTasks.map((task) => <TaskCard key={task.id} task={task} />)
+            )}
+          </TabsContent>
+          <TabsContent value="completed" className="space-y-3 mt-4">
+            {completedTasks.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6 text-center py-8">
+                  <p className="text-muted-foreground">Nenhuma tarefa concluída ainda.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              completedTasks.map((task) => <TaskCard key={task.id} task={task} />)
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }

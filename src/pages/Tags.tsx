@@ -13,13 +13,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Plus,
   MoreHorizontal,
   Edit,
   Trash2,
   Users,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,18 +27,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// Mock data
-const mockTags = [
-  { id: 1, name: 'Lead Quente', color: '#ef4444', description: 'Leads com alta probabilidade de conversão', contacts: 45 },
-  { id: 2, name: 'Novo Cliente', color: '#22c55e', description: 'Clientes recém-convertidos', contacts: 23 },
-  { id: 3, name: 'VIP', color: '#f59e0b', description: 'Clientes de alto valor', contacts: 12 },
-  { id: 4, name: 'Newsletter', color: '#3b82f6', description: 'Inscritos na newsletter', contacts: 156 },
-  { id: 5, name: 'Inativo', color: '#6b7280', description: 'Sem interação há mais de 30 dias', contacts: 38 },
-  { id: 6, name: 'Hotmart', color: '#8b5cf6', description: 'Compradores via Hotmart', contacts: 67 },
-  { id: 7, name: 'WhatsApp', color: '#25d366', description: 'Contatos via WhatsApp', contacts: 89 },
-  { id: 8, name: 'Webinar', color: '#ec4899', description: 'Participantes de webinars', contacts: 34 },
-];
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useTags, useCreateTag, useDeleteTag, type CreateTagData } from '@/hooks/useTags';
 
 const colorOptions = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
@@ -49,16 +48,29 @@ const colorOptions = [
 export default function Tags() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newTag, setNewTag] = useState({ name: '', color: '#3b82f6', description: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [newTag, setNewTag] = useState<CreateTagData>({ name: '', color: '#3b82f6' });
 
-  const filteredTags = mockTags.filter((tag) =>
+  const { data: tags = [], isLoading } = useTags();
+  const createTag = useCreateTag();
+  const deleteTag = useDeleteTag();
+
+  const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateTag = () => {
-    console.log('Creating tag:', newTag);
+  const handleCreateTag = async () => {
+    if (!newTag.name) return;
+    await createTag.mutateAsync(newTag);
     setIsDialogOpen(false);
-    setNewTag({ name: '', color: '#3b82f6', description: '' });
+    setNewTag({ name: '', color: '#3b82f6' });
+  };
+
+  const handleDelete = async () => {
+    if (deleteId) {
+      await deleteTag.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -85,7 +97,7 @@ export default function Tags() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Nome da Tag</Label>
+                <Label htmlFor="name">Nome da Tag *</Label>
                 <Input
                   id="name"
                   value={newTag.name}
@@ -108,16 +120,6 @@ export default function Tags() {
                   ))}
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={newTag.description}
-                  onChange={(e) => setNewTag({ ...newTag, description: e.target.value })}
-                  placeholder="Descrição opcional da tag"
-                  rows={3}
-                />
-              </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Preview:</span>
                 <Badge
@@ -136,7 +138,10 @@ export default function Tags() {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateTag}>Criar Tag</Button>
+              <Button onClick={handleCreateTag} disabled={createTag.isPending || !newTag.name}>
+                {createTag.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar Tag
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -155,53 +160,84 @@ export default function Tags() {
       </Card>
 
       {/* Tags Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredTags.map((tag) => (
-          <Card key={tag.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <Badge
-                  className="text-sm font-medium"
-                  style={{
-                    backgroundColor: `${tag.color}20`,
-                    color: tag.color,
-                    borderColor: tag.color,
-                  }}
-                  variant="outline"
-                >
-                  {tag.name}
-                </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">{tag.description}</p>
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  {tag.contacts} contatos
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : filteredTags.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6 text-center py-8">
+            <p className="text-muted-foreground">
+              {tags.length === 0 ? 'Nenhuma tag criada. Clique em "Nova Tag" para começar.' : 'Nenhuma tag encontrada.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredTags.map((tag) => (
+            <Card key={tag.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <Badge
+                    className="text-sm font-medium"
+                    style={{
+                      backgroundColor: `${tag.color}20`,
+                      color: tag.color,
+                      borderColor: tag.color,
+                    }}
+                    variant="outline"
+                  >
+                    {tag.name}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(tag.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {tag.contacts_count || 0} contatos
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir tag?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A tag será removida de todos os contatos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
