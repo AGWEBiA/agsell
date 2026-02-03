@@ -474,10 +474,6 @@ export default function Pricing() {
         <div className="flex flex-wrap justify-center gap-4 mb-8">
           <div className="flex items-center gap-2 text-sm">
             <Check className="h-4 w-4 text-green-500" />
-            <span>Sem cartão de crédito</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Check className="h-4 w-4 text-green-500" />
             <span>Setup em 2 minutos</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
