@@ -37,6 +37,7 @@ import Organization from "./pages/Organization";
 import Plans from "./pages/Plans";
 import Permissions from "./pages/Permissions";
 import Admin from "./pages/Admin";
+import ApiKeys from "./pages/ApiKeys";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,6 +82,7 @@ const App = () => (
                     <Route path="plans" element={<Plans />} />
                     <Route path="permissions" element={<Permissions />} />
                     <Route path="admin" element={<Admin />} />
+                    <Route path="api-keys" element={<ApiKeys />} />
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />

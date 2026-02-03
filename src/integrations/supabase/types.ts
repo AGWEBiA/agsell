@@ -85,6 +85,74 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_day_reset: string | null
+          last_minute_reset: string | null
+          last_request_at: string | null
+          name: string
+          organization_id: string
+          permissions: Json | null
+          rate_limit_per_day: number | null
+          rate_limit_per_minute: number | null
+          requests_this_minute: number | null
+          requests_today: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_day_reset?: string | null
+          last_minute_reset?: string | null
+          last_request_at?: string | null
+          name: string
+          organization_id: string
+          permissions?: Json | null
+          rate_limit_per_day?: number | null
+          rate_limit_per_minute?: number | null
+          requests_this_minute?: number | null
+          requests_today?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_prefix?: string
+          last_day_reset?: string | null
+          last_minute_reset?: string | null
+          last_request_at?: string | null
+          name?: string
+          organization_id?: string
+          permissions?: Json | null
+          rate_limit_per_day?: number | null
+          rate_limit_per_minute?: number | null
+          requests_this_minute?: number | null
+          requests_today?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_executions: {
         Row: {
           automation_id: string
