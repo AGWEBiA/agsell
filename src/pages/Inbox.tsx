@@ -24,6 +24,7 @@ import {
 import { useInbox } from '@/hooks/useInbox';
 import { useContacts, type Contact } from '@/hooks/useContacts';
 import { SendIAButton } from '@/components/inbox/SendIAButton';
+import { AudioTranscription } from '@/components/inbox/AudioTranscription';
 import {
   Dialog,
   DialogContent,
@@ -357,6 +358,7 @@ export default function Inbox() {
                   <Button variant="ghost" size="icon">
                     <Paperclip className="h-4 w-4" />
                   </Button>
+                  <AudioTranscription onTranscription={(text) => setMessageInput(prev => prev + text)} />
                   <Input
                     placeholder="Digite uma mensagem..."
                     className="flex-1"

@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Trophy,
   Shield,
+  Key,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -56,6 +57,7 @@ const menuItems = [
   { label: 'Organização', icon: Building2, path: '/organization' },
   { label: 'Planos', icon: Target, path: '/plans' },
   { label: 'Permissões', icon: Settings, path: '/permissions' },
+  { label: 'API Keys', icon: Key, path: '/api-keys' },
   { label: 'Admin', icon: Shield, path: '/admin' },
   { label: 'Configurações', icon: Settings, path: '/settings' },
 ];
