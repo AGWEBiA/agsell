@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,12 @@ export function WhatsAppQRConnect({ onConnect }: WhatsAppQRConnectProps) {
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'waiting' | 'connected' | 'error'>('idle');
   const [connections, setConnections] = useState<WhatsAppConnection[]>([]);
+  const connectionStatusRef = useRef(connectionStatus);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    connectionStatusRef.current = connectionStatus;
+  }, [connectionStatus]);
 
   // API connection fields
   const [apiConfig, setApiConfig] = useState({
@@ -89,7 +95,7 @@ export function WhatsAppQRConnect({ onConnect }: WhatsAppQRConnectProps) {
 
     // Simulate waiting for scan (in production, this would be a websocket connection)
     setTimeout(() => {
-      if (connectionStatus === 'waiting') {
+      if (connectionStatusRef.current === 'waiting') {
         // Simulate successful connection
         const newConnection: WhatsAppConnection = {
           id: crypto.randomUUID(),
