@@ -18,6 +18,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ExternalLink,
+  Lock,
   RefreshCw,
   Settings,
   Trash2,
@@ -28,6 +29,8 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { useOrganizationIntegrations } from '@/hooks/useOrganizationIntegrations';
+import { usePlans } from '@/hooks/usePlans';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
@@ -47,11 +50,19 @@ interface WhatsAppBusinessConfig {
 
 export function WhatsAppProviderSetup() {
   const { integrations, upsertIntegration, deleteIntegration, toggleIntegration, isLoading } = useOrganizationIntegrations();
+  const { currentPlan, isLoading: plansLoading } = usePlans();
+  const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('evolution');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Check if plan includes WhatsApp feature
+  const hasWhatsAppFeature = currentPlan?.features?.includes('whatsapp') || 
+                             currentPlan?.slug === 'professional' || 
+                             currentPlan?.slug === 'enterprise' ||
+                             (currentPlan?.max_whatsapp_messages ?? 0) > 0;
 
   // Evolution API Config
   const [evolutionConfig, setEvolutionConfig] = useState<EvolutionAPIConfig>({
@@ -71,6 +82,27 @@ export function WhatsAppProviderSetup() {
   // Get existing integrations
   const evolutionIntegration = integrations.find(i => i.integration_type === 'evolution_api');
   const businessIntegration = integrations.find(i => i.integration_type === 'whatsapp_business');
+
+  // If plan doesn't include WhatsApp, show upgrade prompt
+  if (!plansLoading && !hasWhatsAppFeature) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Recurso Exclusivo</h3>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            A integração com WhatsApp está disponível apenas nos planos pagos. 
+            Faça upgrade para enviar mensagens e campanhas pelo WhatsApp.
+          </p>
+          <Button onClick={() => navigate('/plans')}>
+            Ver Planos
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Load existing config
   useEffect(() => {
