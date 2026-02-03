@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { planId, billingCycle, name, email, organizationName } = await req.json();
+    const { planId, billingCycle, name, email, organizationName, couponCode } = await req.json();
 
     if (!planId || !name || !email || !organizationName) {
       throw new Error("Missing required fields");
@@ -229,6 +229,27 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Validate coupon if provided
+    let discounts: { coupon: string }[] | undefined;
+    if (couponCode) {
+      try {
+        // Try to find coupon by code
+        const coupons = await stripe.coupons.list({ limit: 100 });
+        const matchingCoupon = coupons.data.find(
+          (c: Stripe.Coupon) => c.name?.toLowerCase() === couponCode.toLowerCase() || c.id.toLowerCase() === couponCode.toLowerCase()
+        );
+        
+        if (matchingCoupon && matchingCoupon.valid) {
+          discounts = [{ coupon: matchingCoupon.id }];
+          console.log("Valid coupon found:", matchingCoupon.id);
+        } else {
+          console.log("Coupon not found or invalid:", couponCode);
+        }
+      } catch (couponError) {
+        console.error("Error validating coupon:", couponError);
+      }
+    }
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -239,7 +260,9 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/pricing?success=true`,
+      discounts,
+      allow_promotion_codes: !discounts, // Allow promo codes if no coupon applied
+      success_url: `${req.headers.get("origin")}/purchase-success?plan=${encodeURIComponent(plan.name)}`,
       cancel_url: `${req.headers.get("origin")}/pricing?canceled=true`,
       metadata: {
         plan_id: planId,

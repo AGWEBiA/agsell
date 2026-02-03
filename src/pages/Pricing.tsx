@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2, ArrowRight, Shield, CreditCard,
-  BarChart3, Target, Workflow, Globe, Clock, Sparkles, Phone, Calendar, Inbox, PieChart
+  BarChart3, Target, Workflow, Globe, Clock, Sparkles, Phone, Calendar, Inbox, PieChart, Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -222,6 +222,7 @@ interface CheckoutFormData {
   name: string;
   email: string;
   organizationName: string;
+  couponCode: string;
 }
 
 function GuestCheckoutDialog({ 
@@ -239,8 +240,10 @@ function GuestCheckoutDialog({
     name: '',
     email: '',
     organizationName: '',
+    couponCode: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showCouponField, setShowCouponField] = useState(false);
 
   if (!plan) return null;
 
@@ -264,6 +267,7 @@ function GuestCheckoutDialog({
           name: formData.name,
           email: formData.email,
           organizationName: formData.organizationName,
+          couponCode: formData.couponCode || undefined,
         },
       });
 
@@ -337,20 +341,47 @@ function GuestCheckoutDialog({
           </div>
 
           {!isFree && (
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">{plan.name}</span>
-                <span className="font-bold">
-                  R$ {price}/{billingCycle === 'monthly' ? 'mês' : 'ano'}
-                </span>
+            <>
+              {/* Coupon Field */}
+              {!showCouponField ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCouponField(true)}
+                  className="flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  <Tag className="h-3 w-3" />
+                  Tenho um cupom de desconto
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="couponCode">Cupom de Desconto</Label>
+                  <Input
+                    id="couponCode"
+                    placeholder="Digite o código do cupom"
+                    value={formData.couponCode}
+                    onChange={(e) => setFormData(prev => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    O desconto será aplicado na próxima etapa
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium">{plan.name}</span>
+                  <span className="font-bold">
+                    R$ {price}/{billingCycle === 'monthly' ? 'mês' : 'ano'}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {billingCycle === 'yearly' 
+                    ? 'Cobrança anual com 17% de desconto' 
+                    : 'Cobrança mensal recorrente'
+                  }
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {billingCycle === 'yearly' 
-                  ? 'Cobrança anual com 17% de desconto' 
-                  : 'Cobrança mensal recorrente'
-                }
-              </p>
-            </div>
+            </>
           )}
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
