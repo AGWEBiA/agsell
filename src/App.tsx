@@ -15,6 +15,7 @@ import { GlobalSearch } from "@/components/search/GlobalSearch";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
+import PurchaseSuccess from "./pages/PurchaseSuccess";
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
@@ -60,6 +61,7 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/purchase-success" element={<PurchaseSuccess />} />
                   
                   {/* Protected Routes */}
                   <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
