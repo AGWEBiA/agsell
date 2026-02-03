@@ -28,13 +28,29 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
 }
 
-const menuItems = [
+interface MenuItem {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  path: string;
+  adminOnly?: boolean;
+}
+
+interface MenuDivider {
+  divider: true;
+}
+
+type MenuItemType = MenuItem | MenuDivider;
+
+const menuItems: MenuItemType[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Contatos', icon: Users, path: '/contacts' },
   { label: 'Empresas', icon: Building2, path: '/companies' },
@@ -60,12 +76,35 @@ const menuItems = [
   { label: 'Permissões', icon: Settings, path: '/permissions' },
   { label: 'API Keys', icon: Key, path: '/api-keys' },
   { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
-  { label: 'Admin', icon: Shield, path: '/admin' },
+  { label: 'Admin', icon: Shield, path: '/admin', adminOnly: true },
   { label: 'Configurações', icon: Settings, path: '/settings' },
 ];
 
 export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const { user } = useAuth();
+
+  // Check if user is super admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['is_super_admin_sidebar', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
+      });
+      if (error) return false;
+      return data as boolean;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Filter menu items based on admin status
+  const visibleMenuItems = menuItems.filter(item => {
+    if ('divider' in item) return true;
+    if (item.adminOnly && !isAdmin) return false;
+    return true;
+  });
 
   return (
     <aside
@@ -94,7 +133,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Navigation */}
       <ScrollArea className="h-[calc(100vh-8rem)]">
         <nav className="space-y-1 p-2">
-          {menuItems.map((item, index) => {
+          {visibleMenuItems.map((item, index) => {
             if ('divider' in item) {
               return <div key={index} className="my-2 border-t border-sidebar-border" />;
             }
