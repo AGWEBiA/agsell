@@ -41,6 +41,20 @@ const defaultIntegrations: Integration[] = [
     ],
   },
   {
+    id: 'amazon_ses',
+    name: 'Amazon SES',
+    description: 'Serviço de e-mail escalável da AWS',
+    icon: '📨',
+    category: 'email',
+    status: 'disconnected',
+    configFields: [
+      { key: 'access_key_id', label: 'Access Key ID', type: 'password', placeholder: 'AKIAXXXXXXXX...', required: true },
+      { key: 'secret_access_key', label: 'Secret Access Key', type: 'password', placeholder: 'Sua Secret Key', required: true },
+      { key: 'region', label: 'Região AWS', type: 'text', placeholder: 'us-east-1', required: true },
+      { key: 'from_email', label: 'Email de Envio (verificado)', type: 'email', placeholder: 'noreply@seudominio.com', required: true },
+    ],
+  },
+  {
     id: 'stripe',
     name: 'Stripe',
     description: 'Pagamentos e assinaturas recorrentes',
