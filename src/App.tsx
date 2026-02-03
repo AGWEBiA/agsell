@@ -36,6 +36,7 @@ import Settings from "./pages/Settings";
 import Organization from "./pages/Organization";
 import Plans from "./pages/Plans";
 import Permissions from "./pages/Permissions";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ const App = () => (
                     <Route path="organization" element={<Organization />} />
                     <Route path="plans" element={<Plans />} />
                     <Route path="permissions" element={<Permissions />} />
+                    <Route path="admin" element={<Admin />} />
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />

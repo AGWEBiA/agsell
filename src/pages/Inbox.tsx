@@ -19,9 +19,11 @@ import {
   Mail,
   CheckCheck,
   Plus,
+  Bot,
 } from 'lucide-react';
 import { useInbox } from '@/hooks/useInbox';
 import { useContacts, type Contact } from '@/hooks/useContacts';
+import { SendIAButton } from '@/components/inbox/SendIAButton';
 import {
   Dialog,
   DialogContent,
@@ -365,6 +367,18 @@ export default function Inbox() {
                   <Button variant="ghost" size="icon">
                     <Smile className="h-4 w-4" />
                   </Button>
+                  <SendIAButton
+                    conversationId={selectedConversation.id}
+                    contactName={`${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`}
+                    lastMessages={selectedConversation.messages || []}
+                    onSendMessage={(content) => {
+                      sendMessage.mutate({
+                        conversation_id: selectedConversation.id,
+                        content,
+                        sender_type: 'user',
+                      });
+                    }}
+                  />
                   <Button size="icon" onClick={handleSendMessage}>
                     <Send className="h-4 w-4" />
                   </Button>

@@ -53,6 +53,9 @@ import {
 import { useContacts, useCreateContact, useDeleteContact, type CreateContactData } from '@/hooks/useContacts';
 import { useCompanies } from '@/hooks/useCompanies';
 import { ImportContactsDialog } from '@/components/contacts/ImportContactsDialog';
+import { PermissionGate } from '@/components/permissions/PermissionGate';
+import { useFeatureCheck } from '@/components/permissions/FeatureGate';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,6 +101,7 @@ export default function Contacts() {
   const { data: companies = [] } = useCompanies();
   const createContact = useCreateContact();
   const deleteContact = useDeleteContact();
+  const { enforceLimit } = useFeatureCheck();
 
   const filteredContacts = contacts.filter(
     (contact) =>
@@ -108,6 +112,14 @@ export default function Contacts() {
 
   const handleCreateContact = async () => {
     if (!newContact.first_name) return;
+    
+    // Verificar limite do plano
+    const canCreate = await enforceLimit('contacts', contacts.length, () => {
+      toast.error('Você atingiu o limite de contatos do seu plano. Faça upgrade para continuar.');
+    });
+    
+    if (!canCreate) return;
+    
     await createContact.mutateAsync({
       ...newContact,
       company_id: newContact.company_id || undefined,
@@ -136,21 +148,26 @@ export default function Contacts() {
           <p className="text-muted-foreground">Gerencie seus leads e clientes</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Importar
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Contato
-              </Button>
-            </DialogTrigger>
+          <PermissionGate module="contacts" action="import">
+            <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Importar
+            </Button>
+          </PermissionGate>
+          <PermissionGate module="contacts" action="export">
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </PermissionGate>
+          <PermissionGate module="contacts" action="create">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Contato
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Novo Contato</DialogTitle>
@@ -244,6 +261,7 @@ export default function Contacts() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </PermissionGate>
         </div>
       </div>
 
@@ -353,14 +371,18 @@ export default function Contacts() {
                             <Eye className="mr-2 h-4 w-4" />
                             Ver detalhes
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(contact.id)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
+                          <PermissionGate module="contacts" action="edit">
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                          </PermissionGate>
+                          <PermissionGate module="contacts" action="delete">
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(contact.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </PermissionGate>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

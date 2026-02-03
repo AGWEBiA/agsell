@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { useForms } from '@/hooks/useForms';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PlanCheckout } from '@/components/stripe/PlanCheckout';
 
 const FEATURE_LABELS: Record<string, string> = {
   crm_basico: 'CRM Básico',
@@ -174,6 +175,8 @@ export default function Plans() {
   const { automations } = useAutomations();
   const { forms } = useForms();
   const { members } = useOrganizationMembers();
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const contacts = contactsQuery.data ?? [];
 
@@ -187,8 +190,8 @@ export default function Plans() {
 
   const handleSelectPlan = (plan: Plan) => {
     if (plan.price_monthly > 0) {
-      // TODO: Integrate with Stripe checkout
-      alert('Integração com Stripe será implementada para planos pagos.');
+      setSelectedPlan(plan);
+      setShowCheckout(true);
     } else {
       updatePlan.mutate(plan.id);
     }
@@ -248,6 +251,18 @@ export default function Plans() {
           ))}
         </div>
       </div>
+
+      {/* Checkout Dialog */}
+      {selectedPlan && (
+        <PlanCheckout
+          plan={{
+            ...selectedPlan,
+            features: selectedPlan.features || [],
+          }}
+          open={showCheckout}
+          onOpenChange={setShowCheckout}
+        />
+      )}
     </div>
   );
 }
