@@ -1,8 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Smartphone, CheckCircle2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare, Smartphone, CheckCircle2, Users, Send, Settings } from 'lucide-react';
 import { WhatsAppQRConnect } from '@/components/whatsapp/WhatsAppQRConnect';
+import { WhatsAppGroupsManager } from '@/components/whatsapp/WhatsAppGroupsManager';
+import { WhatsAppCampaignsManager } from '@/components/whatsapp/WhatsAppCampaignsManager';
+import { WhatsAppGroupMessages } from '@/components/whatsapp/WhatsAppGroupMessages';
 
 export default function WhatsApp() {
   return (
@@ -10,7 +14,7 @@ export default function WhatsApp() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">WhatsApp</h1>
-          <p className="text-muted-foreground">Gerencie suas conexões WhatsApp</p>
+          <p className="text-muted-foreground">Gerencie suas conexões, grupos e campanhas WhatsApp</p>
         </div>
       </div>
 
@@ -22,10 +26,9 @@ export default function WhatsApp() {
               <MessageSquare className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100">Integração WhatsApp Business API</h3>
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100">Integração WhatsApp Completa</h3>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                Para enviar e receber mensagens de WhatsApp em escala, você precisa configurar uma conta WhatsApp Business API.
-                Isso permite automações, templates de mensagem e atendimento multiusuário.
+                Conecte via QR Code ou API, gerencie grupos e comunidades, e envie campanhas em massa respeitando as boas práticas do WhatsApp.
               </p>
             </div>
           </div>
@@ -33,7 +36,7 @@ export default function WhatsApp() {
       </Card>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -51,11 +54,11 @@ export default function WhatsApp() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-                <MessageSquare className="h-6 w-6 text-blue-600" />
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground">Mensagens Enviadas</p>
+                <p className="text-sm text-muted-foreground">Grupos Gerenciados</p>
               </div>
             </div>
           </CardContent>
@@ -64,64 +67,112 @@ export default function WhatsApp() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900">
-                <CheckCircle2 className="h-6 w-6 text-purple-600" />
+                <Send className="h-6 w-6 text-purple-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground">Templates Aprovados</p>
+                <p className="text-sm text-muted-foreground">Campanhas Ativas</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900">
+                <CheckCircle2 className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground">Mensagens Hoje</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* WhatsApp Connect Component */}
-      <WhatsAppQRConnect />
+      {/* Main Tabs */}
+      <Tabs defaultValue="connection" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsTrigger value="connection" className="flex items-center gap-2">
+            <Smartphone className="h-4 w-4" />
+            <span className="hidden sm:inline">Conexão</span>
+          </TabsTrigger>
+          <TabsTrigger value="groups" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Grupos</span>
+          </TabsTrigger>
+          <TabsTrigger value="campaigns" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            <span className="hidden sm:inline">Campanhas</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">Automações</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Setup Steps */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Como Configurar</CardTitle>
-          <CardDescription>Siga os passos para integrar o WhatsApp Business API</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                1
+        <TabsContent value="connection" className="space-y-6">
+          <WhatsAppQRConnect />
+          
+          {/* Setup Steps */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Como Configurar</CardTitle>
+              <CardDescription>Siga os passos para integrar o WhatsApp</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                    1
+                  </div>
+                  <div>
+                    <p className="font-medium">Escolha o tipo de conexão</p>
+                    <p className="text-sm text-muted-foreground">
+                      QR Code para uso pessoal ou API Business para empresas com alto volume.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                    2
+                  </div>
+                  <div>
+                    <p className="font-medium">Configure seus grupos</p>
+                    <p className="text-sm text-muted-foreground">
+                      Adicione grupos para monitorar entradas, saídas e enviar mensagens automáticas.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                    3
+                  </div>
+                  <div>
+                    <p className="font-medium">Crie campanhas em massa</p>
+                    <p className="text-sm text-muted-foreground">
+                      Envie mensagens 1-a-1 respeitando os limites e boas práticas do WhatsApp.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Criar conta Meta Business</p>
-                <p className="text-sm text-muted-foreground">
-                  Acesse business.facebook.com e crie uma conta empresarial verificada.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                2
-              </div>
-              <div>
-                <p className="font-medium">Solicitar acesso à API</p>
-                <p className="text-sm text-muted-foreground">
-                  Solicite acesso ao WhatsApp Business Platform através do Meta Developer Portal.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                3
-              </div>
-              <div>
-                <p className="font-medium">Conectar à plataforma</p>
-                <p className="text-sm text-muted-foreground">
-                  Use as credenciais da API para conectar sua conta aqui no AG Sell.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="groups">
+          <WhatsAppGroupsManager />
+        </TabsContent>
+
+        <TabsContent value="campaigns">
+          <WhatsAppCampaignsManager />
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <WhatsAppGroupMessages />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
