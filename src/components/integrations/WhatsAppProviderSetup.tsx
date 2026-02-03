@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -15,12 +16,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  AlertCircle,
   CheckCircle2,
   ExternalLink,
   Lock,
+  Plus,
   RefreshCw,
   Settings,
+  Star,
   Trash2,
   Zap,
   MessageSquare,
@@ -28,17 +30,16 @@ import {
   Server,
   Smartphone,
 } from 'lucide-react';
-import { useOrganizationIntegrations } from '@/hooks/useOrganizationIntegrations';
+import { useWhatsAppInstances, WhatsAppInstance } from '@/hooks/useWhatsAppInstances';
 import { usePlans } from '@/hooks/usePlans';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Json } from '@/integrations/supabase/types';
 
 interface EvolutionAPIConfig {
   api_url: string;
   api_key: string;
   instance_name: string;
+  phone_number: string;
 }
 
 interface WhatsAppBusinessConfig {
@@ -46,17 +47,29 @@ interface WhatsAppBusinessConfig {
   phone_number_id: string;
   business_account_id: string;
   webhook_verify_token: string;
+  phone_number: string;
 }
 
 export function WhatsAppProviderSetup() {
-  const { integrations, upsertIntegration, deleteIntegration, toggleIntegration, isLoading } = useOrganizationIntegrations();
+  const { 
+    instances, 
+    activeInstances,
+    defaultInstance,
+    createInstance, 
+    deleteInstance, 
+    toggleInstance, 
+    setDefaultInstance,
+    isLoading 
+  } = useWhatsAppInstances();
   const { currentPlan, isLoading: plansLoading } = usePlans();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('evolution');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
+  const [isTesting, setIsTesting] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDefault, setIsDefault] = useState(false);
+  const [instanceName, setInstanceName] = useState('');
 
   // Check if plan includes WhatsApp feature
   const hasWhatsAppFeature = currentPlan?.features?.includes('whatsapp') || 
@@ -69,6 +82,7 @@ export function WhatsAppProviderSetup() {
     api_url: '',
     api_key: '',
     instance_name: '',
+    phone_number: '',
   });
 
   // WhatsApp Business Config
@@ -77,11 +91,12 @@ export function WhatsAppProviderSetup() {
     phone_number_id: '',
     business_account_id: '',
     webhook_verify_token: '',
+    phone_number: '',
   });
 
-  // Get existing integrations
-  const evolutionIntegration = integrations.find(i => i.integration_type === 'evolution_api');
-  const businessIntegration = integrations.find(i => i.integration_type === 'whatsapp_business');
+  // Get existing integrations by type
+  const evolutionInstances = instances.filter(i => i.integration_type === 'evolution_api');
+  const businessInstances = instances.filter(i => i.integration_type === 'whatsapp_business');
 
   // If plan doesn't include WhatsApp, show upgrade prompt
   if (!plansLoading && !hasWhatsAppFeature) {
@@ -104,26 +119,12 @@ export function WhatsAppProviderSetup() {
     );
   }
 
-  // Load existing config
-  useEffect(() => {
-    if (evolutionIntegration?.config) {
-      const config = evolutionIntegration.config as Record<string, string>;
-      setEvolutionConfig({
-        api_url: config.api_url || '',
-        api_key: config.api_key || '',
-        instance_name: config.instance_name || '',
-      });
-    }
-    if (businessIntegration?.config) {
-      const config = businessIntegration.config as Record<string, string>;
-      setBusinessConfig({
-        access_token: config.access_token || '',
-        phone_number_id: config.phone_number_id || '',
-        business_account_id: config.business_account_id || '',
-        webhook_verify_token: config.webhook_verify_token || '',
-      });
-    }
-  }, [evolutionIntegration, businessIntegration]);
+  const resetForm = () => {
+    setEvolutionConfig({ api_url: '', api_key: '', instance_name: '', phone_number: '' });
+    setBusinessConfig({ access_token: '', phone_number_id: '', business_account_id: '', webhook_verify_token: '', phone_number: '' });
+    setInstanceName('');
+    setIsDefault(false);
+  };
 
   const handleSaveEvolution = async () => {
     if (!evolutionConfig.api_url || !evolutionConfig.api_key || !evolutionConfig.instance_name) {
@@ -131,15 +132,22 @@ export function WhatsAppProviderSetup() {
       return;
     }
 
+    if (!instanceName) {
+      toast.error('Digite um nome para identificar esta instância');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await upsertIntegration.mutateAsync({
-        name: 'Evolution API',
+      await createInstance.mutateAsync({
+        name: instanceName,
         integration_type: 'evolution_api',
-        config: evolutionConfig as unknown as Json,
-        is_active: true,
+        config: { ...evolutionConfig } as Record<string, string>,
+        phone_number: evolutionConfig.phone_number || evolutionConfig.instance_name,
+        is_default: isDefault || instances.length === 0,
       });
       setIsDialogOpen(false);
+      resetForm();
     } finally {
       setIsSaving(false);
     }
@@ -151,31 +159,39 @@ export function WhatsAppProviderSetup() {
       return;
     }
 
+    if (!instanceName) {
+      toast.error('Digite um nome para identificar esta instância');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await upsertIntegration.mutateAsync({
-        name: 'WhatsApp Business API',
+      await createInstance.mutateAsync({
+        name: instanceName,
         integration_type: 'whatsapp_business',
-        config: businessConfig as unknown as Json,
-        is_active: true,
+        config: { ...businessConfig } as Record<string, string>,
+        phone_number: businessConfig.phone_number || businessConfig.phone_number_id,
+        is_default: isDefault || instances.length === 0,
       });
       setIsDialogOpen(false);
+      resetForm();
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleTestEvolution = async () => {
-    if (!evolutionConfig.api_url || !evolutionConfig.api_key) {
-      toast.error('Configure a API primeiro');
+  const handleTestEvolution = async (instance: WhatsAppInstance) => {
+    const config = instance.config;
+    if (!config.api_url || !config.api_key) {
+      toast.error('Configuração incompleta');
       return;
     }
 
-    setIsTesting(true);
+    setIsTesting(instance.id);
     try {
-      const response = await fetch(`${evolutionConfig.api_url}/instance/connectionState/${evolutionConfig.instance_name}`, {
+      const response = await fetch(`${config.api_url}/instance/connectionState/${config.instance_name}`, {
         headers: {
-          'apikey': evolutionConfig.api_key,
+          'apikey': config.api_key,
         },
       });
 
@@ -192,30 +208,31 @@ export function WhatsAppProviderSetup() {
     } catch (error) {
       toast.error('Não foi possível conectar. Verifique a URL e a chave.');
     } finally {
-      setIsTesting(false);
+      setIsTesting(null);
     }
   };
 
-  const handleTestBusiness = async () => {
-    if (!businessConfig.access_token || !businessConfig.phone_number_id) {
-      toast.error('Configure a API primeiro');
+  const handleTestBusiness = async (instance: WhatsAppInstance) => {
+    const config = instance.config;
+    if (!config.access_token || !config.phone_number_id) {
+      toast.error('Configuração incompleta');
       return;
     }
 
-    setIsTesting(true);
+    setIsTesting(instance.id);
     try {
       const response = await fetch(
-        `https://graph.facebook.com/v18.0/${businessConfig.phone_number_id}`,
+        `https://graph.facebook.com/v18.0/${config.phone_number_id}`,
         {
           headers: {
-            'Authorization': `Bearer ${businessConfig.access_token}`,
+            'Authorization': `Bearer ${config.access_token}`,
           },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(`Conectado! Número: ${data.display_phone_number || businessConfig.phone_number_id}`);
+        toast.success(`Conectado! Número: ${data.display_phone_number || config.phone_number_id}`);
       } else {
         const error = await response.json();
         toast.error(`Erro: ${error.error?.message || 'Token inválido'}`);
@@ -223,18 +240,105 @@ export function WhatsAppProviderSetup() {
     } catch (error) {
       toast.error('Não foi possível conectar. Verifique as credenciais.');
     } finally {
-      setIsTesting(false);
+      setIsTesting(null);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja remover esta integração?')) {
-      await deleteIntegration.mutateAsync(id);
+    if (confirm('Tem certeza que deseja remover esta instância?')) {
+      await deleteInstance.mutateAsync(id);
     }
   };
 
   const handleToggle = async (id: string, isActive: boolean) => {
-    await toggleIntegration.mutateAsync({ id, isActive });
+    await toggleInstance.mutateAsync({ id, isActive });
+  };
+
+  const handleSetDefault = async (id: string) => {
+    await setDefaultInstance.mutateAsync(id);
+  };
+
+  const renderInstanceCard = (instance: WhatsAppInstance) => {
+    const isEvolution = instance.integration_type === 'evolution_api';
+    
+    return (
+      <Card 
+        key={instance.id} 
+        className={`${instance.is_active ? 'border-green-200 dark:border-green-800' : ''} ${instance.is_default ? 'ring-2 ring-yellow-400' : ''}`}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${isEvolution ? 'bg-purple-100 dark:bg-purple-900' : 'bg-blue-100 dark:bg-blue-900'}`}>
+                {isEvolution ? (
+                  <Server className="h-5 w-5 text-purple-600" />
+                ) : (
+                  <Smartphone className="h-5 w-5 text-blue-600" />
+                )}
+              </div>
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  {instance.name}
+                  {instance.is_default && (
+                    <Badge variant="outline" className="text-xs">
+                      <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
+                      Padrão
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  {isEvolution ? 'Evolution API' : 'WhatsApp Business API'}
+                  {instance.phone_number && ` • ${instance.phone_number}`}
+                </CardDescription>
+              </div>
+            </div>
+            <Switch
+              checked={instance.is_active}
+              onCheckedChange={(checked) => handleToggle(instance.id, checked)}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between">
+            <Badge variant={instance.is_active ? 'default' : 'secondary'}>
+              {instance.is_active ? (
+                <><CheckCircle2 className="h-3 w-3 mr-1" /> Ativo</>
+              ) : (
+                'Inativo'
+              )}
+            </Badge>
+            <div className="flex gap-1">
+              {!instance.is_default && instance.is_active && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSetDefault(instance.id)}
+                  title="Definir como padrão"
+                >
+                  <Star className="h-4 w-4" />
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => isEvolution ? handleTestEvolution(instance) : handleTestBusiness(instance)}
+                disabled={isTesting === instance.id}
+              >
+                {isTesting === instance.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => handleDelete(instance.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -247,189 +351,35 @@ export function WhatsAppProviderSetup() {
             Provedores WhatsApp
           </h2>
           <p className="text-muted-foreground">
-            Configure os provedores para envio de mensagens
+            Configure múltiplos números e escolha qual usar para envios
           </p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
-          <Settings className="h-4 w-4 mr-2" />
-          Configurar Provedor
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar Número
         </Button>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Evolution API Card */}
-        <Card className={evolutionIntegration?.is_active ? 'border-green-200 dark:border-green-800' : ''}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900">
-                  <Server className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Evolution API</CardTitle>
-                  <CardDescription>Conexão via QR Code</CardDescription>
-                </div>
-              </div>
-              {evolutionIntegration && (
-                <Switch
-                  checked={evolutionIntegration.is_active || false}
-                  onCheckedChange={(checked) => handleToggle(evolutionIntegration.id, checked)}
-                />
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {evolutionIntegration ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant={evolutionIntegration.is_active ? 'default' : 'secondary'}>
-                    {evolutionIntegration.is_active ? (
-                      <><CheckCircle2 className="h-3 w-3 mr-1" /> Ativo</>
-                    ) : (
-                      'Inativo'
-                    )}
-                  </Badge>
-                  {evolutionIntegration.last_sync_at && (
-                    <span className="text-xs text-muted-foreground">
-                      Última sync: {new Date(evolutionIntegration.last_sync_at).toLocaleString('pt-BR')}
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Instância:</strong> {(evolutionIntegration.config as Record<string, string>)?.instance_name}</p>
-                  <p><strong>URL:</strong> {(evolutionIntegration.config as Record<string, string>)?.api_url}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleTestEvolution}
-                    disabled={isTesting}
-                  >
-                    {isTesting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                    <span className="ml-2">Testar</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setActiveTab('evolution');
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => handleDelete(evolutionIntegration.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground mb-4">Não configurado</p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setActiveTab('evolution');
-                    setIsDialogOpen(true);
-                  }}
-                >
-                  Configurar Evolution API
-                </Button>
-              </div>
-            )}
+      {/* Instances List */}
+      {instances.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Nenhum número configurado</h3>
+            <p className="text-muted-foreground mb-4">
+              Adicione seu primeiro número WhatsApp para começar a enviar mensagens
+            </p>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Número
+            </Button>
           </CardContent>
         </Card>
-
-        {/* WhatsApp Business API Card */}
-        <Card className={businessIntegration?.is_active ? 'border-green-200 dark:border-green-800' : ''}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-                  <Smartphone className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">WhatsApp Business API</CardTitle>
-                  <CardDescription>API Oficial da Meta</CardDescription>
-                </div>
-              </div>
-              {businessIntegration && (
-                <Switch
-                  checked={businessIntegration.is_active || false}
-                  onCheckedChange={(checked) => handleToggle(businessIntegration.id, checked)}
-                />
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {businessIntegration ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant={businessIntegration.is_active ? 'default' : 'secondary'}>
-                    {businessIntegration.is_active ? (
-                      <><CheckCircle2 className="h-3 w-3 mr-1" /> Ativo</>
-                    ) : (
-                      'Inativo'
-                    )}
-                  </Badge>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Phone ID:</strong> {(businessIntegration.config as Record<string, string>)?.phone_number_id}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleTestBusiness}
-                    disabled={isTesting}
-                  >
-                    {isTesting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                    <span className="ml-2">Testar</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setActiveTab('business');
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => handleDelete(businessIntegration.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground mb-4">Não configurado</p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setActiveTab('business');
-                    setIsDialogOpen(true);
-                  }}
-                >
-                  Configurar Business API
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {instances.map(renderInstanceCard)}
+        </div>
+      )}
 
       {/* Help Section */}
       <Card>
@@ -479,11 +429,24 @@ export function WhatsAppProviderSetup() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Configurar Provedor WhatsApp</DialogTitle>
+            <DialogTitle>Adicionar Número WhatsApp</DialogTitle>
             <DialogDescription>
-              Escolha e configure o provedor de WhatsApp
+              Escolha o provedor e configure as credenciais
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="instance-name">Nome da Instância *</Label>
+              <Input
+                id="instance-name"
+                placeholder="Ex: WhatsApp Principal, Suporte, Marketing..."
+                value={instanceName}
+                onChange={(e) => setInstanceName(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Um nome para identificar este número</p>
+            </div>
+          </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -500,14 +463,13 @@ export function WhatsAppProviderSetup() {
                   value={evolutionConfig.api_url}
                   onChange={(e) => setEvolutionConfig({ ...evolutionConfig, api_url: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">URL do seu servidor Evolution API</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="evo-key">API Key *</Label>
                 <Input
                   id="evo-key"
                   type="password"
-                  placeholder="sua-chave-api"
+                  placeholder="Sua chave de API"
                   value={evolutionConfig.api_key}
                   onChange={(e) => setEvolutionConfig({ ...evolutionConfig, api_key: e.target.value })}
                 />
@@ -516,20 +478,21 @@ export function WhatsAppProviderSetup() {
                 <Label htmlFor="evo-instance">Nome da Instância *</Label>
                 <Input
                   id="evo-instance"
-                  placeholder="agsell-whatsapp"
+                  placeholder="minha-instancia"
                   value={evolutionConfig.instance_name}
                   onChange={(e) => setEvolutionConfig({ ...evolutionConfig, instance_name: e.target.value })}
                 />
               </div>
-              <DialogFooter className="mt-6">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveEvolution} disabled={isSaving}>
-                  {isSaving ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Salvar
-                </Button>
-              </DialogFooter>
+              <div className="space-y-2">
+                <Label htmlFor="evo-phone">Número do WhatsApp</Label>
+                <Input
+                  id="evo-phone"
+                  placeholder="+55 11 99999-9999"
+                  value={evolutionConfig.phone_number}
+                  onChange={(e) => setEvolutionConfig({ ...evolutionConfig, phone_number: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Opcional - para identificação</p>
+              </div>
             </TabsContent>
 
             <TabsContent value="business" className="space-y-4 mt-4">
@@ -538,17 +501,16 @@ export function WhatsAppProviderSetup() {
                 <Input
                   id="biz-token"
                   type="password"
-                  placeholder="EAAxxxxxxx..."
+                  placeholder="Token de acesso da Meta"
                   value={businessConfig.access_token}
                   onChange={(e) => setBusinessConfig({ ...businessConfig, access_token: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">Token de acesso do Meta for Developers</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="biz-phone">Phone Number ID *</Label>
+                <Label htmlFor="biz-phone-id">Phone Number ID *</Label>
                 <Input
-                  id="biz-phone"
-                  placeholder="123456789012345"
+                  id="biz-phone-id"
+                  placeholder="ID do número no Meta"
                   value={businessConfig.phone_number_id}
                   onChange={(e) => setBusinessConfig({ ...businessConfig, phone_number_id: e.target.value })}
                 />
@@ -557,32 +519,52 @@ export function WhatsAppProviderSetup() {
                 <Label htmlFor="biz-account">Business Account ID</Label>
                 <Input
                   id="biz-account"
-                  placeholder="123456789012345"
+                  placeholder="ID da conta Business"
                   value={businessConfig.business_account_id}
                   onChange={(e) => setBusinessConfig({ ...businessConfig, business_account_id: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="biz-webhook">Webhook Verify Token</Label>
+                <Label htmlFor="biz-phone">Número do WhatsApp</Label>
                 <Input
-                  id="biz-webhook"
-                  placeholder="my-verify-token"
-                  value={businessConfig.webhook_verify_token}
-                  onChange={(e) => setBusinessConfig({ ...businessConfig, webhook_verify_token: e.target.value })}
+                  id="biz-phone"
+                  placeholder="+55 11 99999-9999"
+                  value={businessConfig.phone_number}
+                  onChange={(e) => setBusinessConfig({ ...businessConfig, phone_number: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">Token para verificação de webhooks</p>
               </div>
-              <DialogFooter className="mt-6">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveBusiness} disabled={isSaving}>
-                  {isSaving ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Salvar
-                </Button>
-              </DialogFooter>
             </TabsContent>
           </Tabs>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox
+              id="is-default"
+              checked={isDefault}
+              onCheckedChange={(checked) => setIsDefault(checked === true)}
+            />
+            <Label htmlFor="is-default" className="text-sm font-normal">
+              Definir como número padrão para envios
+            </Label>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={activeTab === 'evolution' ? handleSaveEvolution : handleSaveBusiness}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Adicionar'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

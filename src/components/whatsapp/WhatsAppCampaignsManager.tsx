@@ -45,8 +45,12 @@ import {
   Users,
   Mail,
   BarChart3,
+  Server,
+  Smartphone,
 } from 'lucide-react';
 import { useWhatsAppCampaigns, WhatsAppCampaign } from '@/hooks/useWhatsAppCampaigns';
+import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
+import { WhatsAppInstanceSelector, WhatsAppInstanceBadge } from './WhatsAppInstanceSelector';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -63,6 +67,8 @@ export function WhatsAppCampaignsManager() {
     isCreatingCampaign,
   } = useWhatsAppCampaigns();
 
+  const { activeInstances, defaultInstance } = useWhatsAppInstances();
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<WhatsAppCampaign | null>(null);
   const [newCampaign, setNewCampaign] = useState<{
@@ -74,6 +80,7 @@ export function WhatsAppCampaignsManager() {
     messages_per_minute: number;
     delay_between_messages: number;
     daily_limit: number;
+    whatsapp_instance_id: string;
   }>({
     name: '',
     description: '',
@@ -83,6 +90,7 @@ export function WhatsAppCampaignsManager() {
     messages_per_minute: 20,
     delay_between_messages: 3000,
     daily_limit: 1000,
+    whatsapp_instance_id: defaultInstance?.id || '',
   });
 
   const handleCreateCampaign = () => {
@@ -97,6 +105,7 @@ export function WhatsAppCampaignsManager() {
       messages_per_minute: 20,
       delay_between_messages: 3000,
       daily_limit: 1000,
+      whatsapp_instance_id: defaultInstance?.id || '',
     });
   };
 
@@ -221,6 +230,17 @@ export function WhatsAppCampaignsManager() {
 
               <TabsContent value="settings" className="space-y-6 mt-4">
                 <div className="space-y-4">
+                  {/* WhatsApp Instance Selector */}
+                  {activeInstances.length > 1 && (
+                    <WhatsAppInstanceSelector
+                      value={newCampaign.whatsapp_instance_id}
+                      onChange={(instanceId) =>
+                        setNewCampaign({ ...newCampaign, whatsapp_instance_id: instanceId })
+                      }
+                      label="Número/Provedor de Envio"
+                    />
+                  )}
+
                   <div className="space-y-2">
                     <Label>Mensagens por Minuto: {newCampaign.messages_per_minute}</Label>
                     <Slider
