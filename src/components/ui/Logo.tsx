@@ -1,29 +1,32 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import logoRed from '@/assets/logo-red.png';
+import logoRed from '@/assets/agsell-logo-red.png';
+import logoFull from '@/assets/agsell-logo-full.png';
 import logoWhite from '@/assets/logo-white.png';
 import logoBlack from '@/assets/logo-black.png';
 import logoAlternativo from '@/assets/logo-alternativo.png';
 
 interface LogoProps {
-  variant?: 'red' | 'white' | 'black' | 'alternativo' | 'auto';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'red' | 'white' | 'black' | 'alternativo' | 'full' | 'auto';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   showText?: boolean;
 }
 
-const sizeMap = {
+const iconSizeMap = {
+  xs: 'h-5 w-5',
   sm: 'h-6 w-6',
   md: 'h-8 w-8',
   lg: 'h-10 w-10',
   xl: 'h-12 w-12',
 };
 
-const textSizeMap = {
-  sm: 'text-sm',
-  md: 'text-lg',
-  lg: 'text-xl',
-  xl: 'text-2xl',
+const fullLogoSizeMap = {
+  xs: 'h-5 w-auto',
+  sm: 'h-6 w-auto',
+  md: 'h-8 w-auto',
+  lg: 'h-10 w-auto',
+  xl: 'h-12 w-auto',
 };
 
 export function Logo({ 
@@ -32,6 +35,17 @@ export function Logo({
   className,
   showText = false 
 }: LogoProps) {
+  // When showText is true, use the full logo with integrated text
+  if (showText) {
+    return (
+      <img 
+        src={logoFull} 
+        alt="AG Sell" 
+        className={cn(fullLogoSizeMap[size], 'object-contain', className)}
+      />
+    );
+  }
+
   const getLogoSrc = () => {
     switch (variant) {
       case 'red':
@@ -42,6 +56,8 @@ export function Logo({
         return logoBlack;
       case 'alternativo':
         return logoAlternativo;
+      case 'full':
+        return logoFull;
       case 'auto':
       default:
         // Auto mode: use red logo for better contrast on light backgrounds
@@ -49,38 +65,18 @@ export function Logo({
     }
   };
 
-  if (showText) {
-    return (
-      <div className={cn('flex items-center gap-2', className)}>
-        <img 
-          src={getLogoSrc()} 
-          alt="AG Sell" 
-          className={cn(sizeMap[size], 'object-contain')}
-        />
-        <div>
-          <span className={cn('font-bold text-foreground', textSizeMap[size])}>
-            AG Sell
-          </span>
-          {size === 'xl' && (
-            <p className="text-xs text-muted-foreground">CRM & Automação</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <img 
       src={getLogoSrc()} 
       alt="AG Sell" 
-      className={cn(sizeMap[size], 'object-contain', className)}
+      className={cn(iconSizeMap[size], 'object-contain', className)}
     />
   );
 }
 
 // Icon-only version for compact spaces
 export function LogoIcon({ 
-  variant = 'alternativo', 
+  variant = 'red', 
   size = 'md', 
   className 
 }: Omit<LogoProps, 'showText'>) {
@@ -93,8 +89,11 @@ export function LogoIcon({
       case 'black':
         return logoBlack;
       case 'alternativo':
-      default:
         return logoAlternativo;
+      case 'full':
+        return logoFull;
+      default:
+        return logoRed;
     }
   };
 
@@ -102,7 +101,7 @@ export function LogoIcon({
     <img 
       src={getLogoSrc()} 
       alt="AG Sell" 
-      className={cn(sizeMap[size], 'object-contain', className)}
+      className={cn(iconSizeMap[size], 'object-contain', className)}
     />
   );
 }
