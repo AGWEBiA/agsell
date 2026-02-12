@@ -24,6 +24,7 @@ import {
   Clock,
   BarChart3,
   CreditCard,
+  Mail,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ import { Navigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { PlansManagement } from '@/components/admin/PlansManagement';
 import { EmailCostProjection } from '@/components/admin/EmailCostProjection';
+import { EmailProviderConfig } from '@/components/admin/EmailProviderConfig';
 
 export default function Admin() {
   const { user } = useAuth();
@@ -175,6 +177,10 @@ export default function Admin() {
           <TabsTrigger value="email-costs" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Custos E-mail
+          </TabsTrigger>
+          <TabsTrigger value="email-provider" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Provedor E-mail
           </TabsTrigger>
         </TabsList>
 
@@ -371,6 +377,10 @@ export default function Admin() {
 
         <TabsContent value="email-costs">
           <EmailCostProjection />
+        </TabsContent>
+
+        <TabsContent value="email-provider">
+          <EmailProviderConfig />
         </TabsContent>
       </Tabs>
     </div>

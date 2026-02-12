@@ -46,49 +46,61 @@ Deno.serve(async (req) => {
 
     const emailReq = (await req.json()) as EmailRequest;
 
-    // Try SendGrid first
-    const { data: sendgridInt } = await supabase
-      .from("organization_integrations")
-      .select("config")
-      .eq("organization_id", emailReq.organization_id)
-      .eq("integration_type", "sendgrid")
-      .eq("is_active", true)
-      .maybeSingle();
+    // --- Resolve sender address from verified domain ---
+    let resolvedFrom = emailReq.from;
+    if (!resolvedFrom && emailReq.organization_id) {
+      const { data: verifiedDomain } = await supabase
+        .from("email_domains")
+        .select("from_email, from_name, domain")
+        .eq("organization_id", emailReq.organization_id)
+        .eq("status", "verified")
+        .eq("is_active", true)
+        .order("verified_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (sendgridInt) {
-      return await sendWithSendGrid(sendgridInt.config as Record<string, string>, emailReq);
+      if (verifiedDomain) {
+        const name = verifiedDomain.from_name || "";
+        const email = verifiedDomain.from_email || `noreply@${verifiedDomain.domain}`;
+        resolvedFrom = name ? `${name} <${email}>` : email;
+      }
     }
 
-    // Try Resend
-    const { data: resendInt } = await supabase
+    // --- Find active email provider (global) ---
+    // Look for any active email integration across all orgs (global provider set by admin)
+    const { data: activeIntegration } = await supabase
       .from("organization_integrations")
-      .select("config")
-      .eq("organization_id", emailReq.organization_id)
-      .eq("integration_type", "resend")
+      .select("integration_type, config")
+      .in("integration_type", ["resend", "amazon_ses", "sendgrid"])
       .eq("is_active", true)
+      .limit(1)
       .maybeSingle();
 
-    if (resendInt) {
-      return await sendWithResend(resendInt.config as Record<string, string>, emailReq);
+    if (!activeIntegration) {
+      return new Response(
+        JSON.stringify({ error: "No email integration configured. Admin must configure a provider." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Try Amazon SES
-    const { data: sesInt } = await supabase
-      .from("organization_integrations")
-      .select("config")
-      .eq("organization_id", emailReq.organization_id)
-      .eq("integration_type", "amazon_ses")
-      .eq("is_active", true)
-      .maybeSingle();
+    const config = activeIntegration.config as Record<string, string>;
+    // Use resolved from, or config default, or platform fallback
+    const finalFrom = resolvedFrom || config.from_email || "noreply@agsell.com";
+    const emailReqWithFrom = { ...emailReq, from: finalFrom };
 
-    if (sesInt) {
-      return await sendWithAmazonSES(sesInt.config as Record<string, string>, emailReq);
+    switch (activeIntegration.integration_type) {
+      case "sendgrid":
+        return await sendWithSendGrid(config, emailReqWithFrom);
+      case "resend":
+        return await sendWithResend(config, emailReqWithFrom);
+      case "amazon_ses":
+        return await sendWithAmazonSES(config, emailReqWithFrom);
+      default:
+        return new Response(
+          JSON.stringify({ error: `Unknown provider: ${activeIntegration.integration_type}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
     }
-
-    return new Response(
-      JSON.stringify({ error: "No email integration configured" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch (error: unknown) {
     console.error("Error sending email:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
