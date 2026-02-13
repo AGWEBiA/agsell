@@ -32,6 +32,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo, LogoIcon } from '@/components/ui/Logo';
+import { useAdminView } from '@/contexts/AdminViewContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -85,6 +86,7 @@ const menuItems: MenuItemType[] = [
 export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
+  const { isUserMode } = useAdminView();
 
   // Check if user is super admin
   const { data: isAdmin } = useQuery({
@@ -104,7 +106,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   // Filter menu items based on admin status
   const visibleMenuItems = menuItems.filter(item => {
     if ('divider' in item) return true;
-    if (item.adminOnly && !isAdmin) return false;
+    if (item.adminOnly && (!isAdmin || isUserMode)) return false;
     return true;
   });
 

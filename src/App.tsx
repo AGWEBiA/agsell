@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
+import { AdminViewProvider } from "@/contexts/AdminViewContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
@@ -52,6 +53,7 @@ const App = () => (
       <AuthProvider>
         <OrganizationProvider>
           <PermissionsProvider>
+            <AdminViewProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -97,6 +99,7 @@ const App = () => (
                 </Routes>
               </BrowserRouter>
             </TooltipProvider>
+            </AdminViewProvider>
           </PermissionsProvider>
         </OrganizationProvider>
       </AuthProvider>

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminView } from '@/contexts/AdminViewContext';
 import { toast } from 'sonner';
 
 export type AppModule = 
@@ -42,6 +43,7 @@ export interface PermissionProfile {
 export function usePermissions() {
   const { user } = useAuth();
   const { currentOrganization, currentRole } = useOrganization();
+  const { isUserMode } = useAdminView();
   const queryClient = useQueryClient();
 
   // Fetch permission profiles
@@ -96,6 +98,12 @@ export function usePermissions() {
 
   // Check if user has permission (client-side check)
   const hasPermission = (module: AppModule, action: AppAction): boolean => {
+    // When in user mode, treat as a regular member (no admin/owner bypass)
+    if (isUserMode) {
+      // Simulate member-level permissions
+      return ['view', 'create', 'edit'].includes(action) && module !== 'admin';
+    }
+
     // Owner has all permissions
     if (currentRole === 'owner') return true;
     

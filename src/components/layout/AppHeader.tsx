@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAdminView } from '@/contexts/AdminViewContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   Search,
   Sun,
@@ -20,8 +22,12 @@ import {
   Settings,
   LogOut,
   HelpCircle,
+  Eye,
+  Shield,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -30,6 +36,22 @@ interface HeaderProps {
 export function AppHeader({ sidebarCollapsed }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isUserMode, toggleViewMode } = useAdminView();
+
+  // Check if user is super admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['is_super_admin_header', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
+      });
+      if (error) return false;
+      return data as boolean;
+    },
+    enabled: !!user?.id,
+  });
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
   const userInitials = userName.slice(0, 2).toUpperCase();
@@ -54,6 +76,27 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        {/* Admin/User View Toggle */}
+        {isAdmin && (
+          <Button
+            variant={isUserMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleViewMode}
+            className="gap-2 text-xs"
+          >
+            {isUserMode ? (
+              <>
+                <Eye className="h-4 w-4" />
+                Visão Usuário
+              </>
+            ) : (
+              <>
+                <Shield className="h-4 w-4" />
+                Visão Admin
+              </>
+            )}
+          </Button>
+        )}
         {/* Theme Toggle */}
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {theme === 'light' ? (
