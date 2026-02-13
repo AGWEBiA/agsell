@@ -1,5 +1,7 @@
 // Webhook Handler for Eduzz Events
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto } from "https://deno.land/std@0.203.0/crypto/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.203.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +42,24 @@ const EDUZZ_STATUS: Record<number, string> = {
   15: "waiting_payment",
 };
 
+async function verifyHmacSignature(rawBody: string, secret: string, signature: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(rawBody);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+  const expectedSignature = encodeHex(new Uint8Array(signatureBuffer));
+
+  return signature === expectedSignature;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,7 +70,8 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const payload = (await req.json()) as EduzzPayload;
+    const rawBody = await req.text();
+    const payload = JSON.parse(rawBody) as EduzzPayload;
 
     console.log("Eduzz webhook received:", EDUZZ_STATUS[payload.trans_status], payload.cus_email);
 
@@ -63,6 +84,29 @@ Deno.serve(async (req) => {
       .single();
 
     const organizationId = integration?.organization_id;
+
+    // Verify signature if secret is configured
+    if (integration?.config?.webhook_secret) {
+      const secret = integration.config.webhook_secret as string;
+      const signature = req.headers.get("x-eduzz-signature");
+
+      if (!signature) {
+        console.error("Missing Eduzz signature");
+        return new Response(
+          JSON.stringify({ error: "Missing signature" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const isValid = await verifyHmacSignature(rawBody, secret, signature);
+      if (!isValid) {
+        console.error("Invalid Eduzz signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // Map Eduzz status to event type
     const eventTypeMap: Record<number, string> = {

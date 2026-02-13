@@ -1,5 +1,7 @@
 // Webhook Handler for Hotmart Events
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto } from "https://deno.land/std@0.203.0/crypto/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.203.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,6 +31,24 @@ interface HotmartPayload {
   [key: string]: unknown;
 }
 
+async function verifyHmacSignature(rawBody: string, secret: string, signature: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(rawBody);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, messageData);
+  const expectedSignature = encodeHex(new Uint8Array(signatureBuffer));
+
+  return signature === expectedSignature;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -39,12 +59,13 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const payload = (await req.json()) as HotmartPayload;
+    const rawBody = await req.text();
+    const payload = JSON.parse(rawBody) as HotmartPayload;
     const hottok = payload.hottok || req.headers.get("x-hotmart-hottok");
 
     console.log("Hotmart webhook received:", payload.status, payload.buyer_email);
 
-    // Find organization by hottok
+    // Find organization by integration
     const { data: integration } = await supabase
       .from("organization_integrations")
       .select("organization_id, config")
@@ -53,6 +74,39 @@ Deno.serve(async (req) => {
       .single();
 
     const organizationId = integration?.organization_id;
+
+    // Verify hottok matches the configured webhook secret
+    if (integration?.config?.webhook_secret) {
+      const configuredSecret = integration.config.webhook_secret as string;
+
+      // Try HMAC verification first (preferred)
+      const signature = req.headers.get("x-hotmart-hottok");
+      if (signature) {
+        const isValid = await verifyHmacSignature(rawBody, configuredSecret, signature);
+        if (!isValid) {
+          console.error("Invalid Hotmart HMAC signature");
+          return new Response(
+            JSON.stringify({ error: "Invalid signature" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else if (hottok) {
+        // Fallback: verify hottok matches configured secret
+        if (hottok !== configuredSecret) {
+          console.error("Invalid Hotmart hottok");
+          return new Response(
+            JSON.stringify({ error: "Invalid hottok" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        console.error("No authentication token provided");
+        return new Response(
+          JSON.stringify({ error: "Missing authentication" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // Map Hotmart status to event type
     const eventTypeMap: Record<string, string> = {

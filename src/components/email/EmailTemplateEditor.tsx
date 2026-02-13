@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -184,7 +185,7 @@ export function EmailTemplateEditor({ content, onChange }: EmailTemplateEditorPr
               fontWeight: (block.content.fontWeight as string) || 'normal',
               color: (block.content.color as string) || 'inherit',
             }}
-            dangerouslySetInnerHTML={{ __html: ((block.content.text as string) || '').replace(/\n/g, '<br>') }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(((block.content.text as string) || '').replace(/\n/g, '<br>'), { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'br', 'p', 'span', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3'], ALLOWED_ATTR: ['href', 'target', 'style'] }) }}
           />
         );
       case 'image':
