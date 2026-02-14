@@ -55,6 +55,8 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { ImportContactsDialog } from '@/components/contacts/ImportContactsDialog';
 import { PermissionGate } from '@/components/permissions/PermissionGate';
 import { useFeatureCheck } from '@/components/permissions/FeatureGate';
+import { usePaginatedData } from '@/hooks/usePaginatedQuery';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -103,11 +105,26 @@ export default function Contacts() {
   const deleteContact = useDeleteContact();
   const { enforceLimit } = useFeatureCheck();
 
-  const filteredContacts = contacts.filter(
-    (contact) =>
-      `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (contact.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (contact.company?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  const {
+    paginatedItems: paginatedContacts,
+    filteredItems: filteredContacts,
+    totalFiltered,
+    totalPages,
+    page,
+    pageSize,
+    hasNextPage,
+    hasPrevPage,
+    nextPage,
+    prevPage,
+    goToPage,
+    setPageSize,
+  } = usePaginatedData(
+    contacts,
+    (contact, term) =>
+      `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(term.toLowerCase()) ||
+      (contact.email?.toLowerCase() || '').includes(term.toLowerCase()) ||
+      (contact.company?.name?.toLowerCase() || '').includes(term.toLowerCase()),
+    searchTerm
   );
 
   const handleCreateContact = async () => {
@@ -288,7 +305,7 @@ export default function Contacts() {
       {/* Contacts Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Contatos ({filteredContacts.length})</CardTitle>
+          <CardTitle>Lista de Contatos ({totalFiltered})</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -313,7 +330,7 @@ export default function Contacts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredContacts.map((contact) => (
+                {paginatedContacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -391,6 +408,18 @@ export default function Contacts() {
               </TableBody>
             </Table>
           )}
+          <DataPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalFiltered}
+            pageSize={pageSize}
+            hasNextPage={hasNextPage}
+            hasPrevPage={hasPrevPage}
+            onNextPage={nextPage}
+            onPrevPage={prevPage}
+            onGoToPage={goToPage}
+            onPageSizeChange={setPageSize}
+          />
         </CardContent>
       </Card>
 

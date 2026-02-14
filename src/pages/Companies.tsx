@@ -59,6 +59,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useCompanies, useCreateCompany, useDeleteCompany, type CreateCompanyData } from '@/hooks/useCompanies';
+import { usePaginatedData } from '@/hooks/usePaginatedQuery';
+import { DataPagination } from '@/components/ui/data-pagination';
 
 const industries = ['Tecnologia', 'Marketing', 'Consultoria', 'Fintech', 'Varejo', 'Indústria', 'Serviços', 'Saúde', 'Educação'];
 const sizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
@@ -80,11 +82,26 @@ export default function Companies() {
   const createCompany = useCreateCompany();
   const deleteCompany = useDeleteCompany();
 
-  const filteredCompanies = companies.filter(
-    (company) =>
-      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (company.domain?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (company.industry?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  const {
+    paginatedItems: paginatedCompanies,
+    filteredItems: filteredCompanies,
+    totalFiltered,
+    totalPages,
+    page,
+    pageSize,
+    hasNextPage,
+    hasPrevPage,
+    nextPage,
+    prevPage,
+    goToPage,
+    setPageSize,
+  } = usePaginatedData(
+    companies,
+    (company, term) =>
+      company.name.toLowerCase().includes(term.toLowerCase()) ||
+      (company.domain?.toLowerCase() || '').includes(term.toLowerCase()) ||
+      (company.industry?.toLowerCase() || '').includes(term.toLowerCase()),
+    searchTerm
   );
 
   const handleCreateCompany = async () => {
@@ -285,7 +302,7 @@ export default function Companies() {
       {/* Companies Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Empresas ({filteredCompanies.length})</CardTitle>
+          <CardTitle>Lista de Empresas ({totalFiltered})</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -309,7 +326,7 @@ export default function Companies() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCompanies.map((company) => (
+                {paginatedCompanies.map((company) => (
                   <TableRow key={company.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -371,6 +388,18 @@ export default function Companies() {
               </TableBody>
             </Table>
           )}
+          <DataPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalFiltered}
+            pageSize={pageSize}
+            hasNextPage={hasNextPage}
+            hasPrevPage={hasPrevPage}
+            onNextPage={nextPage}
+            onPrevPage={prevPage}
+            onGoToPage={goToPage}
+            onPageSizeChange={setPageSize}
+          />
         </CardContent>
       </Card>
 

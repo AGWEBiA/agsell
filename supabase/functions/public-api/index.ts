@@ -1,4 +1,4 @@
-// Public REST API Gateway with API Key Authentication and Rate Limiting
+// Public REST API Gateway with API Key Authentication, Rate Limiting & Cursor Pagination
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -26,6 +26,16 @@ async function hashApiKey(key: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Shared pagination helper with cursor support
+function parsePaginationParams(url: URL) {
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "50"), 1), 100);
+  const cursor = url.searchParams.get("cursor") || null; // ISO date string for cursor
+  const direction = url.searchParams.get("direction") === "prev" ? "prev" : "next";
+  // Keep offset support for backward compat
+  const offset = url.searchParams.get("offset") ? parseInt(url.searchParams.get("offset")!) : null;
+  return { limit, cursor, direction, offset };
 }
 
 Deno.serve(async (req) => {
@@ -88,28 +98,25 @@ Deno.serve(async (req) => {
     const now = new Date();
     const lastMinuteReset = new Date(apiKeyData.last_minute_reset);
     const lastDayReset = new Date(apiKeyData.last_day_reset);
-    
+
     let requestsThisMinute = apiKeyData.requests_this_minute;
     let requestsToday = apiKeyData.requests_today;
 
-    // Reset minute counter if more than 1 minute passed
     if (now.getTime() - lastMinuteReset.getTime() > 60000) {
       requestsThisMinute = 0;
     }
 
-    // Reset daily counter if new day
     const today = now.toISOString().split("T")[0];
     if (apiKeyData.last_day_reset !== today) {
       requestsToday = 0;
     }
 
-    // Check rate limits
     if (requestsThisMinute >= apiKeyData.rate_limit_per_minute) {
       return new Response(
-        JSON.stringify({ 
-          error: "Rate limit exceeded (per minute)", 
+        JSON.stringify({
+          error: "Rate limit exceeded (per minute)",
           code: "RATE_LIMIT_MINUTE",
-          retry_after: 60 - Math.floor((now.getTime() - lastMinuteReset.getTime()) / 1000)
+          retry_after: 60 - Math.floor((now.getTime() - lastMinuteReset.getTime()) / 1000),
         }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -117,10 +124,7 @@ Deno.serve(async (req) => {
 
     if (requestsToday >= apiKeyData.rate_limit_per_day) {
       return new Response(
-        JSON.stringify({ 
-          error: "Rate limit exceeded (per day)", 
-          code: "RATE_LIMIT_DAY" 
-        }),
+        JSON.stringify({ error: "Rate limit exceeded (per day)", code: "RATE_LIMIT_DAY" }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -132,7 +136,10 @@ Deno.serve(async (req) => {
         requests_this_minute: requestsThisMinute + 1,
         requests_today: requestsToday + 1,
         last_request_at: now.toISOString(),
-        last_minute_reset: now.getTime() - lastMinuteReset.getTime() > 60000 ? now.toISOString() : apiKeyData.last_minute_reset,
+        last_minute_reset:
+          now.getTime() - lastMinuteReset.getTime() > 60000
+            ? now.toISOString()
+            : apiKeyData.last_minute_reset,
         last_day_reset: today,
       })
       .eq("id", apiKeyData.id);
@@ -140,18 +147,23 @@ Deno.serve(async (req) => {
     // Parse URL path to determine resource
     const url = new URL(req.url);
     const pathParts = url.pathname.split("/").filter(Boolean);
-    const resource = pathParts[1]; // e.g., /public-api/contacts -> "contacts"
-    const resourceId = pathParts[2]; // e.g., /public-api/contacts/123 -> "123"
+    const resource = pathParts[1];
+    const resourceId = pathParts[2];
 
     // Check permissions
     const permissions = apiKeyData.permissions as string[];
     const method = req.method;
-    
-    const requiredPermission = 
-      method === "GET" ? "read" :
-      method === "POST" ? "write" :
-      method === "PUT" || method === "PATCH" ? "write" :
-      method === "DELETE" ? "delete" : "read";
+
+    const requiredPermission =
+      method === "GET"
+        ? "read"
+        : method === "POST"
+        ? "write"
+        : method === "PUT" || method === "PATCH"
+        ? "write"
+        : method === "DELETE"
+        ? "delete"
+        : "read";
 
     if (!permissions.includes(requiredPermission) && !permissions.includes("admin")) {
       return new Response(
@@ -179,10 +191,10 @@ Deno.serve(async (req) => {
         break;
       default:
         return new Response(
-          JSON.stringify({ 
-            error: "Unknown resource", 
+          JSON.stringify({
+            error: "Unknown resource",
             code: "NOT_FOUND",
-            available_resources: ["contacts", "companies", "deals", "tags"]
+            available_resources: ["contacts", "companies", "deals", "tags"],
           }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -202,41 +214,80 @@ Deno.serve(async (req) => {
   }
 });
 
+// Generic paginated list with cursor support
+async function paginatedList(
+  supabase: any,
+  table: string,
+  orgId: string,
+  req: Request,
+  selectFields = "*",
+) {
+  const url = new URL(req.url);
+  const { limit, cursor, offset } = parsePaginationParams(url);
+
+  let query = supabase
+    .from(table)
+    .select(selectFields, { count: "exact" })
+    .eq("organization_id", orgId)
+    .order("created_at", { ascending: false })
+    .limit(limit + 1); // fetch one extra to detect next page
+
+  // Cursor-based pagination (preferred)
+  if (cursor) {
+    query = query.lt("created_at", cursor);
+  } else if (offset !== null) {
+    // Backward compat: offset-based
+    query = query.range(offset, offset + limit);
+    const { data, error, count } = await query;
+    return error
+      ? { error: error.message }
+      : { data, meta: { total: count, limit, offset } };
+  }
+
+  const { data, error, count } = await query;
+  if (error) return { error: error.message };
+
+  const hasMore = data.length > limit;
+  const items = hasMore ? data.slice(0, limit) : data;
+  const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].created_at : null;
+
+  return {
+    data: items,
+    meta: {
+      total: count,
+      limit,
+      has_more: hasMore,
+      next_cursor: nextCursor,
+    },
+  };
+}
+
 // Resource handlers
 async function handleContacts(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
-  const table = supabase.from("contacts");
-
   if (method === "GET") {
     if (id) {
-      const { data, error } = await table.select("*").eq("id", id).eq("organization_id", orgId).single();
+      const { data, error } = await supabase.from("contacts").select("*").eq("id", id).eq("organization_id", orgId).single();
       return error ? { error: error.message } : { data };
     }
-    const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") || "50");
-    const offset = parseInt(url.searchParams.get("offset") || "0");
-    const { data, error, count } = await table
-      .select("*", { count: "exact" })
-      .eq("organization_id", orgId)
-      .range(offset, offset + limit - 1);
-    return error ? { error: error.message } : { data, meta: { total: count, limit, offset } };
+    return paginatedList(supabase, "contacts", orgId, req);
   }
 
   if (method === "POST") {
     const body = await req.json();
-    const { data, error } = await table.insert({ ...body, organization_id: orgId }).select().single();
+    const { data, error } = await supabase.from("contacts").insert({ ...body, organization_id: orgId }).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "PUT" || method === "PATCH") {
     if (!id) return { error: "ID required for update" };
     const body = await req.json();
-    const { data, error } = await table.update(body).eq("id", id).eq("organization_id", orgId).select().single();
+    const { data, error } = await supabase.from("contacts").update(body).eq("id", id).eq("organization_id", orgId).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
-    const { error } = await table.delete().eq("id", id).eq("organization_id", orgId);
+    const { error } = await supabase.from("contacts").delete().eq("id", id).eq("organization_id", orgId);
     return error ? { error: error.message } : { success: true };
   }
 
@@ -244,39 +295,30 @@ async function handleContacts(supabase: any, method: string, orgId: string, id: 
 }
 
 async function handleCompanies(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
-  const table = supabase.from("companies");
-
   if (method === "GET") {
     if (id) {
-      const { data, error } = await table.select("*").eq("id", id).eq("organization_id", orgId).single();
+      const { data, error } = await supabase.from("companies").select("*").eq("id", id).eq("organization_id", orgId).single();
       return error ? { error: error.message } : { data };
     }
-    const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") || "50");
-    const offset = parseInt(url.searchParams.get("offset") || "0");
-    const { data, error, count } = await table
-      .select("*", { count: "exact" })
-      .eq("organization_id", orgId)
-      .range(offset, offset + limit - 1);
-    return error ? { error: error.message } : { data, meta: { total: count, limit, offset } };
+    return paginatedList(supabase, "companies", orgId, req);
   }
 
   if (method === "POST") {
     const body = await req.json();
-    const { data, error } = await table.insert({ ...body, organization_id: orgId }).select().single();
+    const { data, error } = await supabase.from("companies").insert({ ...body, organization_id: orgId }).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "PUT" || method === "PATCH") {
     if (!id) return { error: "ID required for update" };
     const body = await req.json();
-    const { data, error } = await table.update(body).eq("id", id).eq("organization_id", orgId).select().single();
+    const { data, error } = await supabase.from("companies").update(body).eq("id", id).eq("organization_id", orgId).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
-    const { error } = await table.delete().eq("id", id).eq("organization_id", orgId);
+    const { error } = await supabase.from("companies").delete().eq("id", id).eq("organization_id", orgId);
     return error ? { error: error.message } : { success: true };
   }
 
@@ -284,39 +326,30 @@ async function handleCompanies(supabase: any, method: string, orgId: string, id:
 }
 
 async function handleDeals(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
-  const table = supabase.from("deals");
-
   if (method === "GET") {
     if (id) {
-      const { data, error } = await table.select("*, contacts(*), companies(*)").eq("id", id).eq("organization_id", orgId).single();
+      const { data, error } = await supabase.from("deals").select("*, contacts(*), companies(*)").eq("id", id).eq("organization_id", orgId).single();
       return error ? { error: error.message } : { data };
     }
-    const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") || "50");
-    const offset = parseInt(url.searchParams.get("offset") || "0");
-    const { data, error, count } = await table
-      .select("*, contacts(first_name, last_name, email), companies(name)", { count: "exact" })
-      .eq("organization_id", orgId)
-      .range(offset, offset + limit - 1);
-    return error ? { error: error.message } : { data, meta: { total: count, limit, offset } };
+    return paginatedList(supabase, "deals", orgId, req, "*, contacts(first_name, last_name, email), companies(name)");
   }
 
   if (method === "POST") {
     const body = await req.json();
-    const { data, error } = await table.insert({ ...body, organization_id: orgId }).select().single();
+    const { data, error } = await supabase.from("deals").insert({ ...body, organization_id: orgId }).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "PUT" || method === "PATCH") {
     if (!id) return { error: "ID required for update" };
     const body = await req.json();
-    const { data, error } = await table.update(body).eq("id", id).eq("organization_id", orgId).select().single();
+    const { data, error } = await supabase.from("deals").update(body).eq("id", id).eq("organization_id", orgId).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
-    const { error } = await table.delete().eq("id", id).eq("organization_id", orgId);
+    const { error } = await supabase.from("deals").delete().eq("id", id).eq("organization_id", orgId);
     return error ? { error: error.message } : { success: true };
   }
 
@@ -324,26 +357,24 @@ async function handleDeals(supabase: any, method: string, orgId: string, id: str
 }
 
 async function handleTags(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
-  const table = supabase.from("tags");
-
   if (method === "GET") {
     if (id) {
-      const { data, error } = await table.select("*").eq("id", id).eq("organization_id", orgId).single();
+      const { data, error } = await supabase.from("tags").select("*").eq("id", id).eq("organization_id", orgId).single();
       return error ? { error: error.message } : { data };
     }
-    const { data, error } = await table.select("*").eq("organization_id", orgId);
+    const { data, error } = await supabase.from("tags").select("*").eq("organization_id", orgId);
     return error ? { error: error.message } : { data };
   }
 
   if (method === "POST") {
     const body = await req.json();
-    const { data, error } = await table.insert({ ...body, organization_id: orgId }).select().single();
+    const { data, error } = await supabase.from("tags").insert({ ...body, organization_id: orgId }).select().single();
     return error ? { error: error.message } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
-    const { error } = await table.delete().eq("id", id).eq("organization_id", orgId);
+    const { error } = await supabase.from("tags").delete().eq("id", id).eq("organization_id", orgId);
     return error ? { error: error.message } : { success: true };
   }
 
