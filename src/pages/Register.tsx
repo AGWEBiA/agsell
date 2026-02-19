@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -14,6 +15,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +37,15 @@ export default function Register() {
       toast({
         title: 'Erro',
         description: 'A senha deve ter pelo menos 6 caracteres',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!acceptedTerms) {
+      toast({
+        title: 'Erro',
+        description: 'Você precisa aceitar a Política de Privacidade e os Termos de Uso para continuar.',
         variant: 'destructive',
       });
       return;
@@ -123,6 +134,24 @@ export default function Register() {
                   required
                   minLength={6}
                 />
+              </div>
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                />
+                <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                  Li e aceito a{' '}
+                  <Link to="/privacy-policy" className="text-primary hover:underline" target="_blank">
+                    Política de Privacidade
+                  </Link>{' '}
+                  e os{' '}
+                  <Link to="/terms-of-service" className="text-primary hover:underline" target="_blank">
+                    Termos de Uso
+                  </Link>
+                  , incluindo o tratamento dos meus dados pessoais conforme a LGPD.
+                </label>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">

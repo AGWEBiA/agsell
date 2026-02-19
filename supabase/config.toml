@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.verify-email-domains-cron]
 verify_jwt = false
+
+[functions.export-user-data]
+verify_jwt = false
+
+[functions.delete-user-data]
+verify_jwt = false

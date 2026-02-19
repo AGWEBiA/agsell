@@ -309,7 +309,7 @@ async function sendWelcomeEmail(data: {
   if (!resendApiKey) {
     console.log("RESEND_API_KEY not configured, skipping email");
     console.log("Would send welcome email to:", data.email);
-    console.log("Credentials:", { email: data.email, password: data.password });
+    // LGPD: Never log credentials
     return;
   }
 
