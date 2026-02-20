@@ -2505,6 +2505,119 @@ export type Database = {
           },
         ]
       }
+      whatsapp_flow_submissions: {
+        Row: {
+          completed_at: string | null
+          contact_id: string | null
+          contact_name: string | null
+          created_at: string
+          flow_id: string
+          id: string
+          phone_number: string
+          responses: Json
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          flow_id: string
+          id?: string
+          phone_number: string
+          responses?: Json
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          flow_id?: string
+          id?: string
+          phone_number?: string
+          responses?: Json
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_flow_submissions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_flow_submissions_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_flows: {
+        Row: {
+          auto_trigger: boolean
+          collect_as_contact: boolean
+          created_at: string
+          created_by: string
+          description: string | null
+          flow_json: Json
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          response_message: string | null
+          status: string
+          submissions_count: number | null
+          trigger_keywords: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          auto_trigger?: boolean
+          collect_as_contact?: boolean
+          created_at?: string
+          created_by: string
+          description?: string | null
+          flow_json?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          response_message?: string | null
+          status?: string
+          submissions_count?: number | null
+          trigger_keywords?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          auto_trigger?: boolean
+          collect_as_contact?: boolean
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          flow_json?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          response_message?: string | null
+          status?: string
+          submissions_count?: number | null
+          trigger_keywords?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_flows_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_group_events: {
         Row: {
           created_at: string
