@@ -93,12 +93,6 @@ export default function Login() {
                   'Entrar'
                 )}
               </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                Não tem uma conta?{' '}
-                <Link to="/register" className="text-primary hover:underline">
-                  Criar conta
-                </Link>
-              </p>
             </CardFooter>
           </form>
         </Card>
