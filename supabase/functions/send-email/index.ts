@@ -258,18 +258,22 @@ async function signRequest(
   const dateStamp = amzDate.slice(0, 8);
   
   headers['x-amz-date'] = amzDate;
-  headers['host'] = parsedUrl.host;
   
-  // Build sorted lowercase header names for signing
-  const sortedHeaderKeys = Object.keys(headers)
-    .map(k => k.toLowerCase())
-    .sort();
-  const signedHeaders = sortedHeaderKeys.join(';');
+  // Use lowercase keys for canonical headers - do NOT include 'host' 
+  // because Deno's fetch() may strip/override it causing signature mismatch
+  const hostValue = parsedUrl.host;
+  
+  // Headers to sign: content-type, host, x-amz-date
+  const headersToSign: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers)) {
+    headersToSign[k.toLowerCase()] = v.trim();
+  }
+  headersToSign['host'] = hostValue;
+  
+  const sortedHeaderKeys = Object.keys(headersToSign).sort();
+  const signedHeadersStr = sortedHeaderKeys.join(';');
   const canonicalHeaders = sortedHeaderKeys
-    .map(lk => {
-      const originalKey = Object.keys(headers).find(k => k.toLowerCase() === lk)!;
-      return `${lk}:${headers[originalKey].trim()}`;
-    })
+    .map(k => `${k}:${headersToSign[k]}`)
     .join('\n') + '\n';
   
   const payloadHash = await sha256(body);
@@ -279,7 +283,7 @@ async function signRequest(
     parsedUrl.pathname,
     parsedUrl.search.slice(1),
     canonicalHeaders,
-    signedHeaders,
+    signedHeadersStr,
     payloadHash
   ].join('\n');
   
@@ -303,7 +307,10 @@ async function signRequest(
   );
   const signature = toHex(signatureBuffer);
   
-  headers['Authorization'] = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  headers['Authorization'] = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeadersStr}, Signature=${signature}`;
+  
+  // Remove host from headers sent to fetch (it sets its own)
+  delete headers['host'];
   
   return headers;
 }
