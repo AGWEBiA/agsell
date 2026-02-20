@@ -47,6 +47,7 @@ import Admin from "./pages/Admin";
 import ApiKeys from "./pages/ApiKeys";
 import Webhooks from "./pages/Webhooks";
 import EmailDomain from "./pages/EmailDomain";
+import InboxSettings from "./pages/InboxSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => (
                     <Route path="tags" element={<Tags />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="inbox" element={<Inbox />} />
+                    <Route path="inbox-settings" element={<InboxSettings />} />
                     <Route path="email" element={<Email />} />
                     <Route path="whatsapp" element={<WhatsApp />} />
                     <Route path="automations" element={<Automations />} />
