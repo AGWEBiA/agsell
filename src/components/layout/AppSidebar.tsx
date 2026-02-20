@@ -26,6 +26,7 @@ import {
   Key,
   Webhook,
   SlidersHorizontal,
+  Instagram,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -66,6 +67,7 @@ const menuItems: MenuItemType[] = [
   { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings' },
   { label: 'E-mail', icon: Mail, path: '/email' },
   { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp' },
+  { label: 'Instagram', icon: Instagram, path: '/instagram' },
   { divider: true },
   { label: 'Automações', icon: Zap, path: '/automations' },
   { label: 'Lead Scoring', icon: Target, path: '/lead-scoring' },

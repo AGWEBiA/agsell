@@ -1268,6 +1268,195 @@ export type Database = {
           },
         ]
       }
+      instagram_accounts: {
+        Row: {
+          access_token: string
+          connected_by: string
+          created_at: string
+          full_name: string | null
+          id: string
+          instagram_user_id: string
+          is_active: boolean
+          metadata: Json | null
+          organization_id: string
+          page_access_token: string | null
+          page_id: string | null
+          profile_picture_url: string | null
+          token_expires_at: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          access_token: string
+          connected_by: string
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          instagram_user_id: string
+          is_active?: boolean
+          metadata?: Json | null
+          organization_id: string
+          page_access_token?: string | null
+          page_id?: string | null
+          profile_picture_url?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          access_token?: string
+          connected_by?: string
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          instagram_user_id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          organization_id?: string
+          page_access_token?: string | null
+          page_id?: string | null
+          profile_picture_url?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_automation_logs: {
+        Row: {
+          action_taken: string | null
+          automation_id: string
+          contact_id: string | null
+          created_at: string
+          error_message: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          instagram_account_id: string
+          status: string
+        }
+        Insert: {
+          action_taken?: string | null
+          automation_id: string
+          contact_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          instagram_account_id: string
+          status?: string
+        }
+        Update: {
+          action_taken?: string | null
+          automation_id?: string
+          contact_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          instagram_account_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_automation_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_automation_logs_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_automations: {
+        Row: {
+          actions: Json | null
+          automation_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          executions_count: number | null
+          id: string
+          instagram_account_id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          organization_id: string
+          trigger_config: Json | null
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json | null
+          automation_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          executions_count?: number | null
+          id?: string
+          instagram_account_id: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          organization_id: string
+          trigger_config?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json | null
+          automation_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          executions_count?: number | null
+          id?: string
+          instagram_account_id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          organization_id?: string
+          trigger_config?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_automations_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_automations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_scoring_rules: {
         Row: {
           created_at: string

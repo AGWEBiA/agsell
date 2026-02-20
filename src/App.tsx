@@ -31,6 +31,7 @@ import Tasks from "./pages/Tasks";
 import Inbox from "./pages/Inbox";
 import Email from "./pages/Email";
 import WhatsApp from "./pages/WhatsApp";
+import InstagramPage from "./pages/Instagram";
 import Automations from "./pages/Automations";
 import LeadScoring from "./pages/LeadScoring";
 import Forms from "./pages/Forms";
@@ -87,6 +88,7 @@ const App = () => (
                     <Route path="inbox-settings" element={<InboxSettings />} />
                     <Route path="email" element={<Email />} />
                     <Route path="whatsapp" element={<WhatsApp />} />
+                    <Route path="instagram" element={<InstagramPage />} />
                     <Route path="automations" element={<Automations />} />
                     <Route path="lead-scoring" element={<LeadScoring />} />
                     <Route path="forms" element={<Forms />} />
