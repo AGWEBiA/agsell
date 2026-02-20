@@ -38,6 +38,7 @@ import Analytics from "./pages/Analytics";
 import Gamification from "./pages/Gamification";
 import Integrations from "./pages/Integrations";
 import AIAssistant from "./pages/AIAssistant";
+import AIAgents from "./pages/AIAgents";
 import Settings from "./pages/Settings";
 import Organization from "./pages/Organization";
 import Plans from "./pages/Plans";
@@ -91,6 +92,7 @@ const App = () => (
                     <Route path="gamification" element={<Gamification />} />
                     <Route path="integrations" element={<Integrations />} />
                     <Route path="ai-assistant" element={<AIAssistant />} />
+                    <Route path="ai-agents" element={<AIAgents />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="organization" element={<Organization />} />
                     <Route path="plans" element={<Plans />} />

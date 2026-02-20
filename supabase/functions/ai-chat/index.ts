@@ -1,8 +1,10 @@
-// AI Chat Edge Function for AG Sell Assistant
+// AI Chat Edge Function for AG Sell Assistant — supports custom AI agents
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface Message {
@@ -12,6 +14,7 @@ interface Message {
 
 interface RequestBody {
   messages: Message[];
+  agent_id?: string;
   context?: {
     contactsCount?: number;
     dealsCount?: number;
@@ -25,13 +28,57 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { messages, context } = (await req.json()) as RequestBody;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const { messages, agent_id, context } = (await req.json()) as RequestBody;
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error("Messages array is required");
     }
 
-    const systemPrompt = `Você é o Assistente IA do AG Sell, uma plataforma completa de CRM e automação de marketing omnichannel.
+    let systemPrompt: string;
+    let model = "google/gemini-3-flash-preview";
+    let temperature = 0.7;
+    let maxTokens = 1024;
+
+    // If agent_id is provided, load the agent config and knowledge base
+    if (agent_id) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      const { data: agent, error: agentError } = await supabase
+        .from("ai_agents")
+        .select("*")
+        .eq("id", agent_id)
+        .single();
+
+      if (agentError || !agent) {
+        throw new Error("Agent not found");
+      }
+
+      if (!agent.is_active) {
+        throw new Error("Agent is not active");
+      }
+
+      // Load knowledge base
+      const { data: knowledge } = await supabase
+        .from("ai_agent_knowledge")
+        .select("title, content")
+        .eq("agent_id", agent_id);
+
+      const knowledgeContext = knowledge && knowledge.length > 0
+        ? `\n\nBase de Conhecimento:\n${knowledge.map((k: any) => `### ${k.title}\n${k.content}`).join("\n\n")}`
+        : "";
+
+      systemPrompt = `${agent.system_prompt}${knowledgeContext}`;
+      model = agent.model || model;
+      temperature = agent.temperature || temperature;
+      maxTokens = agent.max_tokens || maxTokens;
+    } else {
+      // Default AG Sell assistant
+      systemPrompt = `Você é o Assistente IA do AG Sell, uma plataforma completa de CRM e automação de marketing omnichannel.
 
 Seu papel é ajudar os usuários com:
 - Estratégias de vendas e marketing
@@ -51,27 +98,41 @@ Contexto atual do usuário:
 Seja conciso, profissional e focado em resultados práticos.
 Responda sempre em português brasileiro.
 Use emojis ocasionalmente para tornar a conversa mais amigável.`;
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        max_tokens: 1024,
-        temperature: 0.7,
+        max_tokens: maxTokens,
+        temperature,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", errorText);
+      console.error("AI Gateway error:", response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Créditos de IA insuficientes. Entre em contato com o suporte." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       throw new Error(`AI Gateway error: ${response.status}`);
     }
 
