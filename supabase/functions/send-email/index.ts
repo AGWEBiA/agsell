@@ -260,10 +260,16 @@ async function signRequest(
   headers['x-amz-date'] = amzDate;
   headers['host'] = parsedUrl.host;
   
-  const signedHeaders = Object.keys(headers).sort().join(';').toLowerCase();
-  const canonicalHeaders = Object.entries(headers)
-    .sort(([a], [b]) => a.toLowerCase().localeCompare(b.toLowerCase()))
-    .map(([k, v]) => `${k.toLowerCase()}:${v.trim()}`)
+  // Build sorted lowercase header names for signing
+  const sortedHeaderKeys = Object.keys(headers)
+    .map(k => k.toLowerCase())
+    .sort();
+  const signedHeaders = sortedHeaderKeys.join(';');
+  const canonicalHeaders = sortedHeaderKeys
+    .map(lk => {
+      const originalKey = Object.keys(headers).find(k => k.toLowerCase() === lk)!;
+      return `${lk}:${headers[originalKey].trim()}`;
+    })
     .join('\n') + '\n';
   
   const payloadHash = await sha256(body);
