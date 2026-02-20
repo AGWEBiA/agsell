@@ -32,6 +32,9 @@ import {
   Trash2,
   Settings,
   Sparkles,
+  Mail,
+  MessageSquare,
+  Instagram,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -44,6 +47,12 @@ import { AutomationActionsEditor, Action } from '@/components/automations/Automa
 import { AutomationTemplates, automationTemplates, type AutomationTemplate } from '@/components/automations/AutomationTemplates';
 import type { Json } from '@/integrations/supabase/types';
 
+const channelTypes = [
+  { value: 'email', label: 'E-mail', icon: Mail, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400' },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' },
+  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'bg-pink-100 text-pink-600 dark:bg-pink-900 dark:text-pink-400' },
+];
+
 const triggerTypes = [
   { value: 'form_submitted', label: 'Formulário Submetido' },
   { value: 'tag_added', label: 'Tag Adicionada' },
@@ -53,6 +62,8 @@ const triggerTypes = [
   { value: 'email_opened', label: 'Email Aberto' },
   { value: 'email_clicked', label: 'Link Clicado no Email' },
   { value: 'whatsapp_received', label: 'WhatsApp Recebido' },
+  { value: 'instagram_dm', label: 'DM Recebida no Instagram' },
+  { value: 'instagram_comment', label: 'Comentário no Instagram' },
 ];
 
 export default function Automations() {
@@ -64,19 +75,20 @@ export default function Automations() {
   const [newAutomation, setNewAutomation] = useState({
     name: '',
     trigger_type: '',
+    channel: '',
   });
   const [editActions, setEditActions] = useState<Action[]>([]);
 
   const handleCreate = () => {
-    if (!newAutomation.name || !newAutomation.trigger_type) return;
+    if (!newAutomation.name || !newAutomation.trigger_type || !newAutomation.channel) return;
     createAutomation.mutate({
       name: newAutomation.name,
       trigger_type: newAutomation.trigger_type,
       is_active: false,
       actions: [],
-      trigger_config: {},
+      trigger_config: { channel: newAutomation.channel },
     });
-    setNewAutomation({ name: '', trigger_type: '' });
+    setNewAutomation({ name: '', trigger_type: '', channel: '' });
     setIsDialogOpen(false);
   };
 
@@ -185,7 +197,7 @@ export default function Automations() {
                   onChange={(e) => setNewAutomation(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
+               <div className="space-y-2">
                 <Label htmlFor="trigger">Gatilho</Label>
                 <Select
                   value={newAutomation.trigger_type}
@@ -200,6 +212,32 @@ export default function Automations() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Canal</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {channelTypes.map((ch) => {
+                    const Icon = ch.icon;
+                    const isSelected = newAutomation.channel === ch.value;
+                    return (
+                      <button
+                        key={ch.value}
+                        type="button"
+                        onClick={() => setNewAutomation(prev => ({ ...prev, channel: ch.value }))}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {ch.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -275,6 +313,9 @@ export default function Automations() {
           {automations.map((automation) => {
             const triggerLabel = triggerTypes.find(t => t.value === automation.trigger_type)?.label || automation.trigger_type;
             const actionsCount = Array.isArray(automation.actions) ? automation.actions.length : 0;
+            const triggerConfig = automation.trigger_config as Record<string, unknown> | null;
+            const channel = channelTypes.find(c => c.value === (triggerConfig?.channel as string));
+            const ChannelIcon = channel?.icon;
 
             return (
               <Card key={automation.id} className="hover:shadow-md transition-shadow">
@@ -288,7 +329,15 @@ export default function Automations() {
                       </div>
                       <div>
                         <CardTitle className="text-base">{automation.name}</CardTitle>
-                        <p className="text-xs text-muted-foreground">{triggerLabel}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-xs text-muted-foreground">{triggerLabel}</p>
+                          {channel && ChannelIcon && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1">
+                              <ChannelIcon className="h-2.5 w-2.5" />
+                              {channel.label}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <Switch
