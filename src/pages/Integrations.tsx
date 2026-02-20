@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Settings, Trash2, TestTube, AlertCircle, RefreshCw, MessageSquare, Mail, CreditCard, Send } from 'lucide-react';
+import { Check, Settings, Trash2, TestTube, AlertCircle, RefreshCw, MessageSquare } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,17 +16,11 @@ import {
 } from '@/components/ui/dialog';
 import { useIntegrations, Integration } from '@/hooks/useIntegrations';
 import { WhatsAppProviderSetup } from '@/components/integrations/WhatsAppProviderSetup';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 const categoryLabels: Record<string, string> = {
-  email: 'Email',
-  payment: 'Pagamentos',
   infoproduct: 'Infoprodutos',
   analytics: 'Analytics',
-  crm: 'CRM',
-  messaging: 'Mensageria',
+  crm: 'Automação',
 };
 
 export default function Integrations() {
@@ -43,54 +37,6 @@ export default function Integrations() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isTestEmailOpen, setIsTestEmailOpen] = useState(false);
-  const [testEmailAddress, setTestEmailAddress] = useState('');
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [testEmailIntegration, setTestEmailIntegration] = useState<Integration | null>(null);
-  const { currentOrganization } = useOrganization();
-
-  const handleSendTestEmail = async () => {
-    if (!testEmailAddress || !testEmailIntegration) return;
-    
-    setIsSendingTest(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
-        body: {
-          organization_id: currentOrganization?.id,
-          to: testEmailAddress,
-          subject: `[Teste] E-mail de teste - ${testEmailIntegration.name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #333;">✅ E-mail de teste enviado com sucesso!</h2>
-              <p>Este é um e-mail de teste enviado pela integração <strong>${testEmailIntegration.name}</strong>.</p>
-              <p style="color: #666; font-size: 14px;">Se você recebeu este e-mail, a integração está funcionando corretamente.</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-              <p style="color: #999; font-size: 12px;">Enviado via AG Sell</p>
-            </div>
-          `,
-          text: `E-mail de teste enviado com sucesso via ${testEmailIntegration.name}. Se você recebeu este e-mail, a integração está funcionando corretamente.`,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      toast.success(`E-mail de teste enviado para ${testEmailAddress}!`);
-      setIsTestEmailOpen(false);
-      setTestEmailAddress('');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-      toast.error(`Falha ao enviar e-mail de teste: ${msg}`);
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
-
-  const openTestEmailDialog = (integration: Integration) => {
-    setTestEmailIntegration(integration);
-    setTestEmailAddress('');
-    setIsTestEmailOpen(true);
-  };
 
   const handleConnect = async () => {
     if (!selectedIntegration) return;
@@ -139,72 +85,26 @@ export default function Integrations() {
         </Badge>
       </div>
 
-      {/* Tabs for different integration types */}
+      {/* WhatsApp Section */}
       <Tabs defaultValue="whatsapp" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+        <TabsList className="w-auto">
           <TabsTrigger value="whatsapp" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="email" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            E-mail
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Pagamentos
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp" className="mt-6">
           <WhatsAppProviderSetup />
         </TabsContent>
-
-        <TabsContent value="email" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações de E-mail</CardTitle>
-              <CardDescription>Configure o provedor de e-mail para disparos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>O provedor de e-mail é configurado pelo administrador da plataforma</p>
-                <p className="text-sm mt-2">Para configurar seu domínio de envio, acesse a página de Domínios de E-mail</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="payments" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Integrações de Pagamento</CardTitle>
-              <CardDescription>Configure webhooks de plataformas de pagamento</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {['Stripe', 'Hotmart', 'Kiwify', 'Eduzz'].map((platform) => (
-                  <Card key={platform} className="text-center">
-                    <CardContent className="pt-6">
-                      <CreditCard className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="font-medium">{platform}</p>
-                      <Badge variant="outline" className="mt-2">Webhook Ativo</Badge>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
-      {/* Other Integrations */}
+      {/* Other Integrations by Category */}
       <div className="pt-6 border-t">
         <h2 className="text-xl font-semibold mb-4">Outras Integrações</h2>
         {Object.entries(groupedIntegrations).map(([category, ints]) => (
           <div key={category} className="space-y-4 mb-6">
-            <h3 className="text-lg font-medium">{categoryLabels[category]}</h3>
+            <h3 className="text-lg font-medium">{categoryLabels[category] || category}</h3>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {ints.map((integration) => (
                 <Card key={integration.id} className="hover:shadow-md transition-shadow">
@@ -230,16 +130,6 @@ export default function Integrations() {
                       </Badge>
                       {integration.status === 'connected' ? (
                         <div className="flex gap-2">
-                          {integration.category === 'email' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openTestEmailDialog(integration)}
-                              title="Enviar e-mail de teste"
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -319,51 +209,6 @@ export default function Integrations() {
                 </>
               ) : (
                 selectedIntegration?.status === 'connected' ? 'Salvar' : 'Conectar'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Test Email Dialog */}
-      <Dialog open={isTestEmailOpen} onOpenChange={setIsTestEmailOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              Enviar E-mail de Teste
-            </DialogTitle>
-            <DialogDescription>
-              Envie um e-mail de teste via {testEmailIntegration?.name} para verificar se a integração está funcionando.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="test-email">E-mail de destino</Label>
-              <Input
-                id="test-email"
-                type="email"
-                placeholder="seu@email.com"
-                value={testEmailAddress}
-                onChange={(e) => setTestEmailAddress(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTestEmailOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSendTestEmail} disabled={isSendingTest || !testEmailAddress}>
-              {isSendingTest ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar Teste
-                </>
               )}
             </Button>
           </DialogFooter>

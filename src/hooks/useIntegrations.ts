@@ -8,26 +8,13 @@ export type Integration = {
   name: string;
   description: string;
   icon: string;
-  category: 'email' | 'payment' | 'infoproduct' | 'analytics' | 'crm' | 'messaging';
+  category: 'infoproduct' | 'analytics' | 'crm';
   status: IntegrationStatus;
   configFields: { key: string; label: string; type: string; placeholder: string; required?: boolean }[];
   config?: Record<string, string>;
 };
 
 const defaultIntegrations: Integration[] = [
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Pagamentos e assinaturas recorrentes',
-    icon: '💳',
-    category: 'payment',
-    status: 'disconnected',
-    configFields: [
-      { key: 'secret_key', label: 'Secret Key', type: 'password', placeholder: 'sk_live_xxxx...', required: true },
-      { key: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'whsec_xxxx...' },
-      { key: 'publishable_key', label: 'Publishable Key', type: 'text', placeholder: 'pk_live_xxxx...' },
-    ],
-  },
   {
     id: 'hotmart',
     name: 'Hotmart',
@@ -89,19 +76,6 @@ const defaultIntegrations: Integration[] = [
     ],
   },
   {
-    id: 'whatsapp_evolution',
-    name: 'Evolution API',
-    description: 'API não-oficial para WhatsApp',
-    icon: '💬',
-    category: 'messaging',
-    status: 'disconnected',
-    configFields: [
-      { key: 'api_url', label: 'URL da API', type: 'text', placeholder: 'https://api.evolution.com', required: true },
-      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Sua API Key', required: true },
-      { key: 'instance_name', label: 'Nome da Instância', type: 'text', placeholder: 'minha-instancia' },
-    ],
-  },
-  {
     id: 'n8n',
     name: 'n8n',
     description: 'Automação de workflows',
@@ -119,7 +93,6 @@ export function useIntegrations() {
   const [integrations, setIntegrations] = useState<Integration[]>(defaultIntegrations);
 
   const connectIntegration = useCallback(async (integrationId: string, config: Record<string, string>) => {
-    // Validate required fields
     const integration = integrations.find((i) => i.id === integrationId);
     if (!integration) {
       toast.error('Integração não encontrada');
@@ -138,7 +111,6 @@ export function useIntegrations() {
     // Simulate API validation
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Update integration status
     setIntegrations((prev) =>
       prev.map((i) =>
         i.id === integrationId
@@ -173,10 +145,7 @@ export function useIntegrations() {
       return false;
     }
 
-    // Simulate API test
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // 80% chance of success
     const success = Math.random() > 0.2;
 
     if (success) {
