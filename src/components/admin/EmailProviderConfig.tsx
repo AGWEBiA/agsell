@@ -57,6 +57,7 @@ export function EmailProviderConfig() {
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [isSendingTest, setIsSendingTest] = useState(false);
+  const [lastTestResult, setLastTestResult] = useState<{ success: boolean; date: Date; email: string } | null>(null);
 
   // Fetch global email config from platform settings
   // We store this as a special organization_integration with a known org-less pattern
@@ -414,23 +415,86 @@ export function EmailProviderConfig() {
       </Card>
 
       {/* Status card */}
-      {config && (
-        <Card className="border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-              <div>
-                <p className="font-medium text-foreground">
-                  Provedor configurado: {providerInfo[config.provider]?.label}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Todos os clientes usarão este provedor. Cada um configura seu domínio na página "Domínio E-mail".
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Status da Integração
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Provider configured status */}
+          <div className="flex items-center gap-3 p-3 rounded-lg border">
+            {config ? (
+              <>
+                <CheckCircle className="h-5 w-5 text-chart-2 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">
+                    Provedor configurado: {providerInfo[config.provider]?.label}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Todos os clientes usarão este provedor. Cada um configura seu domínio na página "Domínio E-mail".
+                  </p>
+                </div>
+                <Badge variant="default" className="shrink-0">Configurado</Badge>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-5 w-5 text-chart-5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">Nenhum provedor configurado</p>
+                  <p className="text-sm text-muted-foreground">
+                    Selecione um provedor acima e salve as credenciais para ativar o envio de e-mails.
+                  </p>
+                </div>
+                <Badge variant="secondary" className="shrink-0">Pendente</Badge>
+              </>
+            )}
+          </div>
+
+          {/* Test status */}
+          <div className="flex items-center gap-3 p-3 rounded-lg border">
+            {lastTestResult ? (
+              lastTestResult.success ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-chart-2 shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">Teste enviado com sucesso</p>
+                    <p className="text-sm text-muted-foreground">
+                      E-mail enviado para <span className="font-mono text-xs">{lastTestResult.email}</span> em{' '}
+                      {lastTestResult.date.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <Badge variant="default" className="shrink-0">Testado ✓</Badge>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">Falha no último teste</p>
+                    <p className="text-sm text-muted-foreground">
+                      Tentativa para <span className="font-mono text-xs">{lastTestResult.email}</span> em{' '}
+                      {lastTestResult.date.toLocaleString('pt-BR')}. Verifique as credenciais.
+                    </p>
+                  </div>
+                  <Badge variant="destructive" className="shrink-0">Falhou</Badge>
+                </>
+              )
+            ) : (
+              <>
+                <TestTube className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">Envio não testado</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use o botão "Enviar E-mail de Teste" acima para validar que a integração está funcionando.
+                  </p>
+                </div>
+                <Badge variant="secondary" className="shrink-0">Não testado</Badge>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Test email dialog */}
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
@@ -474,11 +538,13 @@ export function EmailProviderConfig() {
                   });
                   if (error) throw error;
                   if (data?.error) throw new Error(data.error);
+                  setLastTestResult({ success: true, date: new Date(), email: testEmail });
                   toast.success(`E-mail de teste enviado para ${testEmail}!`);
                   setTestDialogOpen(false);
                   setTestEmail('');
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+                  setLastTestResult({ success: false, date: new Date(), email: testEmail });
                   toast.error(`Falha ao enviar e-mail de teste: ${msg}`);
                 } finally {
                   setIsSendingTest(false);
