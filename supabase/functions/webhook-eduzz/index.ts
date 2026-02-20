@@ -145,6 +145,20 @@ Deno.serve(async (req) => {
     if (payload.trans_status === 3 && organizationId) {
       const nameParts = payload.cus_name.split(" ");
 
+      // Get the organization owner's user_id for proper FK reference
+      const { data: owner } = await supabase
+        .from("organization_members")
+        .select("user_id")
+        .eq("organization_id", organizationId)
+        .eq("role", "owner")
+        .limit(1)
+        .single();
+
+      if (!owner) {
+        console.error("No organization owner found for org:", organizationId);
+        throw new Error("No organization owner found");
+      }
+
       const { data: existingContact } = await supabase
         .from("contacts")
         .select("id")
@@ -155,7 +169,7 @@ Deno.serve(async (req) => {
       if (!existingContact) {
         await supabase.from("contacts").insert({
           organization_id: organizationId,
-          user_id: organizationId,
+          user_id: owner.user_id,
           first_name: nameParts[0],
           last_name: nameParts.slice(1).join(" ") || null,
           email: payload.cus_email,
