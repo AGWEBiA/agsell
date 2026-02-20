@@ -20,9 +20,12 @@ import {
   CheckCheck,
   Plus,
   Bot,
+  UserCheck,
 } from 'lucide-react';
 import { useInbox } from '@/hooks/useInbox';
 import { useContacts, type Contact } from '@/hooks/useContacts';
+import { useAssignmentRules } from '@/hooks/useAssignmentRules';
+import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { SendIAButton } from '@/components/inbox/SendIAButton';
 import { AudioTranscription } from '@/components/inbox/AudioTranscription';
 import {
@@ -59,6 +62,8 @@ export default function Inbox() {
   const { conversations, isLoading, createConversation, sendMessage, markAsRead } = useInbox();
   const contactsQuery = useContacts();
   const contacts = contactsQuery.data ?? [];
+  const { assignConversation } = useAssignmentRules();
+  const { members } = useOrganizationMembers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,6 +310,29 @@ export default function Inbox() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Assignment Selector */}
+                    <Select
+                      value={(selectedConversation as any).assigned_to || 'unassigned'}
+                      onValueChange={(value) => {
+                        assignConversation.mutate({
+                          conversationId: selectedConversation.id,
+                          userId: value === 'unassigned' ? null : value,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-40 h-8 text-xs">
+                        <UserCheck className="h-3.5 w-3.5 mr-1" />
+                        <SelectValue placeholder="Atribuir" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Não atribuído</SelectItem>
+                        {members.map(m => (
+                          <SelectItem key={m.user_id} value={m.user_id}>
+                            {m.profiles?.full_name || m.user_id.slice(0, 8)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button variant="ghost" size="icon">
                       <Phone className="h-4 w-4" />
                     </Button>

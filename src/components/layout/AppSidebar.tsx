@@ -25,6 +25,7 @@ import {
   Shield,
   Key,
   Webhook,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -62,6 +63,7 @@ const menuItems: MenuItemType[] = [
   { label: 'Tarefas', icon: CheckSquare, path: '/tasks' },
   { divider: true },
   { label: 'SAC', icon: Inbox, path: '/inbox' },
+  { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings' },
   { label: 'E-mail', icon: Mail, path: '/email' },
   { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp' },
   { divider: true },

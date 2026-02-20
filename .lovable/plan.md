@@ -1,22 +1,30 @@
 
 
-## Remover link "Criar conta" da página de Login
+## Atribuição Automática + CSAT — ✅ Concluído
 
-Uma alteracao simples no arquivo `src/pages/Login.tsx`: remover o bloco de texto e link "Nao tem uma conta? Criar conta" do `CardFooter`.
+### O que foi implementado:
 
-### Detalhe tecnico
+1. **Tabelas no banco de dados:**
+   - `assignment_rules` — regras de atribuição automática (round robin, menos ocupado, manual)
+   - `assignment_state` — estado de atribuição para round-robin
+   - `csat_surveys` — configuração de pesquisas de satisfação
+   - `csat_responses` — respostas individuais com rating 1-5
+   - Campo `assigned_to` adicionado à tabela `conversations`
 
-No arquivo `src/pages/Login.tsx`, remover as linhas 90-96 que contêm o parágrafo com o link para `/register`:
+2. **Hooks:**
+   - `useAssignmentRules` — CRUD de regras + atribuição de conversas
+   - `useCsat` — CRUD de pesquisas + métricas (nota média, taxa de satisfação)
 
-```tsx
-// REMOVER este bloco:
-<p className="text-sm text-muted-foreground text-center">
-  Não tem uma conta?{' '}
-  <Link to="/register" className="text-primary hover:underline">
-    Criar conta
-  </Link>
-</p>
-```
+3. **Componentes e páginas:**
+   - `AssignmentRulesConfig` — UI para criar/gerenciar regras de atribuição
+   - `CsatConfig` — Dashboard CSAT com métricas + gestão de pesquisas
+   - `InboxSettings` — Página com abas (Atribuição + CSAT) em `/inbox-settings`
+   - Seletor de atribuição integrado no header do chat do Inbox
 
-O botão "Entrar" permanece inalterado. Nenhuma outra alteração necessária.
+4. **Navegação:**
+   - Rota `/inbox-settings` adicionada
+   - Item "Config. SAC" no sidebar
 
+### Próximas etapas pendentes:
+- Automação de Instagram (DMs, comentários, stories)
+- WhatsApp Flows (formulários interativos)
