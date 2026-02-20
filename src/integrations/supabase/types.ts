@@ -326,6 +326,85 @@ export type Database = {
           },
         ]
       }
+      assignment_rules: {
+        Row: {
+          channels: string[]
+          created_at: string
+          eligible_members: string[]
+          id: string
+          is_active: boolean
+          max_concurrent: number | null
+          metadata: Json | null
+          name: string
+          organization_id: string
+          strategy: string
+          updated_at: string
+        }
+        Insert: {
+          channels?: string[]
+          created_at?: string
+          eligible_members?: string[]
+          id?: string
+          is_active?: boolean
+          max_concurrent?: number | null
+          metadata?: Json | null
+          name: string
+          organization_id: string
+          strategy?: string
+          updated_at?: string
+        }
+        Update: {
+          channels?: string[]
+          created_at?: string
+          eligible_members?: string[]
+          id?: string
+          is_active?: boolean
+          max_concurrent?: number | null
+          metadata?: Json | null
+          name?: string
+          organization_id?: string
+          strategy?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_state: {
+        Row: {
+          id: string
+          last_assigned_index: number
+          rule_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          last_assigned_index?: number
+          rule_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          last_assigned_index?: number
+          rule_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_state_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: true
+            referencedRelation: "assignment_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_executions: {
         Row: {
           automation_id: string
@@ -611,6 +690,7 @@ export type Database = {
       }
       conversations: {
         Row: {
+          assigned_to: string | null
           channel: string
           contact_id: string | null
           created_at: string
@@ -622,6 +702,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assigned_to?: string | null
           channel?: string
           contact_id?: string | null
           created_at?: string
@@ -633,6 +714,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assigned_to?: string | null
           channel?: string
           contact_id?: string | null
           created_at?: string
@@ -653,6 +735,115 @@ export type Database = {
           },
           {
             foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      csat_responses: {
+        Row: {
+          agent_id: string | null
+          comment: string | null
+          contact_id: string | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          rating: number
+          survey_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          comment?: string | null
+          contact_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          rating: number
+          survey_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          comment?: string | null
+          contact_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          rating?: number
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csat_responses_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "csat_responses_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "csat_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "csat_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "csat_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      csat_surveys: {
+        Row: {
+          auto_send: boolean
+          channels: string[]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          auto_send?: boolean
+          channels?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id: string
+          question?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_send?: boolean
+          channels?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          question?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csat_surveys_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
