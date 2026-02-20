@@ -283,6 +283,7 @@ async function signRequest(
     payloadHash
   ].join('\n');
   
+  console.log("Canonical request:\n" + canonicalRequest);
   const canonicalRequestHash = await sha256(canonicalRequest);
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
   
@@ -308,7 +309,10 @@ async function signRequest(
 }
 
 async function sendWithAmazonSES(config: Record<string, string>, emailReq: EmailRequest) {
-  const { access_key_id, secret_access_key, region, from_email } = config;
+  const access_key_id = (config.access_key_id || '').trim();
+  const secret_access_key = (config.secret_access_key || '').trim();
+  const region = (config.region || '').trim();
+  const from_email = (config.from_email || '').trim();
   
   if (!access_key_id || !secret_access_key || !region) {
     return new Response(
@@ -316,6 +320,8 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  console.log("SES config - region:", region, "keyId length:", access_key_id.length, "secretKey length:", secret_access_key.length);
 
   const toAddresses = Array.isArray(emailReq.to) ? emailReq.to : [emailReq.to];
   const fromAddress = emailReq.from || from_email || "noreply@agsell.com";
