@@ -198,129 +198,12 @@ async function sendWithResend(config: Record<string, string>, emailReq: EmailReq
   );
 }
 
-// AWS Signature V4 helper functions
-function toHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function sha256(message: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return toHex(hashBuffer);
-}
-
-async function getSignatureKey(key: string, dateStamp: string, region: string, service: string): Promise<ArrayBuffer> {
-  const encoder = new TextEncoder();
-  
-  const kDate = await crypto.subtle.sign(
-    "HMAC",
-    await crypto.subtle.importKey("raw", encoder.encode("AWS4" + key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
-    encoder.encode(dateStamp)
-  );
-  
-  const kRegion = await crypto.subtle.sign(
-    "HMAC",
-    await crypto.subtle.importKey("raw", kDate, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
-    encoder.encode(region)
-  );
-  
-  const kService = await crypto.subtle.sign(
-    "HMAC",
-    await crypto.subtle.importKey("raw", kRegion, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
-    encoder.encode(service)
-  );
-  
-  const kSigning = await crypto.subtle.sign(
-    "HMAC",
-    await crypto.subtle.importKey("raw", kService, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
-    encoder.encode("aws4_request")
-  );
-  
-  return kSigning;
-}
-
-async function signRequest(
-  method: string,
-  url: string,
-  headers: Record<string, string>,
-  body: string,
-  accessKeyId: string,
-  secretAccessKey: string,
-  region: string,
-  service: string
-): Promise<Record<string, string>> {
-  const parsedUrl = new URL(url);
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
-  const dateStamp = amzDate.slice(0, 8);
-  
-  headers['x-amz-date'] = amzDate;
-  
-  // Use lowercase keys for canonical headers - do NOT include 'host' 
-  // because Deno's fetch() may strip/override it causing signature mismatch
-  const hostValue = parsedUrl.host;
-  
-  // Headers to sign: content-type, host, x-amz-date
-  const headersToSign: Record<string, string> = {};
-  for (const [k, v] of Object.entries(headers)) {
-    headersToSign[k.toLowerCase()] = v.trim();
-  }
-  headersToSign['host'] = hostValue;
-  
-  const sortedHeaderKeys = Object.keys(headersToSign).sort();
-  const signedHeadersStr = sortedHeaderKeys.join(';');
-  const canonicalHeaders = sortedHeaderKeys
-    .map(k => `${k}:${headersToSign[k]}`)
-    .join('\n') + '\n';
-  
-  const payloadHash = await sha256(body);
-  
-  const canonicalRequest = [
-    method,
-    parsedUrl.pathname,
-    parsedUrl.search.slice(1),
-    canonicalHeaders,
-    signedHeadersStr,
-    payloadHash
-  ].join('\n');
-  
-  console.log("Canonical request:\n" + canonicalRequest);
-  const canonicalRequestHash = await sha256(canonicalRequest);
-  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
-  
-  const stringToSign = [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    credentialScope,
-    canonicalRequestHash
-  ].join('\n');
-  
-  const signingKey = await getSignatureKey(secretAccessKey, dateStamp, region, service);
-  const encoder = new TextEncoder();
-  const signatureBuffer = await crypto.subtle.sign(
-    "HMAC",
-    await crypto.subtle.importKey("raw", signingKey, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
-    encoder.encode(stringToSign)
-  );
-  const signature = toHex(signatureBuffer);
-  
-  headers['Authorization'] = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeadersStr}, Signature=${signature}`;
-  
-  // Remove host from headers sent to fetch (it sets its own)
-  delete headers['host'];
-  
-  return headers;
-}
-
 async function sendWithAmazonSES(config: Record<string, string>, emailReq: EmailRequest) {
   const access_key_id = (config.access_key_id || '').trim();
   const secret_access_key = (config.secret_access_key || '').trim();
   const region = (config.region || '').trim();
   const from_email = (config.from_email || '').trim();
-  
+
   if (!access_key_id || !secret_access_key || !region) {
     return new Response(
       JSON.stringify({ error: "Amazon SES credentials not configured" }),
@@ -328,12 +211,9 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
     );
   }
 
-  console.log("SES config - region:", region, "keyId length:", access_key_id.length, "secretKey length:", secret_access_key.length);
-
   const toAddresses = Array.isArray(emailReq.to) ? emailReq.to : [emailReq.to];
   const fromAddress = emailReq.from || from_email || "noreply@agsell.com";
 
-  // Build SES API request body
   const params = new URLSearchParams();
   params.append('Action', 'SendEmail');
   params.append('Source', fromAddress);
@@ -353,25 +233,18 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
   const endpoint = `https://email.${region}.amazonaws.com/`;
   const body = params.toString();
 
-  const requestHeaders: Record<string, string> = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-  };
-
-  const signedHeaders = await signRequest(
-    'POST',
-    endpoint,
-    requestHeaders,
-    body,
-    access_key_id,
-    secret_access_key,
-    region,
-    'ses'
-  );
-
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: signedHeaders,
+    const { AwsClient } = await import("https://esm.sh/aws4fetch@1.0.20");
+    const aws = new AwsClient({
+      accessKeyId: access_key_id,
+      secretAccessKey: secret_access_key,
+      region: region,
+      service: "ses",
+    });
+
+    const response = await aws.fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body,
     });
 
@@ -385,7 +258,6 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
       );
     }
 
-    // Extract MessageId from XML response
     const messageIdMatch = responseText.match(/<MessageId>([^<]+)<\/MessageId>/);
     const messageId = messageIdMatch ? messageIdMatch[1] : null;
 
