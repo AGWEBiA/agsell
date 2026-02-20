@@ -8,7 +8,7 @@ import logoAlternativo from '@/assets/logo-alternativo.png';
 
 interface LogoProps {
   variant?: 'red' | 'white' | 'black' | 'alternativo' | 'full' | 'auto';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
   showText?: boolean;
 }
@@ -19,6 +19,7 @@ const iconSizeMap = {
   md: 'h-8 w-8',
   lg: 'h-10 w-10',
   xl: 'h-12 w-12',
+  '2xl': 'h-16 w-16',
 };
 
 const fullLogoSizeMap = {
@@ -27,6 +28,7 @@ const fullLogoSizeMap = {
   md: 'h-8 w-auto',
   lg: 'h-10 w-auto',
   xl: 'h-12 w-auto',
+  '2xl': 'h-16 w-auto',
 };
 
 export function Logo({ 
