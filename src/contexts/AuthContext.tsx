@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,49 +14,79 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// UUID v4 format validation
+const isValidUUID = (id: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const adminCheckRef = useRef<number>(0);
+
+  const checkAdminRole = useCallback(async (userId: string, checkId: number) => {
+    // Skip if user ID is not a valid UUID (e.g. Lovable preview token)
+    if (!isValidUUID(userId)) {
+      console.warn('[AuthContext] Skipping admin check - invalid UUID:', userId);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin',
+      });
+
+      // Only apply result if this is still the latest check
+      if (checkId !== adminCheckRef.current) return;
+
+      if (error) {
+        // Fallback: query user_roles table directly
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (checkId === adminCheckRef.current) {
+          setIsAdmin(!!roleData);
+        }
+        return;
+      }
+
+      setIsAdmin(!!data);
+    } catch (err) {
+      console.error('[AuthContext] Exception checking admin role:', err);
+      if (checkId === adminCheckRef.current) {
+        setIsAdmin(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    const checkAdminRole = async (userId: string) => {
-      try {
-        const { data, error } = await supabase.rpc('has_role', {
-          _user_id: userId,
-          _role: 'admin',
-        });
-        if (error) {
-          // Fallback: query user_roles table directly
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .eq('role', 'admin')
-            .maybeSingle();
-          if (isMounted) setIsAdmin(!!roleData);
-          return;
-        }
-        if (isMounted) setIsAdmin(!!data);
-      } catch (err) {
-        console.error('Exception checking admin role:', err);
-        if (isMounted) setIsAdmin(false);
-      }
-    };
-
     // Listener for ONGOING auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event, currentSession) => {
         if (!isMounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
 
-        if (session?.user) {
-          setTimeout(() => checkAdminRole(session.user.id), 0);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          const checkId = ++adminCheckRef.current;
+          // Use setTimeout to avoid Supabase auth deadlock
+          setTimeout(() => {
+            if (isMounted) {
+              checkAdminRole(currentSession.user.id, checkId);
+            }
+          }, 0);
         } else {
+          adminCheckRef.current++;
           setIsAdmin(false);
         }
       }
@@ -65,14 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // INITIAL load
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (!isMounted) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
 
-        if (session?.user) {
-          await checkAdminRole(session.user.id);
+        if (currentSession?.user) {
+          const checkId = ++adminCheckRef.current;
+          await checkAdminRole(currentSession.user.id, checkId);
         }
       } catch (error) {
         console.error('Error during initial auth setup:', error);
@@ -92,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
