@@ -130,7 +130,7 @@ const menuSections: MenuSection[] = [
       { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings', orgAdminOnly: true },
       { label: 'Domínio E-mail', icon: Mail, path: '/email-domain' },
       { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true },
-      { label: 'Webhooks', icon: Webhook, path: '/webhooks', orgAdminOnly: true },
+      { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
       { label: 'Guia do Sistema', icon: HelpCircle, path: '/system-guide' },
       { label: 'Configurações', icon: Settings, path: '/settings' },
       { label: 'Admin', icon: Shield, path: '/admin', adminOnly: true },
