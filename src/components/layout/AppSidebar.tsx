@@ -259,23 +259,28 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
     return initial;
   });
 
-  const { data: isAdmin, isLoading: isAdminLoading, isFetched: isAdminFetched } = useQuery({
+  const { data: isAdmin, isFetched: isAdminFetched } = useQuery({
     queryKey: ['is_super_admin_sidebar', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
+      console.log('[AdminCheck] Checking admin role for user:', user.id);
       const { data, error } = await supabase.rpc('has_role', {
         _user_id: user.id,
         _role: 'admin',
       });
+      console.log('[AdminCheck] Result:', { data, error });
       if (error) {
-        console.error('Error checking admin role:', error);
+        console.error('[AdminCheck] Error:', error);
         return false;
       }
-      return data as boolean;
+      return !!data;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    gcTime: 0,
   });
+
+  console.log('[AdminCheck] State:', { userId: user?.id, isAdmin, isAdminFetched });
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
