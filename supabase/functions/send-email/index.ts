@@ -236,18 +236,51 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
   try {
     const { AwsClient } = await import("npm:aws4fetch@1.0.20");
     console.log("SES config - region:", region, "keyId:", access_key_id.substring(0, 4) + "...", "secretLen:", secret_access_key.length);
+    
+    // Use SESv2 SendEmail API (JSON-based, simpler signing)
+    const sesV2Endpoint = `https://email.${region}.amazonaws.com/v2/email/outbound-emails`;
+    
+    const emailPayload = {
+      FromEmailAddress: fromAddress,
+      Destination: {
+        ToAddresses: toAddresses,
+      },
+      Content: {
+        Simple: {
+          Subject: {
+            Data: emailReq.subject,
+            Charset: "UTF-8",
+          },
+          Body: {
+            Html: {
+              Data: emailReq.html,
+              Charset: "UTF-8",
+            },
+            ...(emailReq.text ? {
+              Text: {
+                Data: emailReq.text,
+                Charset: "UTF-8",
+              },
+            } : {}),
+          },
+        },
+      },
+      ...(emailReq.reply_to ? {
+        ReplyToAddresses: [emailReq.reply_to],
+      } : {}),
+    };
+
     const aws = new AwsClient({
       accessKeyId: access_key_id,
       secretAccessKey: secret_access_key,
-      service: "ses",
       region: region,
     });
 
-    console.log("Sending SES request to:", endpoint, "body length:", body.length);
-    const response = await aws.fetch(endpoint, {
+    console.log("Sending SES v2 request to:", sesV2Endpoint);
+    const response = await aws.fetch(sesV2Endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emailPayload),
     });
 
     const responseText = await response.text();
@@ -260,8 +293,15 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
       );
     }
 
-    const messageIdMatch = responseText.match(/<MessageId>([^<]+)<\/MessageId>/);
-    const messageId = messageIdMatch ? messageIdMatch[1] : null;
+    // SES v2 returns JSON
+    let messageId = null;
+    try {
+      const jsonResponse = JSON.parse(responseText);
+      messageId = jsonResponse.MessageId;
+    } catch {
+      const messageIdMatch = responseText.match(/<MessageId>([^<]+)<\/MessageId>/);
+      messageId = messageIdMatch ? messageIdMatch[1] : null;
+    }
 
     return new Response(
       JSON.stringify({ success: true, provider: "amazon_ses", id: messageId }),
