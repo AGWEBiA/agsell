@@ -263,24 +263,27 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
     queryKey: ['is_super_admin_sidebar', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
-      console.log('[AdminCheck] Checking admin role for user:', user.id);
+      // Try RPC first, fallback to direct query
       const { data, error } = await supabase.rpc('has_role', {
         _user_id: user.id,
         _role: 'admin',
       });
-      console.log('[AdminCheck] Result:', { data, error });
       if (error) {
-        console.error('[AdminCheck] Error:', error);
-        return false;
+        // Fallback: query user_roles table directly
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        return !!roleData;
       }
       return !!data;
     },
     enabled: !!user?.id,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
   });
-
-  console.log('[AdminCheck] State:', { userId: user?.id, isAdmin, isAdminFetched });
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
