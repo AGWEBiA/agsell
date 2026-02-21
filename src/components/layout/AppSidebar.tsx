@@ -57,38 +57,45 @@ interface MenuDivider {
 type MenuItemType = MenuItem | MenuDivider;
 
 const menuItems: MenuItemType[] = [
+  // Visão Geral
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'Tarefas', icon: CheckSquare, path: '/tasks' },
+  { divider: true },
+  // CRM - Gestão de Relacionamento
   { label: 'Contatos', icon: Users, path: '/contacts' },
   { label: 'Empresas', icon: Building2, path: '/companies' },
   { label: 'Pipeline', icon: Kanban, path: '/pipeline' },
   { label: 'Tags', icon: Tags, path: '/tags' },
-  { label: 'Tarefas', icon: CheckSquare, path: '/tasks' },
   { divider: true },
+  // Comunicação & Atendimento
   { label: 'SAC', icon: Inbox, path: '/inbox' },
-  { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings' },
-  { label: 'E-mail', icon: Mail, path: '/email' },
   { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp' },
+  { label: 'E-mail', icon: Mail, path: '/email' },
   { label: 'Instagram', icon: Instagram, path: '/instagram' },
-  { label: 'WhatsApp Flows', icon: ListChecks, path: '/whatsapp-flows' },
   { divider: true },
+  // Marketing & Automação
   { label: 'Automações', icon: Zap, path: '/automations' },
+  { label: 'WhatsApp Flows', icon: ListChecks, path: '/whatsapp-flows' },
   { label: 'Lead Scoring', icon: Target, path: '/lead-scoring' },
   { label: 'Formulários', icon: FileText, path: '/forms' },
   { divider: true },
+  // Inteligência & Análise
   { label: 'Analytics', icon: BarChart3, path: '/analytics' },
-  { label: 'Gamificação', icon: Trophy, path: '/gamification' },
-  { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
   { label: 'Assistente IA', icon: Bot, path: '/ai-assistant' },
   { label: 'Agentes IA', icon: Brain, path: '/ai-agents' },
+  { label: 'Gamificação', icon: Trophy, path: '/gamification' },
   { divider: true },
+  // Configurações & Administração
+  { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
   { label: 'Organização', icon: Building2, path: '/organization' },
   { label: 'Planos', icon: Target, path: '/plans' },
-  { label: 'Permissões', icon: Settings, path: '/permissions' },
+  { label: 'Permissões', icon: Shield, path: '/permissions' },
+  { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings' },
+  { label: 'Domínio E-mail', icon: Mail, path: '/email-domain' },
   { label: 'API Keys', icon: Key, path: '/api-keys' },
   { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
-  { label: 'Domínio E-mail', icon: Mail, path: '/email-domain' },
-  { label: 'Admin', icon: Shield, path: '/admin', adminOnly: true },
   { label: 'Configurações', icon: Settings, path: '/settings' },
+  { label: 'Admin', icon: Shield, path: '/admin', adminOnly: true },
 ];
 
 export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
