@@ -259,7 +259,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
     return initial;
   });
 
-  const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
+  const { data: isAdmin, isLoading: isAdminLoading, isFetched: isAdminFetched } = useQuery({
     queryKey: ['is_super_admin_sidebar', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
@@ -284,7 +284,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const filteredSections = menuSections.map((section) => ({
     ...section,
     items: section.items.filter((item) => {
-      if (item.adminOnly && ((!isAdminLoading && !isAdmin) || isUserMode)) return false;
+      if (item.adminOnly && ((isAdminFetched && !isAdmin) || isUserMode)) return false;
       if (item.orgAdminOnly && isUserMode) return false;
       return true;
     }),
