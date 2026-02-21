@@ -448,11 +448,23 @@ export default function Inbox() {
                 </div>
                 <Separator />
                 <div>
-                  <p className="text-sm font-medium mb-2">Score</p>
+                  <p className="text-sm font-medium mb-2">Score do Lead</p>
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-primary">{selectedConversation.contacts?.lead_score ?? 0}</Badge>
+                    <Badge className={
+                      (selectedConversation.contacts?.lead_score ?? 0) >= 70 
+                        ? 'bg-green-600' 
+                        : (selectedConversation.contacts?.lead_score ?? 0) >= 40 
+                          ? 'bg-yellow-600' 
+                          : 'bg-muted text-muted-foreground'
+                    }>
+                      {selectedConversation.contacts?.lead_score ?? 0}
+                    </Badge>
                     <span className="text-sm text-muted-foreground">
-                      {(selectedConversation.contacts?.lead_score ?? 0) >= 70 ? 'Lead qualificado' : 'Em desenvolvimento'}
+                      {(selectedConversation.contacts?.lead_score ?? 0) >= 70 
+                        ? 'Lead qualificado' 
+                        : (selectedConversation.contacts?.lead_score ?? 0) >= 40 
+                          ? 'Lead morno' 
+                          : 'Lead frio'}
                     </span>
                   </div>
                 </div>
