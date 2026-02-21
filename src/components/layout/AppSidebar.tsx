@@ -259,7 +259,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
     return initial;
   });
 
-  const { data: isAdmin } = useQuery({
+  const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
     queryKey: ['is_super_admin_sidebar', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
@@ -267,10 +267,14 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
         _user_id: user.id,
         _role: 'admin',
       });
-      if (error) return false;
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
       return data as boolean;
     },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
   });
 
   const toggleSection = (id: string) => {
@@ -280,7 +284,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const filteredSections = menuSections.map((section) => ({
     ...section,
     items: section.items.filter((item) => {
-      if (item.adminOnly && (!isAdmin || isUserMode)) return false;
+      if (item.adminOnly && ((!isAdminLoading && !isAdmin) || isUserMode)) return false;
       if (item.orgAdminOnly && isUserMode) return false;
       return true;
     }),
