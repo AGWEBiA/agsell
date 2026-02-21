@@ -54,6 +54,7 @@ interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
   path: string;
   adminOnly?: boolean;
+  orgAdminOnly?: boolean; // items only visible to org admins (hidden in user mode)
 }
 
 interface MenuSection {
@@ -123,13 +124,13 @@ const menuSections: MenuSection[] = [
     icon: Wrench,
     items: [
       { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
-      { label: 'Organização', icon: Building2, path: '/organization' },
+      { label: 'Organização', icon: Building2, path: '/organization', orgAdminOnly: true },
       { label: 'Planos', icon: Target, path: '/plans' },
-      { label: 'Permissões', icon: Shield, path: '/permissions' },
-      { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings' },
-      { label: 'Domínio E-mail', icon: Mail, path: '/email-domain' },
-      { label: 'API Keys', icon: Key, path: '/api-keys' },
-      { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
+      { label: 'Permissões', icon: Shield, path: '/permissions', orgAdminOnly: true },
+      { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings', orgAdminOnly: true },
+      { label: 'Domínio E-mail', icon: Mail, path: '/email-domain', orgAdminOnly: true },
+      { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true },
+      { label: 'Webhooks', icon: Webhook, path: '/webhooks', orgAdminOnly: true },
       { label: 'Guia do Sistema', icon: HelpCircle, path: '/system-guide' },
       { label: 'Configurações', icon: Settings, path: '/settings' },
       { label: 'Admin', icon: Shield, path: '/admin', adminOnly: true },
@@ -280,6 +281,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
     ...section,
     items: section.items.filter((item) => {
       if (item.adminOnly && (!isAdmin || isUserMode)) return false;
+      if (item.orgAdminOnly && isUserMode) return false;
       return true;
     }),
   }));
