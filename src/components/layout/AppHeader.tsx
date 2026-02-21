@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
@@ -47,6 +48,7 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { isUserMode, toggleViewMode, simulatedPlan, setSimulatedPlan } = useAdminView();
   const { plans } = usePlans();
+  const navigate = useNavigate();
   const [showPlanPicker, setShowPlanPicker] = useState(false);
 
   // Check if user is super admin
@@ -167,11 +169,11 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <User className="mr-2 h-4 w-4" />
                 Meu Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 Configurações
               </DropdownMenuItem>
