@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
+import { usePlans, Plan } from '@/hooks/usePlans';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -24,6 +32,7 @@ import {
   HelpCircle,
   Eye,
   Shield,
+  Crown,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useQuery } from '@tanstack/react-query';
@@ -36,7 +45,9 @@ interface HeaderProps {
 export function AppHeader({ sidebarCollapsed }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { isUserMode, toggleViewMode } = useAdminView();
+  const { isUserMode, toggleViewMode, simulatedPlan, setSimulatedPlan } = useAdminView();
+  const { plans } = usePlans();
+  const [showPlanPicker, setShowPlanPicker] = useState(false);
 
   // Check if user is super admin
   const { data: isAdmin } = useQuery({
@@ -56,100 +67,185 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
   const userInitials = userName.slice(0, 2).toUpperCase();
 
-  return (
-    <header
-      className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-6 transition-all duration-300 ${
-        sidebarCollapsed ? 'left-16' : 'left-64'
-      }`}
-    >
-      {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar... (Ctrl+K)"
-            className="w-64 pl-9 lg:w-80"
-          />
-        </div>
-      </div>
+  const handleSimulatePlan = (plan: Plan) => {
+    setSimulatedPlan(plan);
+    if (!isUserMode) {
+      toggleViewMode();
+    }
+    setShowPlanPicker(false);
+  };
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        {/* Admin/User View Toggle */}
-        {isAdmin && (
-          <Button
-            variant={isUserMode ? 'default' : 'outline'}
-            size="sm"
-            onClick={toggleViewMode}
-            className="gap-2 text-xs"
-          >
-            {isUserMode ? (
-              <>
-                <Eye className="h-4 w-4" />
-                Visão Usuário
-              </>
+  return (
+    <>
+      <header
+        className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-6 transition-all duration-300 ${
+          sidebarCollapsed ? 'left-16' : 'left-64'
+        }`}
+      >
+        {/* Search */}
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar... (Ctrl+K)"
+              className="w-64 pl-9 lg:w-80"
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {/* Admin: Simulate Plan */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPlanPicker(true)}
+              className="gap-2 text-xs"
+            >
+              <Crown className="h-4 w-4" />
+              Simular Plano
+            </Button>
+          )}
+
+          {/* Admin/User View Toggle */}
+          {isAdmin && (
+            <Button
+              variant={isUserMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={toggleViewMode}
+              className="gap-2 text-xs"
+            >
+              {isUserMode ? (
+                <>
+                  <Eye className="h-4 w-4" />
+                  Visão Usuário
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4" />
+                  Visão Admin
+                </>
+              )}
+            </Button>
+          )}
+          {/* Theme Toggle */}
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {theme === 'light' ? (
+              <Moon className="h-5 w-5" />
             ) : (
-              <>
-                <Shield className="h-4 w-4" />
-                Visão Admin
-              </>
+              <Sun className="h-5 w-5" />
             )}
           </Button>
-        )}
-        {/* Theme Toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {theme === 'light' ? (
-            <Moon className="h-5 w-5" />
-          ) : (
-            <Sun className="h-5 w-5" />
-          )}
-        </Button>
 
-        {/* Notifications */}
-        <NotificationCenter />
+          {/* Notifications */}
+          <NotificationCenter />
 
-        {/* Help */}
-        <Button variant="ghost" size="icon">
-          <HelpCircle className="h-5 w-5" />
-        </Button>
+          {/* Help */}
+          <Button variant="ghost" size="icon">
+            <HelpCircle className="h-5 w-5" />
+          </Button>
 
-        {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="" alt={userName} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{userName}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Meu Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              Configurações
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="text-destructive">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="" alt={userName} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{userName}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                Meu Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* Plan Picker Dialog */}
+      <Dialog open={showPlanPicker} onOpenChange={setShowPlanPicker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              Simular Plano
+            </DialogTitle>
+            <DialogDescription>
+              Selecione um plano para visualizar o sistema como um usuário desse plano.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 mt-4">
+            {plans.map((plan) => (
+              <button
+                key={plan.id}
+                onClick={() => handleSimulatePlan(plan)}
+                className={`flex items-center justify-between p-4 rounded-lg border transition-colors hover:bg-accent text-left ${
+                  simulatedPlan?.id === plan.id
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border'
+                }`}
+              >
+                <div>
+                  <p className="font-medium">{plan.name}</p>
+                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {plan.max_contacts === -1 ? '∞' : plan.max_contacts} contatos
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {plan.max_users === -1 ? '∞' : plan.max_users} usuários
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {plan.max_emails_per_month === -1 ? '∞' : plan.max_emails_per_month} emails/mês
+                    </Badge>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-4">
+                  <p className="font-bold text-lg">
+                    {plan.price_monthly === 0 ? 'Grátis' : `R$ ${plan.price_monthly}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">/mês</p>
+                </div>
+              </button>
+            ))}
+            {simulatedPlan && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSimulatedPlan(null);
+                  setShowPlanPicker(false);
+                }}
+                className="mt-2"
+              >
+                Remover Simulação
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

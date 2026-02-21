@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAdminView } from '@/contexts/AdminViewContext';
 import { toast } from 'sonner';
 
 export interface Plan {
@@ -43,6 +44,7 @@ export interface PlanLimitCheck {
 
 export function usePlans() {
   const { currentOrganization } = useOrganization();
+  const { simulatedPlan } = useAdminView();
   const queryClient = useQueryClient();
 
   // Fetch all active plans
@@ -160,10 +162,13 @@ export function usePlans() {
     },
   });
 
+  // If simulating a plan, override the current plan
+  const effectivePlan = simulatedPlan ?? currentPlanQuery.data;
+
   return {
     plans: plansQuery.data ?? [],
     subscription: subscriptionQuery.data,
-    currentPlan: currentPlanQuery.data,
+    currentPlan: effectivePlan,
     isLoading: plansQuery.isLoading || currentPlanQuery.isLoading,
     checkPlanLimit,
     updatePlan,

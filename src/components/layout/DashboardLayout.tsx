@@ -14,7 +14,7 @@ export function DashboardLayout() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { currentOrganization } = useOrganization();
   const { progress, isLoading } = useOnboarding();
-  const { isUserMode, toggleViewMode } = useAdminView();
+  const { isUserMode, toggleViewMode, simulatedPlan, exitSimulation } = useAdminView();
 
   useEffect(() => {
     if (currentOrganization && !isLoading) {
@@ -37,9 +37,15 @@ export function DashboardLayout() {
           )}
         >
           <Eye className="h-4 w-4" />
-          <span>Você está visualizando como <strong>usuário comum</strong>.</span>
+          <span>
+            Você está visualizando como <strong>usuário comum</strong>
+            {simulatedPlan && (
+              <> no plano <strong>{simulatedPlan.name}</strong></>
+            )}
+            .
+          </span>
           <button
-            onClick={toggleViewMode}
+            onClick={exitSimulation}
             className="ml-2 underline font-medium hover:opacity-80"
           >
             Voltar para Admin
