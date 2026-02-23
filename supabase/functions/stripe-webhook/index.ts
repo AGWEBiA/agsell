@@ -32,19 +32,23 @@ Deno.serve(async (req) => {
 
     let event: Stripe.Event;
 
-    // Verify webhook signature if secret is configured
-    if (stripeWebhookSecret && signature) {
-      try {
-        event = stripe.webhooks.constructEvent(rawBody, signature, stripeWebhookSecret);
-      } catch (err) {
-        console.error("Webhook signature verification failed:", err);
-        return new Response(
-          JSON.stringify({ error: "Invalid signature" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
-      event = JSON.parse(rawBody) as Stripe.Event;
+    // SECURITY: Require webhook signature verification
+    if (!stripeWebhookSecret || !signature) {
+      console.error("Webhook rejected: missing webhook secret or signature");
+      return new Response(
+        JSON.stringify({ error: "Webhook signature verification required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, signature, stripeWebhookSecret);
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err);
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Stripe webhook received:", event.type);
@@ -91,9 +95,8 @@ Deno.serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Stripe webhook error:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: "Webhook processing failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -288,8 +291,7 @@ async function sendWelcomeEmail(data: {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   
   if (!resendApiKey) {
-    console.log("RESEND_API_KEY not configured, logging credentials");
-    console.log("Credentials for", data.email, ":", data.password);
+    console.log("RESEND_API_KEY not configured, skipping email");
     return;
   }
 

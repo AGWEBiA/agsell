@@ -1,4 +1,4 @@
-// Webhook Handler for Stripe Events
+// Webhook Handler for Stripe Events — Signature Verification Required
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.14.0";
 
@@ -30,31 +30,36 @@ Deno.serve(async (req) => {
 
     const organizationId = integration?.organization_id;
     const stripeWebhookSecret = integration?.config?.webhook_secret as string | undefined;
+    const stripeSecretKey = integration?.config?.secret_key as string | undefined;
+
+    // SECURITY: Require signature verification
+    if (!stripeWebhookSecret || !signature) {
+      console.error("Webhook rejected: missing webhook secret or signature");
+      return new Response(
+        JSON.stringify({ error: "Webhook signature verification required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!stripeSecretKey) {
+      console.error("Webhook rejected: Stripe secret key not configured");
+      return new Response(
+        JSON.stringify({ error: "Stripe not properly configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
     let event: Stripe.Event;
-
-    // Verify signature if webhook secret is configured
-    if (stripeWebhookSecret && signature) {
-      const stripeSecretKey = integration?.config?.secret_key as string;
-      if (!stripeSecretKey) {
-        throw new Error("Stripe secret key not configured");
-      }
-
-      const stripe = new Stripe(stripeSecretKey, {
-        apiVersion: "2023-10-16",
-      });
-
-      try {
-        event = stripe.webhooks.constructEvent(rawBody, signature, stripeWebhookSecret);
-      } catch (err) {
-        console.error("Stripe signature verification failed:", err);
-        return new Response(
-          JSON.stringify({ error: "Invalid signature" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
-      event = JSON.parse(rawBody) as Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, signature, stripeWebhookSecret);
+    } catch (err) {
+      console.error("Stripe signature verification failed:", err);
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Stripe webhook received:", event.type);
@@ -74,15 +79,29 @@ Deno.serve(async (req) => {
 
     if (webhookError) {
       console.error("Error storing webhook:", webhookError);
-      throw webhookError;
+      return new Response(
+        JSON.stringify({ error: "Failed to process webhook" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Process specific events
     if (organizationId) {
+      // Get org owner user_id for contact creation
+      const { data: ownerMember } = await supabase
+        .from("organization_members")
+        .select("user_id")
+        .eq("organization_id", organizationId)
+        .eq("role", "owner")
+        .limit(1)
+        .maybeSingle();
+
+      const ownerUserId = ownerMember?.user_id;
+
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
-          if (session.customer_details?.email) {
+          if (session.customer_details?.email && ownerUserId) {
             const { data: existingContact } = await supabase
               .from("contacts")
               .select("id")
@@ -94,14 +113,13 @@ Deno.serve(async (req) => {
               const nameParts = (session.customer_details.name || "").split(" ");
               await supabase.from("contacts").insert({
                 organization_id: organizationId,
-                user_id: organizationId,
+                user_id: ownerUserId,
                 first_name: nameParts[0] || "Cliente",
                 last_name: nameParts.slice(1).join(" ") || null,
                 email: session.customer_details.email,
                 phone: session.customer_details.phone,
                 source: "stripe",
                 status: "customer",
-                notes: `Stripe Session: ${session.id}`,
               });
             }
           }
@@ -131,14 +149,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ received: true, event_id: webhookEvent.id }),
+      JSON.stringify({ received: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
     console.error("Error processing Stripe webhook:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ error: "Webhook processing failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
