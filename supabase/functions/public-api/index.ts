@@ -1,4 +1,4 @@
-// Public REST API Gateway with API Key Authentication, Rate Limiting & Cursor Pagination
+// Public REST API Gateway with API Key Authentication, Rate Limiting, Cursor Pagination & Input Validation
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -28,12 +28,85 @@ async function hashApiKey(key: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// --- Input Validation Helpers ---
+function validateString(val: unknown, maxLen = 255): string | null {
+  if (val === undefined || val === null) return null;
+  if (typeof val !== "string") return null;
+  return val.trim().substring(0, maxLen) || null;
+}
+
+function validateEmail(val: unknown): string | null {
+  const s = validateString(val, 320);
+  if (!s) return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) ? s : null;
+}
+
+function validateNumber(val: unknown): number | null {
+  if (val === undefined || val === null) return null;
+  const n = Number(val);
+  return isNaN(n) ? null : n;
+}
+
+// Whitelist-based body sanitization per resource
+function sanitizeContactBody(body: Record<string, unknown>): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  if (body.first_name) clean.first_name = validateString(body.first_name, 100);
+  if (body.last_name !== undefined) clean.last_name = validateString(body.last_name, 100);
+  if (body.email !== undefined) clean.email = validateEmail(body.email);
+  if (body.phone !== undefined) clean.phone = validateString(body.phone, 30);
+  if (body.whatsapp !== undefined) clean.whatsapp = validateString(body.whatsapp, 30);
+  if (body.position !== undefined) clean.position = validateString(body.position, 100);
+  if (body.source !== undefined) clean.source = validateString(body.source, 50);
+  if (body.status !== undefined) clean.status = validateString(body.status, 30);
+  if (body.notes !== undefined) clean.notes = validateString(body.notes, 5000);
+  if (body.company_id !== undefined) clean.company_id = validateString(body.company_id, 36);
+  if (body.lead_score !== undefined) clean.lead_score = validateNumber(body.lead_score);
+  return clean;
+}
+
+function sanitizeCompanyBody(body: Record<string, unknown>): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  if (body.name) clean.name = validateString(body.name, 200);
+  if (body.domain !== undefined) clean.domain = validateString(body.domain, 255);
+  if (body.industry !== undefined) clean.industry = validateString(body.industry, 100);
+  if (body.size !== undefined) clean.size = validateString(body.size, 50);
+  if (body.phone !== undefined) clean.phone = validateString(body.phone, 30);
+  if (body.email !== undefined) clean.email = validateEmail(body.email);
+  if (body.address !== undefined) clean.address = validateString(body.address, 500);
+  if (body.city !== undefined) clean.city = validateString(body.city, 100);
+  if (body.state !== undefined) clean.state = validateString(body.state, 100);
+  if (body.country !== undefined) clean.country = validateString(body.country, 100);
+  if (body.notes !== undefined) clean.notes = validateString(body.notes, 5000);
+  return clean;
+}
+
+function sanitizeDealBody(body: Record<string, unknown>): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  if (body.title) clean.title = validateString(body.title, 200);
+  if (body.value !== undefined) clean.value = validateNumber(body.value);
+  if (body.probability !== undefined) clean.probability = validateNumber(body.probability);
+  if (body.currency !== undefined) clean.currency = validateString(body.currency, 10);
+  if (body.status !== undefined) clean.status = validateString(body.status, 30);
+  if (body.notes !== undefined) clean.notes = validateString(body.notes, 5000);
+  if (body.contact_id !== undefined) clean.contact_id = validateString(body.contact_id, 36);
+  if (body.company_id !== undefined) clean.company_id = validateString(body.company_id, 36);
+  if (body.stage_id !== undefined) clean.stage_id = validateString(body.stage_id, 36);
+  if (body.expected_close_date !== undefined) clean.expected_close_date = validateString(body.expected_close_date, 30);
+  return clean;
+}
+
+function sanitizeTagBody(body: Record<string, unknown>): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  if (body.name) clean.name = validateString(body.name, 100);
+  if (body.color !== undefined) clean.color = validateString(body.color, 20);
+  return clean;
+}
+
 // Shared pagination helper with cursor support
 function parsePaginationParams(url: URL) {
   const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "50"), 1), 100);
-  const cursor = url.searchParams.get("cursor") || null; // ISO date string for cursor
+  const cursor = url.searchParams.get("cursor") || null;
   const direction = url.searchParams.get("direction") === "prev" ? "prev" : "next";
-  // Keep offset support for backward compat
   const offset = url.searchParams.get("offset") ? parseInt(url.searchParams.get("offset")!) : null;
   return { limit, cursor, direction, offset };
 }
@@ -206,15 +279,15 @@ Deno.serve(async (req) => {
     });
   } catch (error: unknown) {
     console.error("Public API error:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
     return new Response(
-      JSON.stringify({ error: message, code: "INTERNAL_ERROR" }),
+      JSON.stringify({ error: "Internal server error", code: "INTERNAL_ERROR" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
 // Generic paginated list with cursor support
+// deno-lint-ignore no-explicit-any
 async function paginatedList(
   supabase: any,
   table: string,
@@ -230,22 +303,20 @@ async function paginatedList(
     .select(selectFields, { count: "exact" })
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false })
-    .limit(limit + 1); // fetch one extra to detect next page
+    .limit(limit + 1);
 
-  // Cursor-based pagination (preferred)
   if (cursor) {
     query = query.lt("created_at", cursor);
   } else if (offset !== null) {
-    // Backward compat: offset-based
     query = query.range(offset, offset + limit);
     const { data, error, count } = await query;
     return error
-      ? { error: error.message }
+      ? { error: "Failed to fetch data" }
       : { data, meta: { total: count, limit, offset } };
   }
 
   const { data, error, count } = await query;
-  if (error) return { error: error.message };
+  if (error) return { error: "Failed to fetch data" };
 
   const hasMore = data.length > limit;
   const items = hasMore ? data.slice(0, limit) : data;
@@ -262,120 +333,156 @@ async function paginatedList(
   };
 }
 
-// Resource handlers
+// --- Resource handlers with input validation ---
+
+// Get org owner user_id for inserts
+// deno-lint-ignore no-explicit-any
+async function getOrgOwnerUserId(supabase: any, orgId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", orgId)
+    .eq("role", "owner")
+    .limit(1)
+    .maybeSingle();
+  return data?.user_id || null;
+}
+
+// deno-lint-ignore no-explicit-any
 async function handleContacts(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
   if (method === "GET") {
     if (id) {
       const { data, error } = await supabase.from("contacts").select("*").eq("id", id).eq("organization_id", orgId).single();
-      return error ? { error: error.message } : { data };
+      return error ? { error: "Contact not found" } : { data };
     }
     return paginatedList(supabase, "contacts", orgId, req);
   }
 
   if (method === "POST") {
-    const body = await req.json();
-    const { data, error } = await supabase.from("contacts").insert({ ...body, organization_id: orgId }).select().single();
-    return error ? { error: error.message } : { data };
+    const rawBody = await req.json();
+    const body = sanitizeContactBody(rawBody);
+    if (!body.first_name) return { error: "first_name is required" };
+    const userId = await getOrgOwnerUserId(supabase, orgId);
+    if (!userId) return { error: "Organization owner not found" };
+    const { data, error } = await supabase.from("contacts").insert({ ...body, organization_id: orgId, user_id: userId }).select().single();
+    return error ? { error: "Failed to create contact" } : { data };
   }
 
   if (method === "PUT" || method === "PATCH") {
     if (!id) return { error: "ID required for update" };
-    const body = await req.json();
+    const rawBody = await req.json();
+    const body = sanitizeContactBody(rawBody);
     const { data, error } = await supabase.from("contacts").update(body).eq("id", id).eq("organization_id", orgId).select().single();
-    return error ? { error: error.message } : { data };
+    return error ? { error: "Failed to update contact" } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
     const { error } = await supabase.from("contacts").delete().eq("id", id).eq("organization_id", orgId);
-    return error ? { error: error.message } : { success: true };
+    return error ? { error: "Failed to delete contact" } : { success: true };
   }
 
   return { error: "Method not allowed" };
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleCompanies(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
   if (method === "GET") {
     if (id) {
       const { data, error } = await supabase.from("companies").select("*").eq("id", id).eq("organization_id", orgId).single();
-      return error ? { error: error.message } : { data };
+      return error ? { error: "Company not found" } : { data };
     }
     return paginatedList(supabase, "companies", orgId, req);
   }
 
   if (method === "POST") {
-    const body = await req.json();
-    const { data, error } = await supabase.from("companies").insert({ ...body, organization_id: orgId }).select().single();
-    return error ? { error: error.message } : { data };
+    const rawBody = await req.json();
+    const body = sanitizeCompanyBody(rawBody);
+    if (!body.name) return { error: "name is required" };
+    const userId = await getOrgOwnerUserId(supabase, orgId);
+    if (!userId) return { error: "Organization owner not found" };
+    const { data, error } = await supabase.from("companies").insert({ ...body, organization_id: orgId, user_id: userId }).select().single();
+    return error ? { error: "Failed to create company" } : { data };
   }
 
   if (method === "PUT" || method === "PATCH") {
     if (!id) return { error: "ID required for update" };
-    const body = await req.json();
+    const rawBody = await req.json();
+    const body = sanitizeCompanyBody(rawBody);
     const { data, error } = await supabase.from("companies").update(body).eq("id", id).eq("organization_id", orgId).select().single();
-    return error ? { error: error.message } : { data };
+    return error ? { error: "Failed to update company" } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
     const { error } = await supabase.from("companies").delete().eq("id", id).eq("organization_id", orgId);
-    return error ? { error: error.message } : { success: true };
+    return error ? { error: "Failed to delete company" } : { success: true };
   }
 
   return { error: "Method not allowed" };
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleDeals(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
   if (method === "GET") {
     if (id) {
       const { data, error } = await supabase.from("deals").select("*, contacts(*), companies(*)").eq("id", id).eq("organization_id", orgId).single();
-      return error ? { error: error.message } : { data };
+      return error ? { error: "Deal not found" } : { data };
     }
     return paginatedList(supabase, "deals", orgId, req, "*, contacts(first_name, last_name, email), companies(name)");
   }
 
   if (method === "POST") {
-    const body = await req.json();
-    const { data, error } = await supabase.from("deals").insert({ ...body, organization_id: orgId }).select().single();
-    return error ? { error: error.message } : { data };
+    const rawBody = await req.json();
+    const body = sanitizeDealBody(rawBody);
+    if (!body.title) return { error: "title is required" };
+    const userId = await getOrgOwnerUserId(supabase, orgId);
+    if (!userId) return { error: "Organization owner not found" };
+    const { data, error } = await supabase.from("deals").insert({ ...body, organization_id: orgId, user_id: userId }).select().single();
+    return error ? { error: "Failed to create deal" } : { data };
   }
 
   if (method === "PUT" || method === "PATCH") {
     if (!id) return { error: "ID required for update" };
-    const body = await req.json();
+    const rawBody = await req.json();
+    const body = sanitizeDealBody(rawBody);
     const { data, error } = await supabase.from("deals").update(body).eq("id", id).eq("organization_id", orgId).select().single();
-    return error ? { error: error.message } : { data };
+    return error ? { error: "Failed to update deal" } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
     const { error } = await supabase.from("deals").delete().eq("id", id).eq("organization_id", orgId);
-    return error ? { error: error.message } : { success: true };
+    return error ? { error: "Failed to delete deal" } : { success: true };
   }
 
   return { error: "Method not allowed" };
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleTags(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
   if (method === "GET") {
     if (id) {
       const { data, error } = await supabase.from("tags").select("*").eq("id", id).eq("organization_id", orgId).single();
-      return error ? { error: error.message } : { data };
+      return error ? { error: "Tag not found" } : { data };
     }
-    const { data, error } = await supabase.from("tags").select("*").eq("organization_id", orgId);
-    return error ? { error: error.message } : { data };
+    return paginatedList(supabase, "tags", orgId, req);
   }
 
   if (method === "POST") {
-    const body = await req.json();
-    const { data, error } = await supabase.from("tags").insert({ ...body, organization_id: orgId }).select().single();
-    return error ? { error: error.message } : { data };
+    const rawBody = await req.json();
+    const body = sanitizeTagBody(rawBody);
+    if (!body.name) return { error: "name is required" };
+    const userId = await getOrgOwnerUserId(supabase, orgId);
+    if (!userId) return { error: "Organization owner not found" };
+    const { data, error } = await supabase.from("tags").insert({ ...body, organization_id: orgId, user_id: userId }).select().single();
+    return error ? { error: "Failed to create tag" } : { data };
   }
 
   if (method === "DELETE") {
     if (!id) return { error: "ID required for delete" };
     const { error } = await supabase.from("tags").delete().eq("id", id).eq("organization_id", orgId);
-    return error ? { error: error.message } : { success: true };
+    return error ? { error: "Failed to delete tag" } : { success: true };
   }
 
   return { error: "Method not allowed" };

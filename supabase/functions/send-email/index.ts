@@ -103,9 +103,8 @@ Deno.serve(async (req) => {
     }
   } catch (error: unknown) {
     console.error("Error sending email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Failed to send email" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -288,7 +287,7 @@ async function sendWithAmazonSES(config: Record<string, string>, emailReq: Email
     if (!response.ok) {
       console.error("Amazon SES error:", responseText);
       return new Response(
-        JSON.stringify({ error: `Amazon SES error: ${response.status}`, details: responseText }),
+        JSON.stringify({ error: `Email provider error: ${response.status}` }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
