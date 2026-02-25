@@ -54,8 +54,9 @@ export function useInstagramAccounts() {
   return useQuery({
     queryKey: ['instagram_accounts', orgId],
     queryFn: async () => {
+      // Use the safe view that excludes sensitive token fields
       const { data, error } = await supabase
-        .from('instagram_accounts')
+        .from('instagram_accounts_safe' as any)
         .select('*')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { usePlanFeature } from '@/hooks/usePlans';
+import { useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -45,6 +48,8 @@ const automationTypes = [
 export default function InstagramPage() {
   const { currentOrganization } = useOrganization();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { hasFeature: hasInstagram, isLoading: loadingFeature } = usePlanFeature('instagram');
   const { data: accounts, isLoading: loadingAccounts } = useInstagramAccounts();
   const { data: automations, isLoading: loadingAutomations } = useInstagramAutomations();
   const createAutomation = useCreateInstagramAutomation();
@@ -91,6 +96,21 @@ export default function InstagramPage() {
 
   const activeAutomations = automations?.filter(a => a.is_active).length || 0;
   const totalExecutions = automations?.reduce((sum, a) => sum + (a.executions_count || 0), 0) || 0;
+
+  if (!loadingFeature && !hasInstagram) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="p-4 rounded-full bg-muted">
+          <Lock className="h-12 w-12 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-bold">Instagram não disponível no seu plano</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          As automações de Instagram estão disponíveis a partir do plano Professional. Faça upgrade para desbloquear essa funcionalidade.
+        </p>
+        <Button onClick={() => navigate('/plans')}>Ver Planos</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
