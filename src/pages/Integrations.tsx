@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Settings, Trash2, TestTube, AlertCircle, RefreshCw, MessageSquare } from 'lucide-react';
+import { Check, Settings, Trash2, TestTube, AlertCircle, RefreshCw, MessageSquare, Instagram } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useIntegrations, Integration } from '@/hooks/useIntegrations';
 import { WhatsAppProviderSetup } from '@/components/integrations/WhatsAppProviderSetup';
+import { useNavigate } from 'react-router-dom';
 
 const categoryLabels: Record<string, string> = {
   infoproduct: 'Infoprodutos',
@@ -24,6 +25,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function Integrations() {
+  const navigate = useNavigate();
   const { 
     integrations, 
     connectIntegration, 
@@ -85,17 +87,46 @@ export default function Integrations() {
         </Badge>
       </div>
 
-      {/* WhatsApp Section */}
+      {/* WhatsApp & Instagram Section */}
       <Tabs defaultValue="whatsapp" className="w-full">
         <TabsList className="w-auto">
           <TabsTrigger value="whatsapp" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             WhatsApp
           </TabsTrigger>
+          <TabsTrigger value="instagram" className="flex items-center gap-2">
+            <Instagram className="h-4 w-4" />
+            Instagram
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp" className="mt-6">
           <WhatsAppProviderSetup />
+        </TabsContent>
+
+        <TabsContent value="instagram" className="mt-6">
+          <Card className="border-dashed">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400">
+                  <Instagram className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Conta do Instagram</CardTitle>
+                  <CardDescription>Conecte sua conta para automações de DM, comentários e stories</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Gerencie a conexão da sua conta do Instagram, configure automações de respostas e acompanhe logs de execução na página dedicada.
+              </p>
+              <Button onClick={() => navigate('/instagram')} className="gap-2">
+                <Instagram className="h-4 w-4" />
+                Ir para Instagram
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
