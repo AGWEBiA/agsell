@@ -1,0 +1,1 @@
+ALTER TABLE public.plans ADD COLUMN max_instagram_accounts integer NOT NULL DEFAULT 1;
