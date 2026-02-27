@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import type { Tables, TablesInsert, TablesUpdate, Json } from '@/integrations/supabase/types';
 
@@ -11,6 +12,7 @@ type FormSubmission = Tables<'form_submissions'>;
 
 export function useForms() {
   const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
   const queryClient = useQueryClient();
 
   const formsQuery = useQuery({
@@ -34,7 +36,7 @@ export function useForms() {
       if (!user?.id) throw new Error('User not authenticated');
       const { data, error } = await supabase
         .from('forms')
-        .insert({ ...form, user_id: user.id })
+        .insert({ ...form, user_id: user.id, organization_id: currentOrganization?.id ?? null })
         .select()
         .single();
       
