@@ -35,6 +35,9 @@ import {
 import { useInstagramAccounts, useInstagramAutomations, useCreateInstagramAutomation, useUpdateInstagramAutomation, useDeleteInstagramAutomation } from '@/hooks/useInstagram';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -49,6 +52,8 @@ export default function InstagramPage() {
   const { currentOrganization } = useOrganization();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { hasFeature: hasInstagram, isLoading: loadingFeature } = usePlanFeature('instagram');
   const { data: accounts, isLoading: loadingAccounts } = useInstagramAccounts();
   const { data: automations, isLoading: loadingAutomations } = useInstagramAutomations();
@@ -57,6 +62,12 @@ export default function InstagramPage() {
   const deleteAutomation = useDeleteInstagramAutomation();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectForm, setConnectForm] = useState({
+    access_token: '',
+    instagram_user_id: '',
+    username: '',
+  });
   const [newAutomation, setNewAutomation] = useState({
     name: '',
     description: '',
@@ -64,6 +75,32 @@ export default function InstagramPage() {
     trigger_keywords: '',
     response_message: '',
   });
+
+  const handleConnectAccount = async () => {
+    if (!currentOrganization || !user) return;
+    if (!connectForm.access_token || !connectForm.instagram_user_id || !connectForm.username) {
+      toast({ title: 'Preencha todos os campos', variant: 'destructive' });
+      return;
+    }
+    setIsConnecting(true);
+    try {
+      const { error } = await supabase.from('instagram_accounts').insert({
+        organization_id: currentOrganization.id,
+        access_token: connectForm.access_token,
+        instagram_user_id: connectForm.instagram_user_id,
+        username: connectForm.username,
+        connected_by: user.id,
+      } as any);
+      if (error) throw error;
+      toast({ title: 'Conta conectada!', description: `@${connectForm.username} foi vinculada com sucesso.` });
+      setConnectForm({ access_token: '', instagram_user_id: '', username: '' });
+      queryClient.invalidateQueries({ queryKey: ['instagram_accounts'] });
+    } catch (err: any) {
+      toast({ title: 'Erro ao conectar', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   const handleCreateAutomation = () => {
     if (!currentOrganization || !user || !accounts?.length) return;
@@ -419,14 +456,56 @@ export default function InstagramPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start p-4 rounded-lg border bg-card">
+                <div className="flex gap-4 items-start p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
                   <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-bold text-sm shrink-0">4</div>
-                  <div>
-                    <h4 className="font-semibold">Cole o Token de Acesso aqui no AG Sell</h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Com o token e o ID do Instagram em mãos, vá em <strong>Integrações → Instagram</strong> no menu lateral 
-                      e cadastre sua conta usando as credenciais obtidas no passo anterior.
-                    </p>
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h4 className="font-semibold">Cole suas credenciais abaixo para conectar</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Com o token e o ID do Instagram em mãos, preencha os campos abaixo para vincular sua conta.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="ig-username">@ Usuário do Instagram <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="ig-username"
+                          placeholder="seu_usuario"
+                          value={connectForm.username}
+                          onChange={e => setConnectForm(prev => ({ ...prev, username: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ig-user-id">Instagram User ID <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="ig-user-id"
+                          placeholder="Ex: 17841400123456789"
+                          value={connectForm.instagram_user_id}
+                          onChange={e => setConnectForm(prev => ({ ...prev, instagram_user_id: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ig-token">Access Token (Longa Duração) <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="ig-token"
+                        type="password"
+                        placeholder="Cole aqui o token gerado no Meta Developers"
+                        value={connectForm.access_token}
+                        onChange={e => setConnectForm(prev => ({ ...prev, access_token: e.target.value }))}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleConnectAccount}
+                      disabled={isConnecting || !connectForm.access_token || !connectForm.instagram_user_id || !connectForm.username}
+                      className="gap-2"
+                    >
+                      {isConnecting ? (
+                        <><RefreshCw className="h-4 w-4 animate-spin" /> Conectando...</>
+                      ) : (
+                        <><Instagram className="h-4 w-4" /> Conectar Conta</>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -457,7 +536,7 @@ export default function InstagramPage() {
                         {account.profile_picture_url ? (
                           <img src={account.profile_picture_url} alt={account.username} className="h-12 w-12 rounded-full" />
                         ) : (
-                          <div className="h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/20 flex items-center justify-center">
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                             <Instagram className="h-6 w-6 text-pink-500" />
                           </div>
                         )}
@@ -476,15 +555,7 @@ export default function InstagramPage() {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                  <Instagram className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-medium">Nenhuma conta do Instagram conectada</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Siga o passo a passo acima e vá em Integrações para conectar sua conta.
-                  </p>
-                </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>
