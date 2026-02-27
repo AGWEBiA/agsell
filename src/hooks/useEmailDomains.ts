@@ -25,7 +25,8 @@ export function useEmailDomains() {
 
   const addDomain = useMutation({
     mutationFn: async ({ domain, from_email, from_name }: { domain: string; from_email?: string; from_name?: string }) => {
-      if (!orgId) throw new Error('Organização não selecionada');
+      const currentOrgId = currentOrganization?.id;
+      if (!currentOrgId) throw new Error('Organização não selecionada. Selecione uma organização antes de continuar.');
 
       const dnsRecords = [
         {
@@ -54,7 +55,7 @@ export function useEmailDomains() {
       const { data, error } = await supabase
         .from('email_domains' as any)
         .insert({
-          organization_id: orgId,
+          organization_id: currentOrgId,
           domain,
           from_email: from_email || `noreply@${domain}`,
           from_name: from_name || '',

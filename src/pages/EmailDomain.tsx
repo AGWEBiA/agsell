@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Globe, Plus, Mail } from 'lucide-react';
+import { Globe, Plus, Mail, AlertCircle } from 'lucide-react';
 import { useEmailDomains } from '@/hooks/useEmailDomains';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import DomainSetupWizard from '@/components/email-domain/DomainSetupWizard';
 import DomainCard from '@/components/email-domain/DomainCard';
 
 export default function EmailDomain() {
+  const { currentOrganization, loading: orgLoading } = useOrganization();
   const { domains, isLoading, addDomain, verifyDomain, deleteDomain } = useEmailDomains();
   const [showWizard, setShowWizard] = useState(false);
 
@@ -16,6 +18,25 @@ export default function EmailDomain() {
       onSuccess: () => setShowWizard(false),
     });
   };
+
+  if (orgLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
+  if (!currentOrganization) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Nenhuma organização selecionada</h2>
+        <p className="text-muted-foreground">Selecione ou crie uma organização para configurar domínios de e-mail.</p>
+      </div>
+    );
+  }
 
   if (showWizard) {
     return (
