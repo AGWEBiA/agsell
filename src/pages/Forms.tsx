@@ -28,7 +28,12 @@ import { FormFieldEditor, type FormField } from '@/components/forms/FormFieldEdi
 export default function Forms() {
   const { forms, isLoading, createForm, updateForm, toggleForm, deleteForm, getFormSubmissions } = useForms();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newForm, setNewForm] = useState({ name: '', description: '' });
+  const [newForm, setNewForm] = useState<{ name: string; description: string; fields: FormField[] }>({
+    name: '', description: '', fields: [
+      { name: 'name', label: 'Nome', type: 'text', required: true },
+      { name: 'email', label: 'Email', type: 'email', required: true },
+    ],
+  });
 
   // Edit state
   const [editingForm, setEditingForm] = useState<{ id: string; name: string; description: string; fields: FormField[] } | null>(null);
@@ -43,12 +48,12 @@ export default function Forms() {
       name: newForm.name,
       description: newForm.description || null,
       is_active: true,
-      fields: [
-        { name: 'name', label: 'Nome', type: 'text', required: true },
-        { name: 'email', label: 'Email', type: 'email', required: true },
-      ] as unknown as Json,
+      fields: newForm.fields as unknown as Json,
     });
-    setNewForm({ name: '', description: '' });
+    setNewForm({ name: '', description: '', fields: [
+      { name: 'name', label: 'Nome', type: 'text', required: true },
+      { name: 'email', label: 'Email', type: 'email', required: true },
+    ]});
     setIsCreateOpen(false);
   };
 
@@ -118,20 +123,26 @@ export default function Forms() {
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />Novo Formulário</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Novo Formulário</DialogTitle>
               <DialogDescription>Crie um novo formulário para capturar leads.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input id="name" placeholder="Ex: Formulário de Contato" value={newForm.name} onChange={(e) => setNewForm(prev => ({ ...prev, name: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome</Label>
+                  <Input id="name" placeholder="Ex: Formulário de Contato" value={newForm.name} onChange={(e) => setNewForm(prev => ({ ...prev, name: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição (opcional)</Label>
+                  <Input id="description" placeholder="Descreva o objetivo" value={newForm.description} onChange={(e) => setNewForm(prev => ({ ...prev, description: e.target.value }))} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição (opcional)</Label>
-                <Textarea id="description" placeholder="Descreva o objetivo do formulário" value={newForm.description} onChange={(e) => setNewForm(prev => ({ ...prev, description: e.target.value }))} />
-              </div>
+              <FormFieldEditor
+                fields={newForm.fields}
+                onChange={(fields) => setNewForm(prev => ({ ...prev, fields }))}
+              />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
