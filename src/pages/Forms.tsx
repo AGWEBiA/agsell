@@ -257,19 +257,19 @@ export default function Forms() {
                             <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handlePreview(form.id)}>
+                            <DropdownMenuItem onSelect={() => handlePreview(form.id)}>
                               <ExternalLink className="mr-2 h-4 w-4" />Visualizar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => copyEmbedCode(form.id)}>
+                            <DropdownMenuItem onSelect={() => copyEmbedCode(form.id)}>
                               <Copy className="mr-2 h-4 w-4" />Copiar embed
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setEditingForm({ id: form.id, name: form.name, description: form.description || '' })}>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEditingForm({ id: form.id, name: form.name, description: form.description || '' }); }}>
                               <Pencil className="mr-2 h-4 w-4" />Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleViewSubmissions(form.id, form.name)}>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleViewSubmissions(form.id, form.name); }}>
                               <List className="mr-2 h-4 w-4" />Ver submissões
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteForm.mutate(form.id)}>
+                            <DropdownMenuItem className="text-destructive" onSelect={() => deleteForm.mutate(form.id)}>
                               <Trash2 className="mr-2 h-4 w-4" />Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>
