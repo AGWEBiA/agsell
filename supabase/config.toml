@@ -62,3 +62,9 @@ verify_jwt = false
 
 [functions.instagram-lookup]
 verify_jwt = false
+
+[functions.send-instagram-dm]
+verify_jwt = false
+
+[functions.admin-manage-users]
+verify_jwt = false
