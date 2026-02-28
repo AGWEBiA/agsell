@@ -45,6 +45,7 @@ import {
 import { useAutomations } from '@/hooks/useAutomations';
 import { AutomationActionsEditor, Action } from '@/components/automations/AutomationActionsEditor';
 import { AutomationTemplates, automationTemplates, type AutomationTemplate } from '@/components/automations/AutomationTemplates';
+import { PageHeader, EmptyState, FormField } from '@/components/ui/help-tooltip';
 import type { Json } from '@/integrations/supabase/types';
 
 const channelTypes = [
@@ -163,17 +164,16 @@ export default function Automations() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Automações</h1>
-          <p className="text-muted-foreground">Construa fluxos automatizados para seus leads</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            Templates
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <PageHeader 
+        title="Automações" 
+        description="Construa fluxos automatizados para seus leads"
+        helpText="Automações executam ações automaticamente quando um evento acontece, como enviar um email quando um contato é criado."
+      >
+        <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
+          <Sparkles className="h-4 w-4 mr-2" />
+          Templates
+        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -188,23 +188,21 @@ export default function Automations() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+              <FormField label="Nome" required helpText="Dê um nome descritivo para identificar esta automação facilmente">
                 <Input
                   id="name"
-                  placeholder="Ex: Boas-vindas"
+                  placeholder="Ex: Boas-vindas para novos leads"
                   value={newAutomation.name}
                   onChange={(e) => setNewAutomation(prev => ({ ...prev, name: e.target.value }))}
                 />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="trigger">Gatilho</Label>
+              </FormField>
+              <FormField label="Gatilho" required helpText="O evento que vai disparar esta automação automaticamente">
                 <Select
                   value={newAutomation.trigger_type}
                   onValueChange={(value) => setNewAutomation(prev => ({ ...prev, trigger_type: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o gatilho" />
+                    <SelectValue placeholder="Selecione o que vai disparar a automação" />
                   </SelectTrigger>
                   <SelectContent>
                     {triggerTypes.map(t => (
@@ -212,9 +210,8 @@ export default function Automations() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Canal</Label>
+              </FormField>
+              <FormField label="Canal" required helpText="Por qual canal a automação vai atuar">
                 <div className="grid grid-cols-3 gap-2">
                   {channelTypes.map((ch) => {
                     const Icon = ch.icon;
@@ -238,7 +235,7 @@ export default function Automations() {
                     );
                   })}
                 </div>
-              </div>
+              </FormField>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -250,8 +247,7 @@ export default function Automations() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        </div>
-      </div>
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -299,13 +295,29 @@ export default function Automations() {
       {/* Automations Grid */}
       {automations.length === 0 ? (
         <Card>
-          <CardContent className="pt-6 text-center py-12">
-            <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nenhuma automação criada ainda</p>
-            <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeira Automação
-            </Button>
+          <CardContent className="p-0">
+            <EmptyState 
+              icon={<Zap className="h-8 w-8 text-muted-foreground" />}
+              title="Nenhuma automação criada ainda"
+              description="Automações ajudam a executar tarefas repetitivas automaticamente, como enviar emails de boas-vindas ou notificar sua equipe."
+              action={
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Usar Template
+                  </Button>
+                  <Button onClick={() => setIsDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar do Zero
+                  </Button>
+                </div>
+              }
+              tips={[
+                "Comece com um template pronto para agilizar",
+                "Configure o gatilho (ex: novo contato) e as ações (ex: enviar email)",
+                "Ative a automação quando estiver pronta"
+              ]}
+            />
           </CardContent>
         </Card>
       ) : (

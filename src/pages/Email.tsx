@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useEmailCampaigns } from '@/hooks/useEmailCampaigns';
 import { EmailTemplateEditor } from '@/components/email/EmailTemplateEditor';
+import { PageHeader, EmptyState, FormField } from '@/components/ui/help-tooltip';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
@@ -155,11 +156,11 @@ export default function Email() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">E-mail Marketing</h1>
-          <p className="text-muted-foreground">Gerencie suas campanhas de e-mail</p>
-        </div>
+      <PageHeader
+        title="E-mail Marketing"
+        description="Gerencie suas campanhas de e-mail"
+        helpText="Crie campanhas de email, edite templates visuais e acompanhe métricas de abertura e cliques em tempo real."
+      >
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -204,7 +205,7 @@ export default function Email() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </PageHeader>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -269,14 +270,22 @@ export default function Email() {
         </CardHeader>
         <CardContent>
           {campaigns.length === 0 ? (
-            <div className="text-center py-12">
-              <Send className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Nenhuma campanha criada ainda</p>
-              <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeira Campanha
-              </Button>
-            </div>
+            <EmptyState 
+              icon={<Send className="h-8 w-8 text-muted-foreground" />}
+              title="Nenhuma campanha criada ainda"
+              description="Campanhas de email permitem enviar mensagens em massa para seus contatos com templates visuais personalizados."
+              action={
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeira Campanha
+                </Button>
+              }
+              tips={[
+                "Dê um nome e assunto para criar a campanha",
+                "Use o editor visual para montar o template",
+                "Agende o envio para o melhor horário"
+              ]}
+            />
           ) : (
             <Table>
               <TableHeader>

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { User, Bell, Shield, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { User, Bell, Shield, Download, Trash2, AlertTriangle, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -108,7 +108,7 @@ export default function Settings() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold">Configurações</h1>
-        <p className="text-muted-foreground">Gerencie suas preferências e dados pessoais</p>
+        <p className="text-muted-foreground">Gerencie suas preferências, segurança e dados pessoais</p>
       </div>
       <Tabs defaultValue="profile">
         <TabsList>

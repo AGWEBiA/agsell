@@ -57,7 +57,7 @@ import {
   type Deal,
 } from '@/hooks/usePipeline';
 import { useContacts } from '@/hooks/useContacts';
-
+import { PageHeader, FormField } from '@/components/ui/help-tooltip';
 const formatCurrency = (value: number | null) => {
   if (!value) return 'R$ 0,00';
   return new Intl.NumberFormat('pt-BR', {
@@ -143,11 +143,11 @@ export default function Pipeline() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Pipeline de Vendas</h1>
-          <p className="text-muted-foreground">Gerencie suas oportunidades de negócio</p>
-        </div>
+      <PageHeader
+        title="Pipeline de Vendas"
+        description="Gerencie suas oportunidades de negócio"
+        helpText="Arraste os deals entre colunas ou use o menu para mover. Cada coluna representa um estágio do seu funil de vendas."
+      >
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -242,7 +242,7 @@ export default function Pipeline() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </PageHeader>
 
       {/* Pipeline Kanban */}
       <div className="flex gap-4 overflow-x-auto pb-4">
