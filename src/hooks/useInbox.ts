@@ -61,22 +61,21 @@ export function useInbox() {
     enabled: !!user?.id,
   });
 
-  // Realtime subscription for new messages
+  // Realtime subscription for new messages and conversation updates
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('inbox-messages')
+      .channel('inbox-realtime')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        }
+        { event: '*', schema: 'public', table: 'messages' },
+        () => { queryClient.invalidateQueries({ queryKey: ['conversations'] }); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => { queryClient.invalidateQueries({ queryKey: ['conversations'] }); }
       )
       .subscribe();
 

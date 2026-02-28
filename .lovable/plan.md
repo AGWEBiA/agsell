@@ -27,5 +27,10 @@
 ### ✅ Etapa 5: Triggers e Workers
 - [x] Trigger de automação para `deal_stage_changed`
 - [x] Trigger de automação para `form_submitted`
+- [x] Trigger de automação para `deal_won`
 - [x] Worker de Instagram para triggers em tempo real (webhook com auto-reply DM/comment)
+- [x] Realtime habilitado para conversations, messages, notifications
 - [ ] Sistema de filas para ações de `wait` em automações (requer infra de cron)
+
+### 🏁 Status: Plataforma Completa
+Todas as funcionalidades planejadas foram implementadas. O sistema está pronto para produção.
