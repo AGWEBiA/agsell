@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { UserPlus, Shield, Trash2, Loader2, RefreshCw, Pencil, Building2, X } from 'lucide-react';
+import { UserPlus, Shield, Trash2, Loader2, RefreshCw, Pencil, Building2, X, Crown } from 'lucide-react';
+import { AssignPlanDialog } from './AssignPlanDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ export function UsersManagement() {
   const [editForm, setEditForm] = useState({ name: '', email: '' });
   const [orgUser, setOrgUser] = useState<AdminUser | null>(null);
   const [orgForm, setOrgForm] = useState({ organization_id: '', org_role: 'member' });
+  const [planAssignOrg, setPlanAssignOrg] = useState<{ id: string; name: string } | null>(null);
 
   const { data: organizations = [] } = useQuery({
     queryKey: ['admin_all_organizations'],
@@ -205,10 +207,16 @@ export function UsersManagement() {
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
                           {u.organizations.length > 0 ? u.organizations.map((o) => (
-                            <Badge key={o.id} variant="outline" className="text-xs cursor-pointer group"
-                              onClick={() => { if (confirm(`Remover ${u.name || u.email} da organização "${o.name}"?`)) removeFromOrgMutation.mutate({ user_id: u.id, organization_id: o.id }); }}>
-                              {o.name} ({o.role}) <X className="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </Badge>
+                            <div key={o.id} className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs cursor-pointer group"
+                                onClick={() => { if (confirm(`Remover ${u.name || u.email} da organização "${o.name}"?`)) removeFromOrgMutation.mutate({ user_id: u.id, organization_id: o.id }); }}>
+                                {o.name} ({o.role}) <X className="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </Badge>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-yellow-500 hover:text-yellow-600" title="Atribuir plano"
+                                onClick={() => setPlanAssignOrg({ id: o.id, name: o.name })}>
+                                <Crown className="h-3 w-3" />
+                              </Button>
+                            </div>
                           )) : <span className="text-sm text-muted-foreground">—</span>}
                         </div>
                       </TableCell>
@@ -371,6 +379,12 @@ export function UsersManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Assign Plan Dialog */}
+      <AssignPlanDialog
+        organization={planAssignOrg}
+        open={!!planAssignOrg}
+        onOpenChange={(open) => { if (!open) setPlanAssignOrg(null); }}
+      />
     </div>
   );
 }
