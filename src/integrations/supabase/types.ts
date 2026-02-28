@@ -1389,6 +1389,13 @@ export type Database = {
             referencedRelation: "instagram_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "instagram_automation_logs_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       instagram_automations: {
@@ -1446,6 +1453,13 @@ export type Database = {
             columns: ["instagram_account_id"]
             isOneToOne: false
             referencedRelation: "instagram_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_automations_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts_safe"
             referencedColumns: ["id"]
           },
           {
@@ -2943,7 +2957,56 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      instagram_accounts_safe: {
+        Row: {
+          connected_by: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          instagram_user_id: string | null
+          is_active: boolean | null
+          metadata: Json | null
+          organization_id: string | null
+          profile_picture_url: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          connected_by?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          instagram_user_id?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          organization_id?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          connected_by?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          instagram_user_id?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          organization_id?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       award_points: {
