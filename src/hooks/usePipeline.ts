@@ -195,20 +195,45 @@ export function useUpdateDeal() {
     },
     onSuccess: async (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+
+      const orgId = currentOrganization?.id ?? '';
+      const contactId = result.contact_id;
+
       // Fire deal_stage_changed automation if stage_id was updated
       if (variables.stage_id) {
         try {
           const { data: automations } = await supabase
             .from('automations')
             .select('id')
-            .eq('organization_id', currentOrganization?.id ?? '')
+            .eq('organization_id', orgId)
             .eq('trigger_type', 'deal_stage_changed')
             .eq('is_active', true);
           if (automations?.length) {
             await Promise.allSettled(
               automations.map((a) =>
                 supabase.functions.invoke('process-automation', {
-                  body: { automation_id: a.id, contact_id: result.contact_id, trigger_event: 'deal_stage_changed' },
+                  body: { automation_id: a.id, contact_id: contactId, trigger_event: 'deal_stage_changed' },
+                })
+              )
+            );
+          }
+        } catch {}
+      }
+
+      // Fire deal_won automation if status changed to won
+      if (variables.status === 'won') {
+        try {
+          const { data: automations } = await supabase
+            .from('automations')
+            .select('id')
+            .eq('organization_id', orgId)
+            .eq('trigger_type', 'deal_won')
+            .eq('is_active', true);
+          if (automations?.length) {
+            await Promise.allSettled(
+              automations.map((a) =>
+                supabase.functions.invoke('process-automation', {
+                  body: { automation_id: a.id, contact_id: contactId, trigger_event: 'deal_won' },
                 })
               )
             );
