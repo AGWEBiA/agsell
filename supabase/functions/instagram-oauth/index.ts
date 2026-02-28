@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const INSTAGRAM_APP_ID = "912565888176650";
+const INSTAGRAM_APP_ID = "1231864369151883";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
