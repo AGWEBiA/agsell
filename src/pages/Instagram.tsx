@@ -141,7 +141,7 @@ function ConnectWizard({
     const state = crypto.randomUUID();
     sessionStorage.setItem('ig_oauth_state', state);
     const redirectUri = `${window.location.origin}/instagram`;
-    const igUrl = `https://www.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}&state=${state}&enable_fb_login=0&force_reauth=true`;
+    const igUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}&state=${state}`;
     window.location.href = igUrl;
   };
 
