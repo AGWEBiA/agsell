@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const INSTAGRAM_APP_SECRET = Deno.env.get("FACEBOOK_APP_SECRET");
+    const INSTAGRAM_APP_SECRET = Deno.env.get("INSTAGRAM_APP_SECRET");
     if (!INSTAGRAM_APP_SECRET) {
       return new Response(
         JSON.stringify({ error: "Instagram App Secret não configurado" }),
