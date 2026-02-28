@@ -76,6 +76,7 @@ export function AssignPlanDialog({ organization, open, onOpenChange }: AssignPla
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_organizations'] });
       queryClient.invalidateQueries({ queryKey: ['admin_plan_distribution'] });
+      queryClient.invalidateQueries({ queryKey: ['admin_org_plans'] });
       const planName = plans.find(p => p.id === selectedPlanId)?.name || 'Plano';
       toast.success(`${planName} atribuído a "${organization?.name}" com sucesso!`);
       onOpenChange(false);

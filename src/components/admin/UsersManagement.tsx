@@ -45,6 +45,23 @@ export function UsersManagement() {
     },
   });
 
+  // Fetch org -> plan mapping for displaying current plans
+  const { data: orgPlans = {} } = useQuery({
+    queryKey: ['admin_org_plans'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, plan_id, plans:plan_id(name, slug)');
+      if (error) throw error;
+      const mapping: Record<string, string> = {};
+      for (const org of data || []) {
+        mapping[org.id] = (org as any).plans?.name || 'Free';
+      }
+      return mapping;
+    },
+    refetchInterval: 10000, // Re-check every 10s for real-time updates
+  });
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin_users'],
     queryFn: async () => {
@@ -211,6 +228,9 @@ export function UsersManagement() {
                               <Badge variant="outline" className="text-xs cursor-pointer group"
                                 onClick={() => { if (confirm(`Remover ${u.name || u.email} da organização "${o.name}"?`)) removeFromOrgMutation.mutate({ user_id: u.id, organization_id: o.id }); }}>
                                 {o.name} ({o.role}) <X className="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                {orgPlans[o.id] || 'Free'}
                               </Badge>
                               <Button variant="ghost" size="icon" className="h-5 w-5 text-yellow-500 hover:text-yellow-600" title="Atribuir plano"
                                 onClick={() => setPlanAssignOrg({ id: o.id, name: o.name })}>
