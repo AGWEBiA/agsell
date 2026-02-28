@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       // Find the Instagram account in our system
       const { data: igAccount } = await supabase
         .from("instagram_accounts")
-        .select("id, organization_id")
+        .select("id, organization_id, connected_by")
         .eq("instagram_user_id", igUserId)
         .eq("is_active", true)
         .maybeSingle();
@@ -57,12 +57,18 @@ Deno.serve(async (req) => {
       const messagingEvents = entry.messaging || [];
       for (const event of messagingEvents) {
         if (event.message) {
-          await processEvent(supabase, igAccount, "dm_received", {
+          const eventData = {
             sender_id: event.sender?.id,
             message_text: event.message?.text,
             message_id: event.message?.mid,
             timestamp: event.timestamp,
-          });
+          };
+
+          // Route DM to SAC Inbox
+          await routeDmToInbox(supabase, igAccount, eventData);
+
+          // Process automations
+          await processEvent(supabase, igAccount, "dm_received", eventData);
         }
       }
 
@@ -100,9 +106,87 @@ Deno.serve(async (req) => {
   }
 });
 
+// Route incoming Instagram DM to SAC Inbox (conversations + messages tables)
+async function routeDmToInbox(
+  supabase: ReturnType<typeof createClient>,
+  igAccount: { id: string; organization_id: string; connected_by: string },
+  eventData: Record<string, unknown>
+) {
+  try {
+    const senderId = eventData.sender_id as string;
+    const messageText = (eventData.message_text as string) || "";
+    if (!senderId || !messageText) return;
+
+    // Try to find an existing contact linked to this Instagram sender
+    // We search by checking if any contact has this IG user id stored or matching phone/name
+    let contactId: string | null = null;
+
+    // Look for existing conversation with this sender via metadata
+    const { data: existingConv } = await supabase
+      .from("conversations")
+      .select("id, contact_id")
+      .eq("organization_id", igAccount.organization_id)
+      .eq("channel", "instagram")
+      .filter("metadata->>instagram_sender_id", "eq", senderId)
+      .maybeSingle();
+
+    let conversationId: string;
+
+    if (existingConv) {
+      conversationId = existingConv.id;
+      contactId = existingConv.contact_id;
+
+      // Update last_message_at
+      await supabase
+        .from("conversations")
+        .update({ last_message_at: new Date().toISOString(), status: "open" })
+        .eq("id", conversationId);
+    } else {
+      // Create a new conversation for this Instagram DM
+      const { data: newConv, error: convError } = await supabase
+        .from("conversations")
+        .insert({
+          user_id: igAccount.connected_by,
+          organization_id: igAccount.organization_id,
+          channel: "instagram",
+          status: "open",
+          last_message_at: new Date().toISOString(),
+          metadata: { instagram_sender_id: senderId },
+        })
+        .select("id")
+        .single();
+
+      if (convError) {
+        console.error("Error creating conversation for IG DM:", convError);
+        return;
+      }
+      conversationId = newConv.id;
+    }
+
+    // Insert the message
+    const { error: msgError } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        content: messageText,
+        sender_type: "contact",
+        is_read: false,
+      });
+
+    if (msgError) {
+      console.error("Error inserting IG DM message:", msgError);
+    } else {
+      console.log("Instagram DM routed to inbox, conversation:", conversationId);
+    }
+  } catch (err) {
+    console.error("Error routing DM to inbox:", err);
+  }
+}
+
+// Process automation events
 async function processEvent(
   supabase: ReturnType<typeof createClient>,
-  igAccount: { id: string; organization_id: string },
+  igAccount: { id: string; organization_id: string; connected_by: string },
   eventType: string,
   eventData: Record<string, unknown>
 ) {
@@ -120,10 +204,8 @@ async function processEvent(
     const triggerConfig = automation.trigger_config as Record<string, unknown> | null;
     const automationType = triggerConfig?.event_type;
 
-    // Match event type
     if (automationType && automationType !== eventType) continue;
 
-    // Check keyword filters
     const keywords = (triggerConfig?.keywords as string[]) || [];
     const messageText = (eventData.message_text || eventData.comment_text || "") as string;
     if (keywords.length > 0) {
@@ -133,7 +215,6 @@ async function processEvent(
       if (!matches) continue;
     }
 
-    // Log the execution
     await supabase.from("instagram_automation_logs").insert({
       automation_id: automation.id,
       instagram_account_id: igAccount.id,
@@ -143,7 +224,6 @@ async function processEvent(
       status: "success",
     });
 
-    // Update execution count
     await supabase
       .from("instagram_automations")
       .update({
@@ -152,7 +232,6 @@ async function processEvent(
       })
       .eq("id", automation.id);
 
-    // Execute actions (auto-reply DM, etc.)
     const actions = (automation.actions || []) as Array<{ type: string; config: Record<string, string> }>;
     for (const action of actions) {
       if (action.type === "auto_reply_dm" && eventType === "dm_received" && eventData.sender_id) {
