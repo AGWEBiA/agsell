@@ -57,7 +57,8 @@ import {
   Copy, 
   Trash2, 
   RefreshCw, 
-  Eye, 
+  Eye,
+  Pencil,
   CheckCircle, 
   XCircle, 
   Clock,
@@ -83,14 +84,16 @@ export default function Webhooks() {
   const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, regenerateToken } = useWebhooks();
   const { automations } = useAutomations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<InboundWebhook | null>(null);
   const [selectedWebhook, setSelectedWebhook] = useState<InboundWebhook | null>(null);
-  const [formData, setFormData] = useState({
+  const defaultFormData = {
     name: '',
     description: '',
     target_action: 'create_contact',
     automation_id: '' as string,
     field_mapping: '{\n  "first_name": "nome",\n  "email": "email",\n  "phone": "telefone"\n}',
-  });
+  };
+  const [formData, setFormData] = useState(defaultFormData);
 
   const webhookBaseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-inbound`;
   const [testingWebhookId, setTestingWebhookId] = useState<string | null>(null);
@@ -146,7 +149,25 @@ export default function Webhooks() {
     }
   };
 
-  const handleCreate = async () => {
+  const openEditDialog = (webhook: InboundWebhook) => {
+    setEditingWebhook(webhook);
+    setFormData({
+      name: webhook.name,
+      description: webhook.description || '',
+      target_action: webhook.target_action,
+      automation_id: webhook.automation_id || '',
+      field_mapping: JSON.stringify(webhook.field_mapping || {}, null, 2),
+    });
+    setIsDialogOpen(true);
+  };
+
+  const resetAndCloseDialog = () => {
+    setFormData(defaultFormData);
+    setEditingWebhook(null);
+    setIsDialogOpen(false);
+  };
+
+  const handleSave = async () => {
     let mapping = {};
     try {
       mapping = JSON.parse(formData.field_mapping);
@@ -155,22 +176,26 @@ export default function Webhooks() {
       return;
     }
 
-    await createWebhook.mutateAsync({
-      name: formData.name,
-      description: formData.description,
-      target_action: formData.target_action,
-      field_mapping: mapping,
-      automation_id: formData.automation_id || null,
-    });
+    if (editingWebhook) {
+      await updateWebhook.mutateAsync({
+        id: editingWebhook.id,
+        name: formData.name,
+        description: formData.description,
+        target_action: formData.target_action,
+        field_mapping: mapping,
+        automation_id: formData.automation_id || null,
+      });
+    } else {
+      await createWebhook.mutateAsync({
+        name: formData.name,
+        description: formData.description,
+        target_action: formData.target_action,
+        field_mapping: mapping,
+        automation_id: formData.automation_id || null,
+      });
+    }
 
-    setFormData({
-      name: '',
-      description: '',
-      target_action: 'create_contact',
-      automation_id: '',
-      field_mapping: '{\n  "first_name": "nome",\n  "email": "email",\n  "phone": "telefone"\n}',
-    });
-    setIsDialogOpen(false);
+    resetAndCloseDialog();
   };
 
   const copyToClipboard = (text: string) => {
@@ -207,18 +232,18 @@ export default function Webhooks() {
           <h1 className="text-3xl font-bold">Webhooks</h1>
           <p className="text-muted-foreground">Receba dados de sistemas externos automaticamente</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetAndCloseDialog(); else setIsDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => { setEditingWebhook(null); setFormData(defaultFormData); }}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Webhook
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Novo Webhook</DialogTitle>
+              <DialogTitle>{editingWebhook ? 'Editar Webhook' : 'Novo Webhook'}</DialogTitle>
               <DialogDescription>
-                Crie um endpoint para receber dados de sistemas externos
+                {editingWebhook ? 'Edite as configurações do webhook' : 'Crie um endpoint para receber dados de sistemas externos'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -296,9 +321,9 @@ export default function Webhooks() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleCreate} disabled={!formData.name || createWebhook.isPending}>
-                {createWebhook.isPending ? 'Criando...' : 'Criar Webhook'}
+              <Button variant="outline" onClick={resetAndCloseDialog}>Cancelar</Button>
+              <Button onClick={handleSave} disabled={!formData.name || createWebhook.isPending || updateWebhook.isPending}>
+                {(createWebhook.isPending || updateWebhook.isPending) ? 'Salvando...' : editingWebhook ? 'Salvar Alterações' : 'Criar Webhook'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -415,6 +440,14 @@ X-Webhook-Secret: {seu_token_secreto}
                             updateWebhook.mutate({ id: webhook.id, is_active: checked })
                           }
                         />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditDialog(webhook)}
+                        >
+                          <Pencil className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
