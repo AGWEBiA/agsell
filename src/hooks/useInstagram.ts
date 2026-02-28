@@ -179,3 +179,33 @@ export function useDeleteInstagramAutomation() {
     },
   });
 }
+
+export function useDisconnectInstagramAccount() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      // Delete related automations first, then the account
+      const { error: autoError } = await supabase
+        .from('instagram_automations')
+        .delete()
+        .eq('instagram_account_id', accountId);
+      if (autoError) throw autoError;
+
+      const { error } = await supabase
+        .from('instagram_accounts')
+        .delete()
+        .eq('id', accountId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['instagram_accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['instagram_automations'] });
+      toast({ title: 'Conta desconectada', description: 'A conta do Instagram foi removida com sucesso.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao desconectar', description: error.message, variant: 'destructive' });
+    },
+  });
+}

@@ -32,7 +32,7 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
-import { useInstagramAccounts, useInstagramAutomations, useCreateInstagramAutomation, useUpdateInstagramAutomation, useDeleteInstagramAutomation } from '@/hooks/useInstagram';
+import { useInstagramAccounts, useInstagramAutomations, useCreateInstagramAutomation, useUpdateInstagramAutomation, useDeleteInstagramAutomation, useDisconnectInstagramAccount } from '@/hooks/useInstagram';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -234,6 +234,7 @@ export default function InstagramPage() {
   const createAutomation = useCreateInstagramAutomation();
   const updateAutomation = useUpdateInstagramAutomation();
   const deleteAutomation = useDeleteInstagramAutomation();
+  const disconnectAccount = useDisconnectInstagramAccount();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newAutomation, setNewAutomation] = useState({
@@ -576,9 +577,24 @@ export default function InstagramPage() {
                     <p className="text-sm text-muted-foreground">{account.full_name}</p>
                   </div>
                 </div>
-                <Badge variant={account.is_active ? 'default' : 'secondary'}>
-                  {account.is_active ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Conectada</> : <><XCircle className="h-3 w-3 mr-1" /> Inativa</>}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={account.is_active ? 'default' : 'secondary'}>
+                    {account.is_active ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Conectada</> : <><XCircle className="h-3 w-3 mr-1" /> Inativa</>}
+                  </Badge>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={disconnectAccount.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Desconectar @${account.username}? Todas as automações dessa conta serão excluídas.`)) {
+                        disconnectAccount.mutate(account.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Desconectar
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
