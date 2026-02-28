@@ -42,10 +42,23 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const automationTypes = [
-  { value: 'dm_reply', label: 'Resposta de DM', icon: MessageCircle, description: 'Responde DMs automaticamente' },
-  { value: 'comment_reply', label: 'Resposta de Comentário', icon: Heart, description: 'Responde comentários em posts' },
-  { value: 'comment_to_dm', label: 'Comentário → DM', icon: Send, description: 'Envia DM quando comentam no post' },
-  { value: 'story_reply', label: 'Resposta de Story', icon: Eye, description: 'Responde menções em stories' },
+  { value: 'dm_reply', label: 'Resposta de DM', icon: MessageCircle, description: 'Responde DMs automaticamente', category: 'dm' },
+  { value: 'comment_reply', label: 'Resposta de Comentário', icon: Heart, description: 'Responde comentários em posts', category: 'post' },
+  { value: 'comment_to_dm', label: 'Comentário → DM', icon: Send, description: 'Envia DM quando comentam no post', category: 'post' },
+  { value: 'story_reply', label: 'Resposta de Story', icon: Eye, description: 'Responde menções em stories', category: 'story' },
+  { value: 'story_mention_dm', label: 'Menção em Story → DM', icon: Send, description: 'Envia DM quando mencionam em story', category: 'story' },
+  { value: 'specific_post_comment', label: 'Comentário em Post Específico', icon: Heart, description: 'Responde comentários em um post específico', category: 'post' },
+  { value: 'specific_post_to_dm', label: 'Post Específico → DM', icon: Send, description: 'Envia DM para quem comenta em um post específico', category: 'post' },
+  { value: 'specific_story_reply', label: 'Resposta de Story Específico', icon: Eye, description: 'Responde a reações/respostas de um story específico', category: 'story' },
+  { value: 'first_dm', label: 'Primeira DM', icon: Sparkles, description: 'Responde automaticamente na primeira DM recebida', category: 'dm' },
+];
+
+type AutomationCategory = 'all' | 'dm' | 'post' | 'story';
+const automationCategories: { value: AutomationCategory; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'dm', label: 'DM' },
+  { value: 'post', label: 'Posts' },
+  { value: 'story', label: 'Stories' },
 ];
 
 /* ─── Wizard de Conexão Simplificado ─── */
@@ -285,7 +298,10 @@ export default function InstagramPage() {
     automation_type: 'dm_reply',
     trigger_keywords: '',
     response_message: '',
+    target_post_url: '',
+    target_story_url: '',
   });
+  const [typeFilter, setTypeFilter] = useState<AutomationCategory>('all');
 
   const maxInstagramAccounts = currentPlan?.max_instagram_accounts ?? 1;
   const canAddMoreAccounts = maxInstagramAccounts === -1 || (accounts?.length ?? 0) < maxInstagramAccounts;
@@ -293,6 +309,10 @@ export default function InstagramPage() {
 
   const handleCreateAutomation = () => {
     if (!currentOrganization || !user || !accounts?.length) return;
+    const isPostSpecific = ['specific_post_comment', 'specific_post_to_dm'].includes(newAutomation.automation_type);
+    const isStorySpecific = newAutomation.automation_type === 'specific_story_reply';
+    const isDmType = ['comment_to_dm', 'specific_post_to_dm', 'story_mention_dm'].includes(newAutomation.automation_type);
+
     createAutomation.mutate({
       organization_id: currentOrganization.id,
       instagram_account_id: accounts[0].id,
@@ -301,16 +321,18 @@ export default function InstagramPage() {
       automation_type: newAutomation.automation_type,
       trigger_config: {
         keywords: newAutomation.trigger_keywords.split(',').map(k => k.trim()).filter(Boolean),
+        ...(isPostSpecific && newAutomation.target_post_url ? { target_post_url: newAutomation.target_post_url } : {}),
+        ...(isStorySpecific && newAutomation.target_story_url ? { target_story_url: newAutomation.target_story_url } : {}),
       },
       actions: [{
-        type: newAutomation.automation_type === 'comment_to_dm' ? 'send_dm' : 'reply',
+        type: isDmType ? 'send_dm' : 'reply',
         content: newAutomation.response_message,
       }],
       created_by: user.id,
     } as any, {
       onSuccess: () => {
         setShowCreateDialog(false);
-        setNewAutomation({ name: '', description: '', automation_type: 'dm_reply', trigger_keywords: '', response_message: '' });
+        setNewAutomation({ name: '', description: '', automation_type: 'dm_reply', trigger_keywords: '', response_message: '', target_post_url: '', target_story_url: '' });
       },
     });
   };
@@ -405,8 +427,23 @@ export default function InstagramPage() {
 
         {/* Automações */}
         <TabsContent value="automations" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Automações</h2>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Automações</h2>
+              <div className="flex gap-1">
+                {automationCategories.map(cat => (
+                  <Button
+                    key={cat.value}
+                    variant={typeFilter === cat.value ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 text-xs px-2.5"
+                    onClick={() => setTypeFilter(cat.value)}
+                  >
+                    {cat.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nova</Button>
@@ -426,24 +463,67 @@ export default function InstagramPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Tipo</Label>
+                    <Label>Tipo de automação</Label>
                     <Select value={newAutomation.automation_type} onValueChange={v => setNewAutomation(prev => ({ ...prev, automation_type: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {automationTypes.map(t => (
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">DMs</div>
+                        {automationTypes.filter(t => t.category === 'dm').map(t => (
                           <SelectItem key={t.value} value={t.value}>
                             <div className="flex items-center gap-2">
                               <t.icon className="h-4 w-4" />
-                              <div>
-                                <span>{t.label}</span>
-                                <span className="text-xs text-muted-foreground ml-2">{t.description}</span>
-                              </div>
+                              <span>{t.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase mt-1">Posts</div>
+                        {automationTypes.filter(t => t.category === 'post').map(t => (
+                          <SelectItem key={t.value} value={t.value}>
+                            <div className="flex items-center gap-2">
+                              <t.icon className="h-4 w-4" />
+                              <span>{t.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase mt-1">Stories</div>
+                        {automationTypes.filter(t => t.category === 'story').map(t => (
+                          <SelectItem key={t.value} value={t.value}>
+                            <div className="flex items-center gap-2">
+                              <t.icon className="h-4 w-4" />
+                              <span>{t.label}</span>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">{automationTypes.find(t => t.value === newAutomation.automation_type)?.description}</p>
                   </div>
+
+                  {/* Post/Story URL fields for specific targeting */}
+                  {['specific_post_comment', 'specific_post_to_dm'].includes(newAutomation.automation_type) && (
+                    <div className="space-y-2">
+                      <Label>URL do Post</Label>
+                      <Input
+                        value={newAutomation.target_post_url}
+                        onChange={e => setNewAutomation(prev => ({ ...prev, target_post_url: e.target.value }))}
+                        placeholder="https://www.instagram.com/p/ABC123..."
+                      />
+                      <p className="text-xs text-muted-foreground">Cole o link do post específico que deseja monitorar.</p>
+                    </div>
+                  )}
+
+                  {newAutomation.automation_type === 'specific_story_reply' && (
+                    <div className="space-y-2">
+                      <Label>URL ou ID do Story</Label>
+                      <Input
+                        value={newAutomation.target_story_url}
+                        onChange={e => setNewAutomation(prev => ({ ...prev, target_story_url: e.target.value }))}
+                        placeholder="https://www.instagram.com/stories/username/123..."
+                      />
+                      <p className="text-xs text-muted-foreground">Cole o link do story específico.</p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Palavras-chave <span className="text-xs text-muted-foreground font-normal">(opcional)</span></Label>
                     <Input
@@ -490,7 +570,9 @@ export default function InstagramPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {automations.map(automation => {
+              {automations
+                .filter(a => typeFilter === 'all' || automationTypes.find(t => t.value === a.automation_type)?.category === typeFilter)
+                .map(automation => {
                 const typeInfo = automationTypes.find(t => t.value === automation.automation_type);
                 const TypeIcon = typeInfo?.icon || Zap;
                 return (
@@ -508,7 +590,10 @@ export default function InstagramPage() {
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {typeInfo?.label} · {automation.executions_count || 0} execuções
+                            {typeInfo?.label}
+                            {(automation.trigger_config as any)?.target_post_url && <> · 📌 Post específico</>}
+                            {(automation.trigger_config as any)?.target_story_url && <> · 📸 Story específico</>}
+                            {' · '}{automation.executions_count || 0} execuções
                             {automation.last_triggered_at && (
                               <> · <Clock className="h-3 w-3 inline" /> {format(new Date(automation.last_triggered_at), "dd/MM HH:mm", { locale: ptBR })}</>
                             )}
