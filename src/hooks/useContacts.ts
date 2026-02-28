@@ -82,9 +82,27 @@ export function useCreateContact() {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast.success('Contato criado com sucesso!');
+      // Fire automation trigger
+      try {
+        const { data: automations } = await supabase
+          .from('automations')
+          .select('id')
+          .eq('organization_id', currentOrganization?.id ?? '')
+          .eq('trigger_type', 'contact_created')
+          .eq('is_active', true);
+        if (automations?.length) {
+          await Promise.allSettled(
+            automations.map((a) =>
+              supabase.functions.invoke('process-automation', {
+                body: { automation_id: a.id, contact_id: result.id, trigger_event: 'contact_created' },
+              })
+            )
+          );
+        }
+      } catch {}
     },
     onError: (error) => {
       toast.error('Erro ao criar contato: ' + error.message);

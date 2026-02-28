@@ -149,9 +149,27 @@ export function useCreateDeal() {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       toast.success('Deal criado com sucesso!');
+      // Fire automation trigger
+      try {
+        const { data: automations } = await supabase
+          .from('automations')
+          .select('id')
+          .eq('organization_id', currentOrganization?.id ?? '')
+          .eq('trigger_type', 'deal_created')
+          .eq('is_active', true);
+        if (automations?.length) {
+          await Promise.allSettled(
+            automations.map((a) =>
+              supabase.functions.invoke('process-automation', {
+                body: { automation_id: a.id, contact_id: result.contact_id, trigger_event: 'deal_created' },
+              })
+            )
+          );
+        }
+      } catch {}
     },
     onError: (error) => {
       toast.error('Erro ao criar deal: ' + error.message);

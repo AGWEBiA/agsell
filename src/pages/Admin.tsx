@@ -138,6 +138,15 @@ export default function Admin() {
     return months;
   }, [organizations]);
 
+  // Calculate real MRR growth percentage
+  const mrrGrowth = React.useMemo(() => {
+    if (mrrData.length < 2) return 0;
+    const current = mrrData[mrrData.length - 1].mrr;
+    const previous = mrrData[mrrData.length - 2].mrr;
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  }, [mrrData]);
+
   if (isCheckingAdmin) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -202,8 +211,11 @@ export default function Admin() {
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(mrr)}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <TrendingUp className="inline h-3 w-3 text-green-500 mr-1" />
-                  +12% vs mês anterior
+                  {mrrGrowth >= 0 ? (
+                    <><TrendingUp className="inline h-3 w-3 text-green-500 mr-1" />+{mrrGrowth}% vs mês anterior</>
+                  ) : (
+                    <><TrendingUp className="inline h-3 w-3 text-destructive mr-1 rotate-180" />{mrrGrowth}% vs mês anterior</>
+                  )}
                 </p>
               </CardContent>
             </Card>
