@@ -270,6 +270,47 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
               ))}
             </div>
 
+            {/* Inbound email section */}
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">Receber e-mails no SAC (Opcional)</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Para que e-mails enviados para o seu domínio apareçam automaticamente no Inbox/SAC, configure o <strong>Inbound Parse</strong> no seu provedor de e-mail:
+              </p>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">1. Configure o registro MX no DNS (se ainda não existir)</p>
+                  <DnsRecordRow
+                    type="MX"
+                    name={cleanDomain}
+                    value="mx.sendgrid.net (prioridade 10) ou conforme seu provedor"
+                    purpose="MX"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">2. No painel do seu provedor (SendGrid, Resend, etc.), configure o Inbound Webhook para:</p>
+                  <div className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2">
+                    <code className="text-xs flex-1 break-all">
+                      {`https://gmemxbfibakfpsjbsvyt.supabase.co/functions/v1/email-inbound`}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => copyToClipboard(`https://gmemxbfibakfpsjbsvyt.supabase.co/functions/v1/email-inbound`)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Quando configurado, qualquer e-mail recebido neste domínio será automaticamente roteado para o SAC da sua organização.
+              </p>
+            </div>
+
             <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900">
               <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
               <div className="text-sm text-yellow-800 dark:text-yellow-400 space-y-1">
