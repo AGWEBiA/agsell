@@ -1471,6 +1471,114 @@ export type Database = {
           },
         ]
       }
+      instagram_dm_broadcast_recipients: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          sent_at: string | null
+          status: string
+          username: string
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string | null
+          status?: string
+          username: string
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string | null
+          status?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_dm_broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_dm_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_dm_broadcasts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          failed_count: number
+          id: string
+          instagram_account_id: string
+          message: string
+          organization_id: string
+          sent_count: number
+          status: string
+          target_type: string
+          total_recipients: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          instagram_account_id: string
+          message: string
+          organization_id: string
+          sent_count?: number
+          status?: string
+          target_type?: string
+          total_recipients?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          instagram_account_id?: string
+          message?: string
+          organization_id?: string
+          sent_count?: number
+          status?: string
+          target_type?: string
+          total_recipients?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_dm_broadcasts_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_dm_broadcasts_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_dm_broadcasts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_scoring_rules: {
         Row: {
           created_at: string

@@ -225,6 +225,121 @@ function ConnectWizard({
   );
 }
 
+/* ─── Painel de Histórico de Broadcasts ─── */
+function BroadcastHistory({ organizationId }: { organizationId?: string }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const { data: broadcasts, isLoading } = useQuery({
+    queryKey: ['instagram_broadcasts', organizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_dm_broadcasts' as any)
+        .select('*')
+        .eq('organization_id', organizationId!)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!organizationId,
+    refetchInterval: 5000,
+  });
+
+  const { data: recipients } = useQuery({
+    queryKey: ['broadcast_recipients', expandedId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_dm_broadcast_recipients' as any)
+        .select('*')
+        .eq('broadcast_id', expandedId!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!expandedId,
+    refetchInterval: 3000,
+  });
+
+  if (isLoading) return <Skeleton className="h-24 w-full" />;
+  if (!broadcasts?.length) return null;
+
+  const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+    queued: { label: 'Na fila', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', icon: <Clock className="h-3 w-3" /> },
+    processing: { label: 'Enviando', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+    completed: { label: 'Concluído', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300', icon: <CheckCircle2 className="h-3 w-3" /> },
+    failed: { label: 'Falhou', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300', icon: <XCircle className="h-3 w-3" /> },
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <BarChart3 className="h-4 w-4" />
+          Histórico de Envios
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {broadcasts.map((b: any) => {
+          const status = statusConfig[b.status] || statusConfig.queued;
+          const isExpanded = expandedId === b.id;
+          return (
+            <div key={b.id} className="border rounded-lg">
+              <button
+                className="w-full flex items-center justify-between p-3 hover:bg-accent/50 text-left"
+                onClick={() => setExpandedId(isExpanded ? null : b.id)}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                    {status.icon}
+                    {status.label}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm truncate max-w-[300px]">{b.message}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(b.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      {' · '}{b.target_type === 'all' ? 'Todos' : `${b.total_recipients} selecionados`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+                  <span className="text-green-600 dark:text-green-400">{b.sent_count} enviadas</span>
+                  {b.failed_count > 0 && <span className="text-red-600 dark:text-red-400">{b.failed_count} falhas</span>}
+                  <ArrowRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                </div>
+              </button>
+
+              {isExpanded && (
+                <div className="border-t px-3 py-2 space-y-1 max-h-48 overflow-y-auto bg-muted/30">
+                  {!recipients?.length ? (
+                    <p className="text-xs text-muted-foreground py-2 text-center">
+                      {b.target_type === 'all' ? 'Envio para todos — detalhes individuais não disponíveis.' : 'Carregando destinatários...'}
+                    </p>
+                  ) : (
+                    recipients.map((r: any) => (
+                      <div key={r.id} className="flex items-center justify-between py-1.5 text-sm">
+                        <span className="font-medium">@{r.username}</span>
+                        <div className="flex items-center gap-1">
+                          {r.status === 'pending' && <Badge variant="outline" className="text-xs"><Clock className="h-3 w-3 mr-1" /> Pendente</Badge>}
+                          {r.status === 'sent' && <Badge variant="default" className="text-xs bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Enviada</Badge>}
+                          {r.status === 'failed' && (
+                            <Badge variant="destructive" className="text-xs" title={r.error_message}>
+                              <XCircle className="h-3 w-3 mr-1" /> Falhou
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ─── Seletor de Seguidores com Autocomplete ─── */
 function FollowerSelector({
   selectedFollowers,
@@ -806,11 +921,15 @@ export default function InstagramPage() {
 
         {/* DM em Massa */}
         <TabsContent value="broadcast" className="space-y-4">
+          {/* Histórico de envios */}
+          <BroadcastHistory organizationId={currentOrganization?.id} />
+
+          {/* Novo envio */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Megaphone className="h-5 w-5" />
-                Enviar DM em Massa
+                Novo Envio
               </CardTitle>
               <CardDescription>
                 Envie mensagens diretas para seus seguidores — todos de uma vez ou selecionando individualmente.
@@ -879,26 +998,62 @@ export default function InstagramPage() {
                   !broadcastMessage.trim() || 
                   broadcastMessage.length > 1000 ||
                   isSendingBroadcast ||
-                  (broadcastTarget === 'selected' && selectedFollowers.length === 0)
+                  (broadcastTarget === 'selected' && selectedFollowers.length === 0) ||
+                  !accounts?.length
                 }
-                onClick={() => {
+                onClick={async () => {
                   const targets = broadcastTarget === 'all' ? 'todos os seguidores' : `${selectedFollowers.length} seguidores selecionados`;
-                  if (window.confirm(`Enviar DM para ${targets}? Esta ação não pode ser desfeita.`)) {
-                    setIsSendingBroadcast(true);
+                  if (!window.confirm(`Enviar DM para ${targets}? Esta ação não pode ser desfeita.`)) return;
+                  if (!currentOrganization || !user || !accounts?.length) return;
+
+                  setIsSendingBroadcast(true);
+                  try {
+                    const { data: broadcast, error: insertError } = await supabase
+                      .from('instagram_dm_broadcasts' as any)
+                      .insert({
+                        organization_id: currentOrganization.id,
+                        instagram_account_id: accounts[0].id,
+                        message: broadcastMessage,
+                        target_type: broadcastTarget,
+                        total_recipients: broadcastTarget === 'selected' ? selectedFollowers.length : 0,
+                        created_by: user.id,
+                      } as any)
+                      .select()
+                      .single();
+
+                    if (insertError) throw insertError;
+
+                    if (broadcastTarget === 'selected' && selectedFollowers.length > 0) {
+                      const recipients = selectedFollowers.map(username => ({
+                        broadcast_id: (broadcast as any).id,
+                        username,
+                      }));
+                      const { error: recipError } = await supabase
+                        .from('instagram_dm_broadcast_recipients' as any)
+                        .insert(recipients as any);
+                      if (recipError) throw recipError;
+                    }
+
+                    supabase.functions.invoke('send-instagram-dm', {
+                      body: { broadcast_id: (broadcast as any).id },
+                    });
+
                     toast({
                       title: 'Envio iniciado',
-                      description: `As DMs estão sendo enviadas para ${targets}. Isso pode levar alguns minutos.`,
+                      description: `As DMs foram enfileiradas para ${targets}. Acompanhe o status acima.`,
                     });
-                    // The actual send would be handled by an edge function
-                    setTimeout(() => {
-                      setIsSendingBroadcast(false);
-                      setBroadcastMessage('');
-                      setSelectedFollowers([]);
-                      toast({
-                        title: 'Envio concluído',
-                        description: 'As mensagens foram enfileiradas para envio.',
-                      });
-                    }, 3000);
+
+                    setBroadcastMessage('');
+                    setSelectedFollowers([]);
+                    queryClient.invalidateQueries({ queryKey: ['instagram_broadcasts'] });
+                  } catch (err: any) {
+                    toast({
+                      title: 'Erro ao criar envio',
+                      description: err.message || 'Tente novamente',
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setIsSendingBroadcast(false);
                   }
                 }}
               >
