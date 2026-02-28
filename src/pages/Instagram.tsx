@@ -62,7 +62,7 @@ const automationCategories: { value: AutomationCategory; label: string }[] = [
 ];
 
 const INSTAGRAM_APP_ID = "1231864369151883";
-const INSTAGRAM_SCOPES = "instagram_business_basic,instagram_manage_comments,instagram_business_manage_messages";
+const INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments";
 
 /* ─── Wizard de Conexão via Facebook Login ─── */
 function ConnectWizard({ 
@@ -140,8 +140,8 @@ function ConnectWizard({
   const handleInstagramLogin = () => {
     const state = crypto.randomUUID();
     sessionStorage.setItem('ig_oauth_state', state);
-    const redirectUri = `${window.location.origin}/instagram`;
-    const igUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}&state=${state}`;
+    const redirectUri = 'https://site.agsell.com.br/instagram';
+    const igUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}`;
     window.location.href = igUrl;
   };
 
