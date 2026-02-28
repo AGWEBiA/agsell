@@ -63,6 +63,8 @@ import {
   Clock,
   Code,
   ExternalLink,
+  Play,
+  Loader2,
 } from 'lucide-react';
 import { useWebhooks, useWebhookLogs, type InboundWebhook } from '@/hooks/useWebhooks';
 import { useAutomations } from '@/hooks/useAutomations';
@@ -91,6 +93,58 @@ export default function Webhooks() {
   });
 
   const webhookBaseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-inbound`;
+  const [testingWebhookId, setTestingWebhookId] = useState<string | null>(null);
+
+  const handleTestWebhook = async (webhook: InboundWebhook) => {
+    setTestingWebhookId(webhook.id);
+    const testPayload: Record<string, string> = {
+      first_name: 'Teste',
+      last_name: 'Webhook',
+      email: `teste-${Date.now()}@webhook-test.com`,
+      phone: '(11) 99999-0000',
+      whatsapp: '5511999990000',
+    };
+
+    // Apply reverse field mapping so the payload matches what the webhook expects
+    const mapping = webhook.field_mapping || {};
+    const mappedPayload: Record<string, string> = {};
+    for (const [systemField, externalField] of Object.entries(mapping)) {
+      if (testPayload[systemField]) {
+        mappedPayload[externalField] = testPayload[systemField];
+      }
+    }
+    const finalPayload = Object.keys(mappedPayload).length > 0 ? mappedPayload : testPayload;
+
+    try {
+      const res = await fetch(`${webhookBaseUrl}/${webhook.endpoint_id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': webhook.secret_token,
+        },
+        body: JSON.stringify(finalPayload),
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.success) {
+        toast.success('Teste bem-sucedido! Webhook recebeu e processou os dados.', {
+          description: `Ação: ${result.action}${result.contact_id ? ` | Contato: ${result.contact_id.substring(0, 8)}...` : ''}${result.automation_triggered ? ' | Automação disparada ✓' : ''}`,
+          duration: 6000,
+        });
+      } else {
+        toast.error('Falha no teste do webhook', {
+          description: result.error || 'Erro desconhecido',
+        });
+      }
+    } catch (err) {
+      toast.error('Erro de conexão ao testar webhook', {
+        description: err instanceof Error ? err.message : 'Não foi possível conectar',
+      });
+    } finally {
+      setTestingWebhookId(null);
+    }
+  };
 
   const handleCreate = async () => {
     let mapping = {};
@@ -361,6 +415,20 @@ X-Webhook-Secret: {seu_token_secreto}
                             updateWebhook.mutate({ id: webhook.id, is_active: checked })
                           }
                         />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={testingWebhookId === webhook.id || !webhook.is_active}
+                          onClick={() => handleTestWebhook(webhook)}
+                          title={!webhook.is_active ? 'Ative o webhook para testar' : 'Enviar payload de teste'}
+                        >
+                          {testingWebhookId === webhook.id ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <Play className="h-4 w-4 mr-1" />
+                          )}
+                          Testar
+                        </Button>
                         <Sheet>
                           <SheetTrigger asChild>
                             <Button 
