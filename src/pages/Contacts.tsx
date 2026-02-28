@@ -51,6 +51,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useContacts, useCreateContact, useDeleteContact, type CreateContactData } from '@/hooks/useContacts';
+import { PageHeader, EmptyState, FormField } from '@/components/ui/help-tooltip';
 import { useCompanies } from '@/hooks/useCompanies';
 import { ImportContactsDialog } from '@/components/contacts/ImportContactsDialog';
 import { PermissionGate } from '@/components/permissions/PermissionGate';
@@ -158,26 +159,24 @@ export default function Contacts() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Contatos</h1>
-          <p className="text-muted-foreground">Gerencie seus leads e clientes</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <PermissionGate module="contacts" action="import">
-            <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Importar
-            </Button>
-          </PermissionGate>
-          <PermissionGate module="contacts" action="export">
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
-          </PermissionGate>
-          <PermissionGate module="contacts" action="create">
+      <PageHeader
+        title="Contatos"
+        description="Gerencie seus leads e clientes"
+        helpText="Contatos são pessoas com quem você faz negócios. Organize por status (Lead, Qualificado, Cliente) e acompanhe o score de engajamento."
+      >
+        <PermissionGate module="contacts" action="import">
+          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar
+          </Button>
+        </PermissionGate>
+        <PermissionGate module="contacts" action="export">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+        </PermissionGate>
+        <PermissionGate module="contacts" action="create">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -278,9 +277,8 @@ export default function Contacts() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          </PermissionGate>
-        </div>
-      </div>
+        </PermissionGate>
+      </PageHeader>
 
       {/* Filters */}
       <Card>
@@ -313,9 +311,30 @@ export default function Contacts() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : filteredContacts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {contacts.length === 0 ? 'Nenhum contato cadastrado. Clique em "Novo Contato" para começar.' : 'Nenhum contato encontrado.'}
-            </div>
+            <EmptyState
+              icon={<Search className="h-8 w-8 text-muted-foreground" />}
+              title={contacts.length === 0 ? "Nenhum contato cadastrado" : "Nenhum contato encontrado"}
+              description={contacts.length === 0 
+                ? "Comece adicionando seu primeiro contato ou importe uma lista existente." 
+                : "Tente ajustar os termos da busca."}
+              action={contacts.length === 0 ? (
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar Lista
+                  </Button>
+                  <Button onClick={() => setIsDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Contato
+                  </Button>
+                </div>
+              ) : undefined}
+              tips={contacts.length === 0 ? [
+                "Importe contatos de uma planilha CSV",
+                "Contatos criados via formulários aparecem aqui automaticamente",
+                "Use tags para organizar seus contatos"
+              ] : undefined}
+            />
           ) : (
             <Table>
               <TableHeader>

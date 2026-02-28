@@ -17,6 +17,7 @@ import {
 import { useIntegrations, Integration } from '@/hooks/useIntegrations';
 import { WhatsAppProviderSetup } from '@/components/integrations/WhatsAppProviderSetup';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader, HelpTooltip } from '@/components/ui/help-tooltip';
 
 const categoryLabels: Record<string, string> = {
   infoproduct: 'Infoprodutos',
@@ -77,15 +78,15 @@ export default function Integrations() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Integrações</h1>
-          <p className="text-muted-foreground">Conecte suas ferramentas favoritas</p>
-        </div>
+      <PageHeader
+        title="Integrações"
+        description="Conecte suas ferramentas favoritas"
+        helpText="Integrações permitem conectar o AG Sell a plataformas externas como WhatsApp, Instagram, Hotmart e mais. Configure as credenciais de cada serviço para ativar."
+      >
         <Badge variant="secondary" className="text-sm">
           {connectedCount} conectadas
         </Badge>
-      </div>
+      </PageHeader>
 
       {/* WhatsApp & Instagram Section */}
       <Tabs defaultValue="whatsapp" className="w-full">
@@ -212,12 +213,20 @@ export default function Integrations() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {selectedIntegration?.configFields?.length === 0 && (
+              <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                ℹ️ Esta integração não requer configuração adicional.
+              </p>
+            )}
             {selectedIntegration?.configFields?.map((field) => (
               <div key={field.key} className="space-y-2">
-                <Label htmlFor={field.key}>
-                  {field.label}
-                  {field.required && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor={field.key}>
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  <HelpTooltip content={`Cole aqui o ${field.label} obtido no painel da ${selectedIntegration.name}. Geralmente encontrado em Configurações > API.`} />
+                </div>
                 <Input
                   id={field.key}
                   type={field.type}
