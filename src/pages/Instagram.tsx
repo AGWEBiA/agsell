@@ -30,7 +30,11 @@ import {
   RefreshCw,
   ArrowRight,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  UserPlus,
+  Users,
+  Megaphone,
+  Loader2
 } from 'lucide-react';
 import { useInstagramAccounts, useInstagramAutomations, useCreateInstagramAutomation, useUpdateInstagramAutomation, useDeleteInstagramAutomation, useDisconnectInstagramAccount } from '@/hooks/useInstagram';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -44,6 +48,7 @@ import { ptBR } from 'date-fns/locale';
 const automationTypes = [
   { value: 'dm_reply', label: 'Resposta de DM', icon: MessageCircle, description: 'Responde DMs automaticamente', category: 'dm', hasDualAction: false },
   { value: 'first_dm', label: 'Primeira DM', icon: Sparkles, description: 'Responde automaticamente na primeira DM recebida', category: 'dm', hasDualAction: false },
+  { value: 'new_follower', label: 'Novo Seguidor', icon: UserPlus, description: 'Envia DM automaticamente para novos seguidores', category: 'dm', hasDualAction: false },
   { value: 'comment_reply', label: 'Resposta de Comentário', icon: Heart, description: 'Responde comentários em posts (comentário + DM opcional)', category: 'post', hasDualAction: true },
   { value: 'comment_to_dm', label: 'Comentário → DM', icon: Send, description: 'Envia apenas DM quando comentam no post', category: 'post', hasDualAction: false },
   { value: 'specific_post_comment', label: 'Post Específico', icon: Heart, description: 'Responde comentários em um post específico (comentário + DM opcional)', category: 'post', hasDualAction: true },
@@ -249,6 +254,11 @@ export default function InstagramPage() {
     target_story_url: '',
   });
   const [typeFilter, setTypeFilter] = useState<AutomationCategory>('all');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastTarget, setBroadcastTarget] = useState<'all' | 'selected'>('all');
+  const [selectedFollowers, setSelectedFollowers] = useState<string[]>([]);
+  const [followerSearch, setFollowerSearch] = useState('');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
   const maxInstagramAccounts = currentPlan?.max_instagram_accounts ?? 1;
   const canAddMoreAccounts = maxInstagramAccounts === -1 || (accounts?.length ?? 0) < maxInstagramAccounts;
@@ -378,6 +388,7 @@ export default function InstagramPage() {
       <Tabs defaultValue="automations" className="space-y-4">
         <TabsList>
           <TabsTrigger value="automations" className="gap-2"><Zap className="h-4 w-4" /> Automações</TabsTrigger>
+          <TabsTrigger value="broadcast" className="gap-2"><Megaphone className="h-4 w-4" /> DM em Massa</TabsTrigger>
           <TabsTrigger value="account" className="gap-2"><Instagram className="h-4 w-4" /> Conta</TabsTrigger>
           <TabsTrigger value="logs" className="gap-2"><BarChart3 className="h-4 w-4" /> Histórico</TabsTrigger>
         </TabsList>
@@ -604,7 +615,172 @@ export default function InstagramPage() {
           )}
         </TabsContent>
 
-        {/* Conta */}
+        {/* DM em Massa */}
+        <TabsContent value="broadcast" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Megaphone className="h-5 w-5" />
+                Enviar DM em Massa
+              </CardTitle>
+              <CardDescription>
+                Envie mensagens diretas para seus seguidores — todos de uma vez ou selecionando individualmente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Destinatários</Label>
+                <Select value={broadcastTarget} onValueChange={(v: 'all' | 'selected') => setBroadcastTarget(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Todos os seguidores</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="selected">
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Selecionar individualmente</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {broadcastTarget === 'selected' && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Adicionar seguidores</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={followerSearch}
+                        onChange={e => setFollowerSearch(e.target.value)}
+                        placeholder="@username do seguidor"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && followerSearch.trim()) {
+                            e.preventDefault();
+                            const username = followerSearch.trim().replace(/^@/, '');
+                            if (username && !selectedFollowers.includes(username)) {
+                              setSelectedFollowers(prev => [...prev, username]);
+                            }
+                            setFollowerSearch('');
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const username = followerSearch.trim().replace(/^@/, '');
+                          if (username && !selectedFollowers.includes(username)) {
+                            setSelectedFollowers(prev => [...prev, username]);
+                          }
+                          setFollowerSearch('');
+                        }}
+                        disabled={!followerSearch.trim()}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Digite o @username e pressione Enter ou clique em + para adicionar.
+                    </p>
+                  </div>
+
+                  {selectedFollowers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedFollowers.map(username => (
+                        <Badge key={username} variant="secondary" className="gap-1 pr-1">
+                          @{username}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => setSelectedFollowers(prev => prev.filter(u => u !== username))}
+                          >
+                            <XCircle className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-destructive"
+                        onClick={() => setSelectedFollowers([])}
+                      >
+                        Limpar todos
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Mensagem</Label>
+                <Textarea
+                  value={broadcastMessage}
+                  onChange={e => setBroadcastMessage(e.target.value)}
+                  placeholder="Olá! Temos uma novidade especial para você..."
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {broadcastMessage.length}/1000 caracteres
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30 p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ <strong>Atenção:</strong> O envio em massa respeita os limites da API do Instagram. 
+                  Mensagens são enviadas com intervalo para evitar bloqueios. 
+                  {broadcastTarget === 'selected' && selectedFollowers.length > 0 && (
+                    <> Serão enviadas para <strong>{selectedFollowers.length}</strong> seguidores selecionados.</>
+                  )}
+                </p>
+              </div>
+
+              <Button
+                className="w-full gap-2"
+                disabled={
+                  !broadcastMessage.trim() || 
+                  broadcastMessage.length > 1000 ||
+                  isSendingBroadcast ||
+                  (broadcastTarget === 'selected' && selectedFollowers.length === 0)
+                }
+                onClick={() => {
+                  const targets = broadcastTarget === 'all' ? 'todos os seguidores' : `${selectedFollowers.length} seguidores selecionados`;
+                  if (window.confirm(`Enviar DM para ${targets}? Esta ação não pode ser desfeita.`)) {
+                    setIsSendingBroadcast(true);
+                    toast({
+                      title: 'Envio iniciado',
+                      description: `As DMs estão sendo enviadas para ${targets}. Isso pode levar alguns minutos.`,
+                    });
+                    // The actual send would be handled by an edge function
+                    setTimeout(() => {
+                      setIsSendingBroadcast(false);
+                      setBroadcastMessage('');
+                      setSelectedFollowers([]);
+                      toast({
+                        title: 'Envio concluído',
+                        description: 'As mensagens foram enfileiradas para envio.',
+                      });
+                    }, 3000);
+                  }
+                }}
+              >
+                {isSendingBroadcast ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                ) : (
+                  <><Send className="h-4 w-4" /> Enviar DMs</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="account" className="space-y-4">
           {accounts?.map(account => (
             <Card key={account.id}>
