@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.instagram-webhook]
 verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.email-inbound]
+verify_jwt = false
