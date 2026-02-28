@@ -381,25 +381,40 @@ function FollowerSelector({
   const { data: interactionContacts } = useQuery({
     queryKey: ['ig_interaction_contacts', organizationId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const map = new Map<string, string | undefined>();
+
+      // Source 1: automation logs
+      const { data: logs } = await supabase
         .from('instagram_automation_logs')
         .select('event_data, contact_id')
         .order('created_at', { ascending: false })
         .limit(200);
-      if (error) throw error;
-      // Extract unique usernames + IGSIDs from event_data
-      const map = new Map<string, string | undefined>();
-      data?.forEach(log => {
+      
+      logs?.forEach(log => {
         const ed = log.event_data as Record<string, unknown>;
         const username = (ed?.username || ed?.from_username) as string | undefined;
         const igId = (ed?.from_id || ed?.sender_id || ed?.user_id) as string | undefined;
         if (username && typeof username === 'string') {
-          // Prefer entries with IGSID
           if (!map.has(username.toLowerCase()) || (igId && !map.get(username.toLowerCase()))) {
             map.set(username.toLowerCase(), igId);
           }
         }
       });
+
+      // Source 2: previously discovered IGSIDs from broadcast recipients
+      const { data: pastRecipients } = await supabase
+        .from('instagram_dm_broadcast_recipients' as any)
+        .select('username, instagram_user_id')
+        .not('instagram_user_id', 'is', null)
+        .limit(500);
+
+      (pastRecipients as any[])?.forEach((r: any) => {
+        const u = (r.username as string).toLowerCase();
+        if (!map.has(u) || (!map.get(u) && r.instagram_user_id)) {
+          map.set(u, r.instagram_user_id);
+        }
+      });
+
       return Array.from(map.entries()).map(([username, igId]) => ({ username, instagram_user_id: igId }));
     },
     enabled: !!organizationId,

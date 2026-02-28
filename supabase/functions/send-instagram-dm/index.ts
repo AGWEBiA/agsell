@@ -7,6 +7,66 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/**
+ * Attempt to find a user's IGSID by searching recent conversations.
+ * Returns the IGSID if found, or null.
+ */
+async function lookupIgsidByUsername(
+  igUserId: string,
+  accessToken: string,
+  targetUsername: string
+): Promise<string | null> {
+  try {
+    // Fetch recent conversations with participant info
+    const url = `https://graph.instagram.com/v21.0/${igUserId}/conversations?fields=participants,updated_time&platform=instagram&access_token=${encodeURIComponent(accessToken)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error || !data.data) {
+      console.error("Conversations lookup error:", data.error || "No data");
+      return null;
+    }
+
+    const normalizedTarget = targetUsername.toLowerCase().replace(/^@/, "");
+
+    for (const convo of data.data) {
+      const participants = convo.participants?.data || [];
+      for (const p of participants) {
+        if (p.username?.toLowerCase() === normalizedTarget && p.id) {
+          console.log(`Found IGSID ${p.id} for @${targetUsername} via conversations`);
+          return String(p.id);
+        }
+      }
+    }
+
+    // Check pagination (up to 2 more pages)
+    let nextUrl = data.paging?.next;
+    let pages = 0;
+    while (nextUrl && pages < 2) {
+      pages++;
+      const nextRes = await fetch(nextUrl);
+      const nextData = await nextRes.json();
+      if (nextData.error || !nextData.data) break;
+
+      for (const convo of nextData.data) {
+        const participants = convo.participants?.data || [];
+        for (const p of participants) {
+          if (p.username?.toLowerCase() === normalizedTarget && p.id) {
+            console.log(`Found IGSID ${p.id} for @${targetUsername} via conversations (page ${pages + 1})`);
+            return String(p.id);
+          }
+        }
+      }
+      nextUrl = nextData.paging?.next;
+    }
+
+    return null;
+  } catch (err) {
+    console.error("IGSID lookup failed:", err);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -123,15 +183,30 @@ serve(async (req) => {
     // Process each recipient with delay
     for (const recipient of recipients) {
       try {
-        // The Instagram Messaging API requires the recipient's IGSID (Instagram-scoped user ID)
-        // Username-based sending is NOT supported by the API
-        const recipientIgId = recipient.instagram_user_id;
+        let recipientIgId = recipient.instagram_user_id;
+
+        // If no IGSID stored, try to look it up via conversations API
+        if (!recipientIgId) {
+          console.log(`No IGSID for @${recipient.username} — attempting lookup via conversations...`);
+          recipientIgId = await lookupIgsidByUsername(
+            igAccount.instagram_user_id,
+            igAccount.access_token,
+            recipient.username
+          );
+
+          // Save discovered IGSID for future use
+          if (recipientIgId) {
+            await supabaseAdmin.from("instagram_dm_broadcast_recipients").update({
+              instagram_user_id: recipientIgId,
+            }).eq("id", recipient.id);
+          }
+        }
 
         if (!recipientIgId) {
-          console.error(`No IGSID for @${recipient.username} — cannot send DM`);
+          console.error(`No IGSID found for @${recipient.username} — cannot send DM`);
           await supabaseAdmin.from("instagram_dm_broadcast_recipients").update({
             status: "failed",
-            error_message: "IGSID não disponível. Só é possível enviar DM para usuários que já interagiram com sua conta.",
+            error_message: "IGSID não encontrado. Esse usuário precisa ter enviado uma mensagem ou interagido com sua conta primeiro.",
           }).eq("id", recipient.id);
           failedCount++;
           continue;
