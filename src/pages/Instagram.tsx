@@ -41,7 +41,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -222,6 +222,195 @@ function ConnectWizard({
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+/* ─── Seletor de Seguidores com Autocomplete ─── */
+function FollowerSelector({
+  selectedFollowers,
+  setSelectedFollowers,
+  followerSearch,
+  setFollowerSearch,
+  organizationId,
+}: {
+  selectedFollowers: string[];
+  setSelectedFollowers: React.Dispatch<React.SetStateAction<string[]>>;
+  followerSearch: string;
+  setFollowerSearch: React.Dispatch<React.SetStateAction<string>>;
+  organizationId?: string;
+}) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Fetch contacts from CRM that could be Instagram users
+  const { data: crmContacts } = useQuery({
+    queryKey: ['crm_contacts_ig_suggest', organizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, first_name, last_name, email, source')
+        .eq('organization_id', organizationId!)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!organizationId,
+  });
+
+  // Fetch contacts from instagram automation logs (interaction history)
+  const { data: interactionContacts } = useQuery({
+    queryKey: ['ig_interaction_contacts', organizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_automation_logs')
+        .select('event_data, contact_id')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      // Extract unique usernames from event_data
+      const usernames = new Set<string>();
+      data?.forEach(log => {
+        const ed = log.event_data as Record<string, unknown>;
+        if (ed?.username && typeof ed.username === 'string') {
+          usernames.add(ed.username);
+        }
+        if (ed?.from_username && typeof ed.from_username === 'string') {
+          usernames.add(ed.from_username);
+        }
+      });
+      return Array.from(usernames);
+    },
+    enabled: !!organizationId,
+  });
+
+  // Build suggestion list
+  const suggestions = React.useMemo(() => {
+    const items: { username: string; label: string; source: 'crm' | 'interaction' | 'manual' }[] = [];
+    const seen = new Set<string>();
+
+    // From interaction history
+    interactionContacts?.forEach(username => {
+      if (!seen.has(username.toLowerCase())) {
+        seen.add(username.toLowerCase());
+        items.push({ username, label: `@${username}`, source: 'interaction' });
+      }
+    });
+
+    // From CRM contacts (use first_name as pseudo-username if source is instagram)
+    crmContacts?.forEach(contact => {
+      const name = `${contact.first_name}${contact.last_name ? ' ' + contact.last_name : ''}`;
+      if (contact.source === 'instagram' && !seen.has(contact.first_name.toLowerCase())) {
+        seen.add(contact.first_name.toLowerCase());
+        items.push({ username: contact.first_name, label: `@${contact.first_name} (${name})`, source: 'crm' });
+      }
+    });
+
+    return items;
+  }, [crmContacts, interactionContacts]);
+
+  const searchTerm = followerSearch.replace(/^@/, '').toLowerCase();
+  const filteredSuggestions = searchTerm
+    ? suggestions.filter(s => 
+        s.username.toLowerCase().includes(searchTerm) && 
+        !selectedFollowers.includes(s.username)
+      )
+    : [];
+
+  const addFollower = (username: string) => {
+    const clean = username.trim().replace(/^@/, '');
+    if (clean && !selectedFollowers.includes(clean)) {
+      setSelectedFollowers(prev => [...prev, clean]);
+    }
+    setFollowerSearch('');
+    setShowSuggestions(false);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Label>Adicionar seguidores</Label>
+        <div className="relative">
+          <div className="flex gap-2">
+            <Input
+              value={followerSearch}
+              onChange={e => {
+                setFollowerSearch(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              placeholder="@username — digite para buscar"
+              onKeyDown={e => {
+                if (e.key === 'Enter' && followerSearch.trim()) {
+                  e.preventDefault();
+                  addFollower(followerSearch);
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addFollower(followerSearch)}
+              disabled={!followerSearch.trim()}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Autocomplete dropdown */}
+          {showSuggestions && filteredSuggestions.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg max-h-48 overflow-y-auto">
+              {filteredSuggestions.slice(0, 10).map(suggestion => (
+                <button
+                  key={suggestion.username}
+                  type="button"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-left"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    addFollower(suggestion.username);
+                  }}
+                >
+                  <Instagram className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-medium">{suggestion.label}</span>
+                  <Badge variant="outline" className="ml-auto text-[10px] h-5">
+                    {suggestion.source === 'interaction' ? 'Interação' : 'CRM'}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Digite @ para buscar em contatos do CRM e histórico de interações, ou adicione manualmente.
+        </p>
+      </div>
+
+      {selectedFollowers.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {selectedFollowers.map(username => (
+            <Badge key={username} variant="secondary" className="gap-1 pr-1">
+              @{username}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-4 w-4 p-0 hover:bg-transparent"
+                onClick={() => setSelectedFollowers(prev => prev.filter(u => u !== username))}
+              >
+                <XCircle className="h-3 w-3" />
+              </Button>
+            </Badge>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs text-destructive"
+            onClick={() => setSelectedFollowers([])}
+          >
+            Limpar todos
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -652,71 +841,13 @@ export default function InstagramPage() {
               </div>
 
               {broadcastTarget === 'selected' && (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label>Adicionar seguidores</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={followerSearch}
-                        onChange={e => setFollowerSearch(e.target.value)}
-                        placeholder="@username do seguidor"
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && followerSearch.trim()) {
-                            e.preventDefault();
-                            const username = followerSearch.trim().replace(/^@/, '');
-                            if (username && !selectedFollowers.includes(username)) {
-                              setSelectedFollowers(prev => [...prev, username]);
-                            }
-                            setFollowerSearch('');
-                          }
-                        }}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const username = followerSearch.trim().replace(/^@/, '');
-                          if (username && !selectedFollowers.includes(username)) {
-                            setSelectedFollowers(prev => [...prev, username]);
-                          }
-                          setFollowerSearch('');
-                        }}
-                        disabled={!followerSearch.trim()}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Digite o @username e pressione Enter ou clique em + para adicionar.
-                    </p>
-                  </div>
-
-                  {selectedFollowers.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedFollowers.map(username => (
-                        <Badge key={username} variant="secondary" className="gap-1 pr-1">
-                          @{username}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={() => setSelectedFollowers(prev => prev.filter(u => u !== username))}
-                          >
-                            <XCircle className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      ))}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs text-destructive"
-                        onClick={() => setSelectedFollowers([])}
-                      >
-                        Limpar todos
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <FollowerSelector
+                  selectedFollowers={selectedFollowers}
+                  setSelectedFollowers={setSelectedFollowers}
+                  followerSearch={followerSearch}
+                  setFollowerSearch={setFollowerSearch}
+                  organizationId={currentOrganization?.id}
+                />
               )}
 
               <div className="space-y-2">
