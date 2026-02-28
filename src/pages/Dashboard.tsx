@@ -82,17 +82,17 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do seu CRM</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Visão geral do seu CRM</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Gamification Mini Widget */}
           {gamificationStats && (
-            <Card className="flex items-center gap-3 px-4 py-2">
+            <Card className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xs sm:text-sm">
                   {currentLevel}
                 </div>
                 <div className="hidden sm:block">
@@ -101,14 +101,14 @@ export default function Dashboard() {
                 </div>
               </div>
               {gamificationStats.current_streak > 0 && (
-                <Badge variant="secondary" className="flex items-center gap-1">
+                <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                   <Flame className="h-3 w-3 text-orange-500" />
                   {gamificationStats.current_streak}
                 </Badge>
               )}
             </Card>
           )}
-          <Badge variant="outline" className="gap-1">
+          <Badge variant="outline" className="gap-1 text-xs hidden sm:flex">
             <Activity className="h-3 w-3" />
             Atualizado agora
           </Badge>
@@ -220,9 +220,9 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
         {/* Leads Chart */}
-        <Card className="col-span-4">
+        <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Novos Leads</CardTitle>
           </CardHeader>
@@ -260,7 +260,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Pipeline Chart */}
-        <Card className="col-span-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Pipeline de Vendas</CardTitle>
           </CardHeader>
@@ -321,9 +321,9 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
         {/* Recent Activities */}
-        <Card className="col-span-4">
+        <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Atividades Recentes</CardTitle>
           </CardHeader>
@@ -370,7 +370,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Top Leads */}
-        <Card className="col-span-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Leads Mais Quentes</CardTitle>
           </CardHeader>

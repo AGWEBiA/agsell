@@ -245,11 +245,11 @@ export default function Pipeline() {
       </PageHeader>
 
       {/* Pipeline Kanban */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-3 px-3 sm:mx-0 sm:px-0 snap-x snap-mandatory sm:snap-none">
         {stages.map((stage) => {
           const stageDeals = getDealsByStage(stage.id);
           return (
-            <div key={stage.id} className="flex-shrink-0 w-80">
+            <div key={stage.id} className="flex-shrink-0 w-[280px] sm:w-80 snap-start">
               <Card className="h-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">

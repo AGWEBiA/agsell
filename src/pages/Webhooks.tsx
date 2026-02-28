@@ -252,10 +252,10 @@ export default function Webhooks() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Webhooks</h1>
-          <p className="text-muted-foreground">Receba dados de sistemas externos automaticamente</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Webhooks</h1>
+          <p className="text-muted-foreground text-sm">Receba dados de sistemas externos automaticamente</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetAndCloseDialog(); else setIsDialogOpen(true); }}>
           <DialogTrigger asChild>
@@ -411,19 +411,19 @@ X-Webhook-Secret: {seu_token_secreto}
             <div className="space-y-4">
               {webhooks.map((webhook) => (
                 <Card key={webhook.id} className="border">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-2">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold">{webhook.name}</h3>
                           <Badge variant={webhook.is_active ? 'default' : 'secondary'}>
                             {webhook.is_active ? 'Ativo' : 'Inativo'}
                           </Badge>
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="hidden sm:inline-flex">
                             {TARGET_ACTIONS.find(a => a.value === webhook.target_action)?.label}
                           </Badge>
                           {webhook.automation_id && (
-                            <Badge variant="outline" className="border-primary text-primary">
+                            <Badge variant="outline" className="border-primary text-primary hidden sm:inline-flex">
                               ⚡ {automations.find(a => a.id === webhook.automation_id)?.name || 'Automação'}
                             </Badge>
                           )}
@@ -434,19 +434,20 @@ X-Webhook-Secret: {seu_token_secreto}
                         <div className="space-y-1">
                           <Label className="text-xs">URL do Endpoint</Label>
                           <div className="flex items-center gap-2">
-                            <code className="flex-1 p-2 bg-muted rounded text-xs truncate">
+                            <code className="flex-1 p-2 bg-muted rounded text-xs truncate block overflow-hidden">
                               {webhookBaseUrl}/{webhook.endpoint_id}
                             </code>
                             <Button 
                               size="icon" 
                               variant="outline"
+                              className="shrink-0"
                               onClick={() => copyToClipboard(`${webhookBaseUrl}/${webhook.endpoint_id}`)}
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground">
                           <span>{webhook.requests_count} requisições</span>
                           {webhook.last_request_at && (
                             <span>
@@ -458,7 +459,7 @@ X-Webhook-Secret: {seu_token_secreto}
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Switch
                           checked={webhook.is_active}
                           onCheckedChange={(checked) => 

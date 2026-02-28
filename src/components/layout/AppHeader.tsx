@@ -7,43 +7,29 @@ import { usePlans, Plan } from '@/hooks/usePlans';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
-  Search,
-  Sun,
-  Moon,
-  User,
-  Settings,
-  LogOut,
-  HelpCircle,
-  Eye,
-  Shield,
-  Crown,
+  Search, Sun, Moon, User, Settings, LogOut, HelpCircle,
+  Eye, Shield, Crown, Menu,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { AgencyAccountSelector } from '@/components/agency/AgencyAccountSelector';
-
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
+  onMenuToggle?: () => void;
+  isMobile?: boolean;
 }
 
-export function AppHeader({ sidebarCollapsed }: HeaderProps) {
+export function AppHeader({ sidebarCollapsed, onMenuToggle, isMobile }: HeaderProps) {
   const { user, isAdmin, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isUserMode, toggleViewMode, simulatedPlan, setSimulatedPlan } = useAdminView();
@@ -56,86 +42,94 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
 
   const handleSimulatePlan = (plan: Plan) => {
     setSimulatedPlan(plan);
-    if (!isUserMode) {
-      toggleViewMode();
-    }
+    if (!isUserMode) toggleViewMode();
     setShowPlanPicker(false);
   };
 
   return (
     <>
       <header
-        className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-6 transition-all duration-300 ${
-          sidebarCollapsed ? 'left-16' : 'left-64'
-        }`}
+        className={cn(
+          'fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-3 sm:px-6 transition-all duration-300',
+          isMobile ? 'left-0' : sidebarCollapsed ? 'left-16' : 'left-64'
+        )}
       >
-        {/* Search */}
-        <div className="flex items-center gap-4">
-          <div className="relative">
+        {/* Left section */}
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          {isMobile && (
+            <Button variant="ghost" size="icon" onClick={onMenuToggle} className="shrink-0">
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          {/* Search - hidden on mobile, visible on sm+ */}
+          <div className="relative hidden sm:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar... (Ctrl+K)"
-              className="w-64 pl-9 lg:w-80"
+              className="w-48 pl-9 lg:w-80"
             />
           </div>
+          {/* Mobile search icon */}
+          {isMobile && (
+            <Button variant="ghost" size="icon" className="shrink-0">
+              <Search className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {/* Agency Account Selector */}
-          <AgencyAccountSelector />
+        {/* Right actions */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Agency selector - hidden on mobile */}
+          <div className="hidden md:block">
+            <AgencyAccountSelector />
+          </div>
 
-          {/* Admin: Simulate Plan */}
-          {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPlanPicker(true)}
-              className="gap-2 text-xs"
-            >
-              <Crown className="h-4 w-4" />
-              Simular Plano
-            </Button>
+          {/* Admin buttons - hidden on mobile */}
+          {isAdmin && !isMobile && (
+            <>
+              <Button
+                variant="outline" size="sm"
+                onClick={() => setShowPlanPicker(true)}
+                className="gap-2 text-xs"
+              >
+                <Crown className="h-4 w-4" />
+                <span className="hidden lg:inline">Simular Plano</span>
+              </Button>
+              <Button
+                variant={isUserMode ? 'default' : 'outline'} size="sm"
+                onClick={toggleViewMode}
+                className="gap-2 text-xs"
+              >
+                {isUserMode ? (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    <span className="hidden lg:inline">Visão Usuário</span>
+                  </>
+                ) : (
+                  <>
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden lg:inline">Visão Admin</span>
+                  </>
+                )}
+              </Button>
+            </>
           )}
 
-          {/* Admin/User View Toggle */}
-          {isAdmin && (
-            <Button
-              variant={isUserMode ? 'default' : 'outline'}
-              size="sm"
-              onClick={toggleViewMode}
-              className="gap-2 text-xs"
-            >
-              {isUserMode ? (
-                <>
-                  <Eye className="h-4 w-4" />
-                  Visão Usuário
-                </>
-              ) : (
-                <>
-                  <Shield className="h-4 w-4" />
-                  Visão Admin
-                </>
-              )}
-            </Button>
-          )}
-          {/* Theme Toggle */}
+          {/* Theme */}
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Sun className="h-5 w-5" />
-            )}
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
 
           {/* Notifications */}
           <NotificationCenter />
 
-          {/* Help */}
-          <Button variant="ghost" size="icon">
-            <HelpCircle className="h-5 w-5" />
-          </Button>
+          {/* Help - hidden on mobile */}
+          {!isMobile && (
+            <Button variant="ghost" size="icon">
+              <HelpCircle className="h-5 w-5" />
+            </Button>
+          )}
 
           {/* User Menu */}
           <DropdownMenu>
@@ -143,7 +137,7 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
                   <AvatarImage src="" alt={userName} />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -153,22 +147,19 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">{userName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/settings')}>
-                <User className="mr-2 h-4 w-4" />
-                Meu Perfil
+                <User className="mr-2 h-4 w-4" /> Meu Perfil
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/settings')}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
+                <Settings className="mr-2 h-4 w-4" /> Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
+                <LogOut className="mr-2 h-4 w-4" /> Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -192,11 +183,10 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
               <button
                 key={plan.id}
                 onClick={() => handleSimulatePlan(plan)}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-colors hover:bg-accent text-left ${
-                  simulatedPlan?.id === plan.id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border'
-                }`}
+                className={cn(
+                  'flex items-center justify-between p-4 rounded-lg border transition-colors hover:bg-accent text-left',
+                  simulatedPlan?.id === plan.id ? 'border-primary bg-primary/5' : 'border-border'
+                )}
               >
                 <div>
                   <p className="font-medium">{plan.name}</p>
@@ -224,10 +214,7 @@ export function AppHeader({ sidebarCollapsed }: HeaderProps) {
             {simulatedPlan && (
               <Button
                 variant="outline"
-                onClick={() => {
-                  setSimulatedPlan(null);
-                  setShowPlanPicker(false);
-                }}
+                onClick={() => { setSimulatedPlan(null); setShowPlanPicker(false); }}
                 className="mt-2"
               >
                 Remover Simulação

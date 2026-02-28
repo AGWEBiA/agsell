@@ -79,15 +79,15 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, helpText, children }: PageHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+      <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
           {helpText && <HelpTooltip content={helpText} variant="info" />}
         </div>
-        <p className="text-muted-foreground mt-1">{description}</p>
+        <p className="text-muted-foreground mt-1 text-sm">{description}</p>
       </div>
-      {children && <div className="flex items-center gap-2 flex-shrink-0">{children}</div>}
+      {children && <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">{children}</div>}
     </div>
   );
 }
