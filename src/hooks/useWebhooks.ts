@@ -17,6 +17,7 @@ export interface InboundWebhook {
   requests_count: number;
   last_request_at: string | null;
   created_at: string;
+  automation_id: string | null;
 }
 
 export interface WebhookLog {
@@ -59,6 +60,7 @@ export function useWebhooks() {
       description?: string;
       target_action: string;
       field_mapping?: Record<string, string>;
+      automation_id?: string | null;
     }) => {
       if (!currentOrganization) throw new Error('No organization');
 
@@ -70,6 +72,7 @@ export function useWebhooks() {
           description: input.description,
           target_action: input.target_action,
           field_mapping: input.field_mapping || {},
+          automation_id: input.automation_id || null,
         })
         .select()
         .single();
@@ -94,6 +97,7 @@ export function useWebhooks() {
       is_active?: boolean;
       target_action?: string;
       field_mapping?: Record<string, string>;
+      automation_id?: string | null;
     }) => {
       const { id, ...updates } = input;
       const { data, error } = await supabase

@@ -1268,6 +1268,7 @@ export type Database = {
       }
       inbound_webhooks: {
         Row: {
+          automation_id: string | null
           created_at: string
           description: string | null
           endpoint_id: string
@@ -1285,6 +1286,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          automation_id?: string | null
           created_at?: string
           description?: string | null
           endpoint_id?: string
@@ -1302,6 +1304,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          automation_id?: string | null
           created_at?: string
           description?: string | null
           endpoint_id?: string
@@ -1319,6 +1322,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "inbound_webhooks_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inbound_webhooks_organization_id_fkey"
             columns: ["organization_id"]

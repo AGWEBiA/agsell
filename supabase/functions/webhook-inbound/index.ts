@@ -266,6 +266,25 @@ Deno.serve(async (req) => {
       })
       .eq("id", config.id);
 
+    // Trigger linked automation if configured
+    const automationId = (webhook as Record<string, unknown>).automation_id;
+    const contactId = (result as Record<string, unknown>).contact_id;
+    if (automationId && contactId) {
+      try {
+        await supabase.functions.invoke("process-automation", {
+          body: {
+            automation_id: automationId,
+            contact_id: contactId,
+            trigger_event: "webhook_received",
+          },
+        });
+        (result as Record<string, unknown>).automation_triggered = true;
+      } catch (autoErr) {
+        console.error("Automation trigger error:", autoErr);
+        (result as Record<string, unknown>).automation_triggered = false;
+      }
+    }
+
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

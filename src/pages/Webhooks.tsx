@@ -65,6 +65,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useWebhooks, useWebhookLogs, type InboundWebhook } from '@/hooks/useWebhooks';
+import { useAutomations } from '@/hooks/useAutomations';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -78,12 +79,14 @@ const TARGET_ACTIONS = [
 
 export default function Webhooks() {
   const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, regenerateToken } = useWebhooks();
+  const { automations } = useAutomations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedWebhook, setSelectedWebhook] = useState<InboundWebhook | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     target_action: 'create_contact',
+    automation_id: '' as string,
     field_mapping: '{\n  "first_name": "nome",\n  "email": "email",\n  "phone": "telefone"\n}',
   });
 
@@ -103,12 +106,14 @@ export default function Webhooks() {
       description: formData.description,
       target_action: formData.target_action,
       field_mapping: mapping,
+      automation_id: formData.automation_id || null,
     });
 
     setFormData({
       name: '',
       description: '',
       target_action: 'create_contact',
+      automation_id: '',
       field_mapping: '{\n  "first_name": "nome",\n  "email": "email",\n  "phone": "telefone"\n}',
     });
     setIsDialogOpen(false);
@@ -201,6 +206,28 @@ export default function Webhooks() {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Automação Vinculada (opcional)</Label>
+                <Select
+                  value={formData.automation_id}
+                  onValueChange={(value) => setFormData({ ...formData, automation_id: value === 'none' ? '' : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nenhuma automação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma automação</SelectItem>
+                    {automations.map((auto) => (
+                      <SelectItem key={auto.id} value={auto.id}>
+                        {auto.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Ao receber um contato, a automação selecionada será disparada automaticamente
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label>Mapeamento de Campos (JSON)</Label>
                 <Textarea
                   className="font-mono text-sm"
@@ -291,6 +318,11 @@ X-Webhook-Secret: {seu_token_secreto}
                           <Badge variant="outline">
                             {TARGET_ACTIONS.find(a => a.value === webhook.target_action)?.label}
                           </Badge>
+                          {webhook.automation_id && (
+                            <Badge variant="outline" className="border-primary text-primary">
+                              ⚡ {automations.find(a => a.id === webhook.automation_id)?.name || 'Automação'}
+                            </Badge>
+                          )}
                         </div>
                         {webhook.description && (
                           <p className="text-sm text-muted-foreground">{webhook.description}</p>
