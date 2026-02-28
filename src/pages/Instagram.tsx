@@ -42,15 +42,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const automationTypes = [
-  { value: 'dm_reply', label: 'Resposta de DM', icon: MessageCircle, description: 'Responde DMs automaticamente', category: 'dm' },
-  { value: 'comment_reply', label: 'Resposta de Comentário', icon: Heart, description: 'Responde comentários em posts', category: 'post' },
-  { value: 'comment_to_dm', label: 'Comentário → DM', icon: Send, description: 'Envia DM quando comentam no post', category: 'post' },
-  { value: 'story_reply', label: 'Resposta de Story', icon: Eye, description: 'Responde menções em stories', category: 'story' },
-  { value: 'story_mention_dm', label: 'Menção em Story → DM', icon: Send, description: 'Envia DM quando mencionam em story', category: 'story' },
-  { value: 'specific_post_comment', label: 'Comentário em Post Específico', icon: Heart, description: 'Responde comentários em um post específico', category: 'post' },
-  { value: 'specific_post_to_dm', label: 'Post Específico → DM', icon: Send, description: 'Envia DM para quem comenta em um post específico', category: 'post' },
-  { value: 'specific_story_reply', label: 'Resposta de Story Específico', icon: Eye, description: 'Responde a reações/respostas de um story específico', category: 'story' },
-  { value: 'first_dm', label: 'Primeira DM', icon: Sparkles, description: 'Responde automaticamente na primeira DM recebida', category: 'dm' },
+  { value: 'dm_reply', label: 'Resposta de DM', icon: MessageCircle, description: 'Responde DMs automaticamente', category: 'dm', hasDualAction: false },
+  { value: 'first_dm', label: 'Primeira DM', icon: Sparkles, description: 'Responde automaticamente na primeira DM recebida', category: 'dm', hasDualAction: false },
+  { value: 'comment_reply', label: 'Resposta de Comentário', icon: Heart, description: 'Responde comentários em posts (comentário + DM opcional)', category: 'post', hasDualAction: true },
+  { value: 'comment_to_dm', label: 'Comentário → DM', icon: Send, description: 'Envia apenas DM quando comentam no post', category: 'post', hasDualAction: false },
+  { value: 'specific_post_comment', label: 'Post Específico', icon: Heart, description: 'Responde comentários em um post específico (comentário + DM opcional)', category: 'post', hasDualAction: true },
+  { value: 'specific_post_to_dm', label: 'Post Específico → DM', icon: Send, description: 'Envia apenas DM para quem comenta em um post específico', category: 'post', hasDualAction: false },
+  { value: 'story_reply', label: 'Resposta de Story', icon: Eye, description: 'Responde menções em stories (resposta + DM opcional)', category: 'story', hasDualAction: true },
+  { value: 'story_mention_dm', label: 'Menção em Story → DM', icon: Send, description: 'Envia apenas DM quando mencionam em story', category: 'story', hasDualAction: false },
+  { value: 'specific_story_reply', label: 'Story Específico', icon: Eye, description: 'Responde a reações/respostas de um story específico (resposta + DM opcional)', category: 'story', hasDualAction: true },
 ];
 
 type AutomationCategory = 'all' | 'dm' | 'post' | 'story';
@@ -243,6 +243,8 @@ export default function InstagramPage() {
     automation_type: 'dm_reply',
     trigger_keywords: '',
     response_message: '',
+    dm_message: '',
+    send_dm_too: false,
     target_post_url: '',
     target_story_url: '',
   });
@@ -256,7 +258,20 @@ export default function InstagramPage() {
     if (!currentOrganization || !user || !accounts?.length) return;
     const isPostSpecific = ['specific_post_comment', 'specific_post_to_dm'].includes(newAutomation.automation_type);
     const isStorySpecific = newAutomation.automation_type === 'specific_story_reply';
-    const isDmType = ['comment_to_dm', 'specific_post_to_dm', 'story_mention_dm'].includes(newAutomation.automation_type);
+    const isDmOnlyType = ['comment_to_dm', 'specific_post_to_dm', 'story_mention_dm'].includes(newAutomation.automation_type);
+    const typeInfo = automationTypes.find(t => t.value === newAutomation.automation_type);
+    const hasDual = typeInfo?.hasDualAction && newAutomation.send_dm_too;
+
+    const actions: { type: string; content: string }[] = [];
+
+    if (isDmOnlyType) {
+      actions.push({ type: 'send_dm', content: newAutomation.response_message });
+    } else {
+      actions.push({ type: 'reply', content: newAutomation.response_message });
+      if (hasDual && newAutomation.dm_message) {
+        actions.push({ type: 'send_dm', content: newAutomation.dm_message });
+      }
+    }
 
     createAutomation.mutate({
       organization_id: currentOrganization.id,
@@ -269,15 +284,12 @@ export default function InstagramPage() {
         ...(isPostSpecific && newAutomation.target_post_url ? { target_post_url: newAutomation.target_post_url } : {}),
         ...(isStorySpecific && newAutomation.target_story_url ? { target_story_url: newAutomation.target_story_url } : {}),
       },
-      actions: [{
-        type: isDmType ? 'send_dm' : 'reply',
-        content: newAutomation.response_message,
-      }],
+      actions,
       created_by: user.id,
     } as any, {
       onSuccess: () => {
         setShowCreateDialog(false);
-        setNewAutomation({ name: '', description: '', automation_type: 'dm_reply', trigger_keywords: '', response_message: '', target_post_url: '', target_story_url: '' });
+        setNewAutomation({ name: '', description: '', automation_type: 'dm_reply', trigger_keywords: '', response_message: '', dm_message: '', send_dm_too: false, target_post_url: '', target_story_url: '' });
       },
     });
   };
@@ -479,18 +491,51 @@ export default function InstagramPage() {
                     <p className="text-xs text-muted-foreground">Separe por vírgula. Vazio = todas as mensagens.</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Mensagem de resposta</Label>
+                    <Label>
+                      {['comment_to_dm', 'specific_post_to_dm', 'story_mention_dm', 'dm_reply', 'first_dm'].includes(newAutomation.automation_type)
+                        ? 'Mensagem da DM'
+                        : 'Mensagem de resposta (comentário/story)'}
+                    </Label>
                     <Textarea
                       value={newAutomation.response_message}
                       onChange={e => setNewAutomation(prev => ({ ...prev, response_message: e.target.value }))}
-                      placeholder="Olá! Obrigado pelo interesse..."
+                      placeholder={['comment_to_dm', 'specific_post_to_dm', 'story_mention_dm', 'dm_reply', 'first_dm'].includes(newAutomation.automation_type)
+                        ? 'Olá! Obrigado pelo interesse...'
+                        : 'Obrigado pelo comentário! 🎉'}
                       rows={3}
                     />
                   </div>
+
+                  {/* Dual action: also send DM */}
+                  {automationTypes.find(t => t.value === newAutomation.automation_type)?.hasDualAction && (
+                    <>
+                      <div className="flex items-center gap-3 rounded-lg border p-3 bg-muted/50">
+                        <Switch
+                          checked={newAutomation.send_dm_too}
+                          onCheckedChange={v => setNewAutomation(prev => ({ ...prev, send_dm_too: v }))}
+                        />
+                        <div>
+                          <Label className="cursor-pointer">Enviar DM também</Label>
+                          <p className="text-xs text-muted-foreground">Além de responder, envia uma mensagem privada ao usuário.</p>
+                        </div>
+                      </div>
+                      {newAutomation.send_dm_too && (
+                        <div className="space-y-2">
+                          <Label>Mensagem da DM</Label>
+                          <Textarea
+                            value={newAutomation.dm_message}
+                            onChange={e => setNewAutomation(prev => ({ ...prev, dm_message: e.target.value }))}
+                            placeholder="Oi! Vi que você comentou no nosso post. Posso te ajudar?"
+                            rows={3}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
-                  <Button onClick={handleCreateAutomation} disabled={!newAutomation.name || !newAutomation.response_message || createAutomation.isPending}>
+                  <Button onClick={handleCreateAutomation} disabled={!newAutomation.name || !newAutomation.response_message || (newAutomation.send_dm_too && !newAutomation.dm_message) || createAutomation.isPending}>
                     {createAutomation.isPending ? 'Criando...' : 'Criar'}
                   </Button>
                 </DialogFooter>
