@@ -62,7 +62,7 @@ const automationCategories: { value: AutomationCategory; label: string }[] = [
 ];
 
 const FACEBOOK_APP_ID = "912565888176650";
-const FACEBOOK_PERMISSIONS = "instagram_basic,instagram_manage_messages,pages_show_list,pages_messaging";
+const FACEBOOK_PERMISSIONS = "pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_insights";
 
 /* ─── Wizard de Conexão via Facebook Login ─── */
 function ConnectWizard({ 
