@@ -147,9 +147,9 @@ export default function Inbox() {
 
   return (
     <div className="h-[calc(100vh-7rem)] animate-fade-in">
-      <div className="flex h-full gap-4">
+      <div className="flex h-full gap-0 sm:gap-4">
         {/* Conversations List */}
-        <Card className="w-96 flex-shrink-0">
+        <Card className={`w-full sm:w-80 md:w-96 flex-shrink-0 ${selectedId && 'hidden sm:flex sm:flex-col'}`}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle>Conversas</CardTitle>
@@ -285,11 +285,19 @@ export default function Inbox() {
         {/* Chat Area */}
         {selectedConversation ? (
           <>
-            <Card className="flex-1 flex flex-col">
+            <Card className={`flex-1 flex flex-col ${!selectedId ? 'hidden sm:flex' : ''}`}>
               {/* Chat Header */}
               <CardHeader className="pb-3 border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="sm:hidden shrink-0 -ml-2"
+                      onClick={() => setSelectedId(null)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </Button>
                     <Avatar>
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {getInitials(selectedConversation.contacts?.first_name, selectedConversation.contacts?.last_name)}

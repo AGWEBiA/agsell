@@ -295,17 +295,17 @@ export default function Contacts() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, email ou empresa..."
+                placeholder="Buscar por nome, email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="self-end sm:self-auto shrink-0">
               <Filter className="h-4 w-4" />
             </Button>
           </div>
@@ -348,7 +348,8 @@ export default function Contacts() {
               ] : undefined}
             />
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Contato</TableHead>
@@ -438,6 +439,7 @@ export default function Contacts() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
           <DataPagination
             page={page}

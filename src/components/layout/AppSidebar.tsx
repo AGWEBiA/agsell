@@ -2,54 +2,27 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  Kanban,
-  Tags,
-  CheckSquare,
-  Inbox,
-  Mail,
-  MessageSquare,
-  Zap,
-  BarChart3,
-  Target,
-  FileText,
-  Link as LinkIcon,
-  Settings,
-  Bot,
-  Brain,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  Trophy,
-  Shield,
-  Key,
-  Webhook,
-  SlidersHorizontal,
-  Instagram,
-  ListChecks,
-  Home,
-  Megaphone,
-  Lightbulb,
-  Wrench,
-  HelpCircle,
-  Briefcase,
+  LayoutDashboard, Users, Building2, Kanban, Tags, CheckSquare,
+  Inbox, Mail, MessageSquare, Zap, BarChart3, Target, FileText,
+  Link as LinkIcon, Settings, Bot, Brain, ChevronLeft, ChevronRight,
+  ChevronDown, Trophy, Shield, Key, Webhook, SlidersHorizontal,
+  Instagram, ListChecks, Home, Megaphone, Lightbulb, Wrench,
+  HelpCircle, Briefcase, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
-
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo, LogoIcon } from '@/components/ui/Logo';
 import { useAdminView } from '@/contexts/AdminViewContext';
 import { usePlanFeature } from '@/hooks/usePlans';
-// Force cache invalidation
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen?: boolean;
+  isMobile?: boolean;
+  onClose?: () => void;
 }
 
 interface MenuItem {
@@ -144,17 +117,9 @@ const menuSections: MenuSection[] = [
 ];
 
 function SectionHeader({
-  section,
-  isOpen,
-  onToggle,
-  collapsed,
-  hasActiveItem,
+  section, isOpen, onToggle, collapsed, hasActiveItem,
 }: {
-  section: MenuSection;
-  isOpen: boolean;
-  onToggle: () => void;
-  collapsed: boolean;
-  hasActiveItem: boolean;
+  section: MenuSection; isOpen: boolean; onToggle: () => void; collapsed: boolean; hasActiveItem: boolean;
 }) {
   const Icon = section.icon;
 
@@ -208,19 +173,16 @@ function SectionHeader({
 }
 
 function MenuItemLink({
-  item,
-  isActive,
-  collapsed,
+  item, isActive, collapsed, onNavigate,
 }: {
-  item: MenuItem;
-  isActive: boolean;
-  collapsed: boolean;
+  item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate?: () => void;
 }) {
   const Icon = item.icon;
 
   const linkContent = (
     <Link
       to={item.path}
+      onClick={onNavigate}
       className={cn(
         'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
         collapsed ? 'justify-center' : 'ml-2',
@@ -249,13 +211,12 @@ function MenuItemLink({
   return linkContent;
 }
 
-export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
+export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose }: SidebarProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const { isUserMode } = useAdminView();
   const { hasFeature: hasAgency } = usePlanFeature('agency_management');
 
-  // Initialize open sections based on active route
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     menuSections.forEach((section) => {
@@ -283,6 +244,71 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
     }),
   }));
 
+  // On mobile, sidebar is an overlay drawer
+  if (isMobile) {
+    return (
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 h-screen w-72 border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-in-out',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        {/* Mobile Header */}
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+          <Link to="/dashboard" onClick={onClose}>
+            <Logo variant="red" size="md" showText />
+          </Link>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[calc(100vh-4rem)]">
+          <nav className="space-y-1 p-2" aria-label="Menu principal">
+            {filteredSections.map((section) => {
+              if (section.items.length === 0) return null;
+              const hasActiveItem = section.items.some((item) => location.pathname === item.path);
+              const isOpen = openSections[section.id] ?? false;
+
+              return (
+                <div key={section.id} className="py-0.5">
+                  <SectionHeader
+                    section={section}
+                    isOpen={isOpen}
+                    onToggle={() => toggleSection(section.id)}
+                    collapsed={false}
+                    hasActiveItem={hasActiveItem}
+                  />
+                  <div
+                    className={cn(
+                      'overflow-hidden transition-all duration-200 ease-in-out',
+                      isOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+                    )}
+                    role="group"
+                    aria-label={section.label}
+                  >
+                    <div className="mt-0.5 space-y-0.5">
+                      {section.items.map((item) => (
+                        <MenuItemLink
+                          key={item.path}
+                          item={item}
+                          isActive={location.pathname === item.path}
+                          collapsed={false}
+                          onNavigate={onClose}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </nav>
+        </ScrollArea>
+      </aside>
+    );
+  }
+
+  // Desktop sidebar
   return (
     <aside
       className={cn(
@@ -290,7 +316,6 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
         collapsed ? 'w-16' : 'w-64'
       )}
     >
-      {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         {!collapsed && (
           <Link to="/dashboard">
@@ -304,7 +329,6 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
         )}
       </div>
 
-      {/* Navigation */}
       <ScrollArea className="h-[calc(100vh-8rem)]">
         <nav className="space-y-1 p-2" aria-label="Menu principal">
           {filteredSections.map((section) => {
@@ -321,8 +345,6 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
                   collapsed={collapsed}
                   hasActiveItem={hasActiveItem}
                 />
-
-                {/* Collapsible items */}
                 <div
                   className={cn(
                     'overflow-hidden transition-all duration-200 ease-in-out',
@@ -348,7 +370,6 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
         </nav>
       </ScrollArea>
 
-      {/* Toggle Button */}
       <div className="absolute bottom-0 left-0 right-0 border-t border-sidebar-border p-2">
         <Button
           variant="ghost"

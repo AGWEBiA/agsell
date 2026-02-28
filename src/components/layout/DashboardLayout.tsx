@@ -7,10 +7,13 @@ import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Eye } from 'lucide-react';
 
 export function DashboardLayout() {
+  const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { currentOrganization } = useOrganization();
   const { progress, isLoading } = useOnboarding();
@@ -23,32 +26,64 @@ export function DashboardLayout() {
     }
   }, [currentOrganization, progress, isLoading]);
 
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMobile]);
+
+  const handleSidebarToggle = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(!mobileSidebarOpen);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <AppSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <AppHeader sidebarCollapsed={sidebarCollapsed} />
+      {/* Mobile backdrop */}
+      {isMobile && mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      <AppSidebar
+        collapsed={isMobile ? false : sidebarCollapsed}
+        onToggle={handleSidebarToggle}
+        mobileOpen={mobileSidebarOpen}
+        isMobile={isMobile}
+        onClose={() => setMobileSidebarOpen(false)}
+      />
+      <AppHeader
+        sidebarCollapsed={sidebarCollapsed}
+        onMenuToggle={handleSidebarToggle}
+        isMobile={isMobile}
+      />
       
       {/* User Mode Banner */}
       {isUserMode && (
         <div
           className={cn(
             'fixed top-16 right-0 z-20 flex items-center justify-center gap-2 bg-amber-500 text-white text-sm py-1.5 px-4 transition-all duration-300',
-            sidebarCollapsed ? 'left-16' : 'left-64'
+            isMobile ? 'left-0' : sidebarCollapsed ? 'left-16' : 'left-64'
           )}
         >
           <Eye className="h-4 w-4" />
-          <span>
-            Você está visualizando como <strong>usuário comum</strong>
-            {simulatedPlan && (
+          <span className="text-xs sm:text-sm">
+            Visualizando como <strong>usuário</strong>
+            {simulatedPlan && !isMobile && (
               <> no plano <strong>{simulatedPlan.name}</strong></>
             )}
-            .
           </span>
           <button
             onClick={exitSimulation}
-            className="ml-2 underline font-medium hover:opacity-80"
+            className="ml-2 underline font-medium hover:opacity-80 text-xs sm:text-sm"
           >
-            Voltar para Admin
+            Voltar
           </button>
         </div>
       )}
@@ -56,11 +91,11 @@ export function DashboardLayout() {
       <main
         className={cn(
           'min-h-screen transition-all duration-300',
-          sidebarCollapsed ? 'pl-16' : 'pl-64',
+          isMobile ? 'pl-0' : sidebarCollapsed ? 'pl-16' : 'pl-64',
           isUserMode ? 'pt-[calc(4rem+2rem)]' : 'pt-16'
         )}
       >
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           <Outlet />
         </div>
       </main>
