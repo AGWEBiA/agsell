@@ -411,7 +411,7 @@ function PlansSection() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-primary shrink-0" />
-                      <span>{plan.max_whatsapp_messages === -1 ? 'WhatsApp ilimitado' : plan.max_whatsapp_messages === 0 ? 'Sem WhatsApp' : `${plan.max_whatsapp_messages.toLocaleString()} msgs WhatsApp/mês`}</span>
+                      <span>WhatsApp ilimitado</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Brain className="h-4 w-4 text-primary shrink-0" />
