@@ -53,6 +53,7 @@ interface Plan {
   max_whatsapp_messages: number;
   max_automations: number;
   max_forms: number;
+  max_ai_requests_per_month: number;
   features: string[];
   is_active: boolean;
   is_default: boolean;
@@ -71,6 +72,7 @@ interface PlanFormData {
   max_whatsapp_messages: number;
   max_automations: number;
   max_forms: number;
+  max_ai_requests_per_month: number;
   features: string;
   is_active: boolean;
   is_default: boolean;
@@ -88,6 +90,7 @@ const defaultFormData: PlanFormData = {
   max_whatsapp_messages: 100,
   max_automations: 5,
   max_forms: 3,
+  max_ai_requests_per_month: 100,
   features: '',
   is_active: true,
   is_default: false,
@@ -133,6 +136,7 @@ export function PlansManagement() {
         max_whatsapp_messages: data.max_whatsapp_messages,
         max_automations: data.max_automations,
         max_forms: data.max_forms,
+        max_ai_requests_per_month: data.max_ai_requests_per_month,
         features: features,
         is_active: data.is_active,
         is_default: data.is_default,
@@ -173,6 +177,7 @@ export function PlansManagement() {
           max_whatsapp_messages: data.max_whatsapp_messages,
           max_automations: data.max_automations,
           max_forms: data.max_forms,
+          max_ai_requests_per_month: data.max_ai_requests_per_month,
           features: features,
           is_active: data.is_active,
           is_default: data.is_default,
@@ -228,6 +233,7 @@ export function PlansManagement() {
       max_whatsapp_messages: plan.max_whatsapp_messages,
       max_automations: plan.max_automations,
       max_forms: plan.max_forms,
+      max_ai_requests_per_month: plan.max_ai_requests_per_month ?? 0,
       features: (plan.features || []).join('\n'),
       is_active: plan.is_active,
       is_default: plan.is_default,
@@ -488,6 +494,23 @@ export function PlansManagement() {
                           setFormData({
                             ...formData,
                             max_forms: parseInt(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="max_ai_requests" className="text-xs text-muted-foreground">
+                        Requisições IA/mês
+                      </Label>
+                      <Input
+                        id="max_ai_requests"
+                        type="number"
+                        min="-1"
+                        value={formData.max_ai_requests_per_month}
+                        onChange={e =>
+                          setFormData({
+                            ...formData,
+                            max_ai_requests_per_month: parseInt(e.target.value) || 0,
                           })
                         }
                       />

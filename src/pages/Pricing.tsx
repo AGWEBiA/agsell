@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2, ArrowRight, Shield, CreditCard,
-  BarChart3, Target, Workflow, Globe, Clock, Sparkles, Phone, Calendar, Inbox, PieChart, Tag
+  BarChart3, Target, Workflow, Globe, Clock, Sparkles, Phone, Calendar, Inbox, PieChart, Tag, Brain
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,6 +94,7 @@ interface Plan {
   max_whatsapp_messages: number;
   max_automations: number;
   max_forms: number;
+  max_ai_requests_per_month: number;
   features: string[];
 }
 
@@ -188,6 +189,10 @@ function PricingCard({
             <span>{plan.max_automations === -1 ? 'Automações ilimitadas' : `${plan.max_automations} automações`}</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            <Brain className="h-5 w-5 text-primary" />
+            <span>{plan.max_ai_requests_per_month === -1 ? 'IA ilimitada' : `${plan.max_ai_requests_per_month.toLocaleString()} requisições IA/mês`}</span>
+          </div>
+          <div className="flex items-center gap-3 text-sm">
             <FileText className="h-5 w-5 text-primary" />
             <span>{plan.max_forms === -1 ? 'Formulários ilimitados' : `${plan.max_forms} formulários`}</span>
           </div>
@@ -212,7 +217,7 @@ function PricingCard({
           variant={isPro ? 'default' : 'outline'}
           onClick={onSelect}
         >
-          {isFree ? 'Começar Grátis' : 'Assinar Agora'}
+          {isFree ? 'Começar' : 'Assinar Agora'}
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </CardFooter>
@@ -440,6 +445,7 @@ export default function Pricing() {
           max_whatsapp_messages: p.max_whatsapp_messages || 100,
           max_automations: p.max_automations || 5,
           max_forms: p.max_forms || 3,
+          max_ai_requests_per_month: (p as any).max_ai_requests_per_month || 0,
         })));
       }
       setIsLoading(false);
@@ -553,7 +559,7 @@ export default function Pricing() {
           Escolha o plano ideal para seu <span className="text-primary">negócio</span>
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-          Comece grátis e faça upgrade conforme sua equipe cresce
+          Escolha o plano ideal e escale conforme sua equipe cresce
         </p>
 
         {/* Billing Toggle */}

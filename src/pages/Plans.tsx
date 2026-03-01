@@ -9,7 +9,7 @@ import { useContacts } from '@/hooks/useContacts';
 import { useAutomations } from '@/hooks/useAutomations';
 import { useForms } from '@/hooks/useForms';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
-import { Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2 } from 'lucide-react';
+import { Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlanCheckout } from '@/components/stripe/PlanCheckout';
 
@@ -100,6 +100,10 @@ function PlanCard({ plan, isCurrentPlan, onSelect }: { plan: Plan; isCurrentPlan
             <span>{plan.max_automations === -1 ? 'Automações ilimitadas' : `${plan.max_automations} automações`}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
+            <Brain className="h-4 w-4 text-muted-foreground" />
+            <span>{plan.max_ai_requests_per_month === -1 ? 'IA ilimitada' : `${plan.max_ai_requests_per_month?.toLocaleString() ?? 0} requisições IA/mês`}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4 text-muted-foreground" />
             <span>{plan.max_forms === -1 ? 'Formulários ilimitados' : `${plan.max_forms} formulários`}</span>
           </div>
@@ -122,7 +126,7 @@ function PlanCard({ plan, isCurrentPlan, onSelect }: { plan: Plan; isCurrentPlan
           disabled={isCurrentPlan}
           onClick={onSelect}
         >
-          {isCurrentPlan ? 'Plano Atual' : plan.price_monthly === 0 ? 'Começar Grátis' : 'Fazer Upgrade'}
+          {isCurrentPlan ? 'Plano Atual' : plan.price_monthly === 0 ? 'Começar' : 'Fazer Upgrade'}
         </Button>
       </CardFooter>
     </Card>

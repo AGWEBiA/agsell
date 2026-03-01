@@ -12,7 +12,7 @@ interface PermissionsContextType {
   
   // Plan info
   currentPlan: Plan | null | undefined;
-  checkPlanLimit: (resource: 'users' | 'contacts' | 'emails' | 'whatsapp' | 'automations' | 'forms', currentCount?: number) => Promise<PlanLimitCheck>;
+  checkPlanLimit: (resource: 'users' | 'contacts' | 'emails' | 'whatsapp' | 'automations' | 'forms' | 'ai_requests', currentCount?: number) => Promise<PlanLimitCheck>;
   hasFeature: (feature: string) => boolean;
   
   // Loading state
