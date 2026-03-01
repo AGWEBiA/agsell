@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +70,8 @@ const formatCurrency = (value: number | null) => {
 export default function Pipeline() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
+  const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
   const [newDeal, setNewDeal] = useState<CreateDealData>({
     title: '',
     value: 0,
@@ -114,6 +117,40 @@ export default function Pipeline() {
 
   const handleMoveDeal = async (dealId: string, newStageId: string) => {
     await updateDeal.mutateAsync({ id: dealId, stage_id: newStageId });
+  };
+
+  const handleDragStart = (e: React.DragEvent, dealId: string) => {
+    setDraggedDealId(dealId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dealId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, stageId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStageId(stageId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverStageId(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, stageId: string) => {
+    e.preventDefault();
+    setDragOverStageId(null);
+    const dealId = e.dataTransfer.getData('text/plain');
+    if (dealId) {
+      const deal = deals.find(d => d.id === dealId);
+      if (deal && deal.stage_id !== stageId) {
+        await handleMoveDeal(dealId, stageId);
+      }
+    }
+    setDraggedDealId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedDealId(null);
+    setDragOverStageId(null);
   };
 
   const handleDelete = async () => {
@@ -249,8 +286,17 @@ export default function Pipeline() {
         {stages.map((stage) => {
           const stageDeals = getDealsByStage(stage.id);
           return (
-            <div key={stage.id} className="flex-shrink-0 w-[280px] sm:w-80 snap-start">
-              <Card className="h-full">
+            <div
+              key={stage.id}
+              className="flex-shrink-0 w-[280px] sm:w-80 snap-start"
+              onDragOver={(e) => handleDragOver(e, stage.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage.id)}
+            >
+              <Card className={cn(
+                'h-full transition-all duration-200',
+                dragOverStageId === stage.id && 'ring-2 ring-primary/50 bg-primary/5'
+              )}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -292,7 +338,13 @@ export default function Pipeline() {
                           return (
                             <Card
                               key={deal.id}
-                              className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, deal.id)}
+                              onDragEnd={handleDragEnd}
+                              className={cn(
+                                'cursor-grab active:cursor-grabbing hover:shadow-md transition-all',
+                                draggedDealId === deal.id && 'opacity-50 scale-95'
+                              )}
                             >
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between mb-3">
