@@ -411,7 +411,7 @@ function PlansSection() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-primary shrink-0" />
-                      <span>WhatsApp ilimitado</span>
+                      <span>{plan.features.includes('whatsapp') ? 'WhatsApp ilimitado' : 'WhatsApp não incluso'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Brain className="h-4 w-4 text-primary shrink-0" />
