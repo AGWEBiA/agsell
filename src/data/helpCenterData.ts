@@ -4,7 +4,7 @@ import {
   Link as LinkIcon, Settings, Bot, Brain, Trophy, Shield, Key,
   Webhook, SlidersHorizontal, Instagram, ListChecks, BookOpen,
   Rocket, Globe, Briefcase, Star, PlayCircle, HelpCircle, Workflow,
-  Vote, SplitSquareVertical,
+  Vote, SplitSquareVertical, Megaphone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -650,16 +650,20 @@ O primeiro passo é definir o que inicia seu fluxo:
 - 📸 Comentário em qualquer post
 - 📌 Comentário em post específico
 - 💬 DM recebida
-- 📖 Resposta ao story
+- 📖 Resposta ao story (geral ou story específico por URL/ID)
+- 🏷️ Menção em story específico
 - 👤 Novo seguidor
 
 **WhatsApp:**
 - 💬 Mensagem recebida
-- ✨ Palavra-chave específica
+- ✨ Palavra-chave específica (correspondência exata, contém ou inicia com)
+- 🤖 Automação fonte (disparar quando contato vem de automação específica)
+- 📨 Origem da mensagem (campanha, grupo, broadcast ou mensagem direta)
 
 **CRM:**
 - 👤 Novo contato criado
-- 📝 Formulário submetido
+- 📝 Formulário submetido (com seleção de formulário específico)
+- 🔍 Fonte do contato (filtrar por origem: site, anúncios, landing page, indicação, etc.)
 
 ### 2. Adicione passos
 
@@ -1103,9 +1107,11 @@ Acesse "Planos" no menu para ver todos os planos com:
 ## Módulos configuráveis
 
 - CRM (Contatos, Empresas, Pipeline)
-- Comunicação (Inbox, WhatsApp, E-mail)
-- Marketing (Automações, Forms)
+- Comunicação (Inbox, WhatsApp, E-mail, Instagram)
+- Marketing (Automações, Flow Builder, Sequências, Forms, Growth Tools)
+- Testes A/B e Lead Scoring
 - Analytics e relatórios
+- Agentes de IA e Gamificação
 - Configurações administrativas
 
 ## Gate de funcionalidades
@@ -1115,6 +1121,152 @@ Recursos que o membro não tem permissão são:
 - Ocultos do menu lateral
 - Bloqueados se acessados por URL direta
 - Uma mensagem amigável indica a restrição`,
+  },
+  {
+    id: 'sequences',
+    categoryId: 'settings',
+    title: 'Sequências (Drip Campaigns)',
+    icon: ListChecks,
+    description: 'Envio automatizado de mensagens programadas para nutrição de leads.',
+    readTime: '4 min',
+    content: `As Sequências permitem criar campanhas de nutrição com envios automáticos em intervalos programados.
+
+## O que são Sequências?
+
+São séries de mensagens (e-mail, WhatsApp, SMS) enviadas automaticamente em intervalos configuráveis. Ideal para:
+
+- Nutrição de leads
+- Onboarding de novos clientes
+- Follow-up pós-venda
+- Educação e engajamento
+
+## Criando uma Sequência
+
+1. Acesse "Sequências" no menu lateral
+2. Clique em "Nova Sequência"
+3. Defina o nome e descrição
+4. Adicione passos com o tipo de envio e intervalo entre cada um
+5. Ative a sequência
+
+## Passos da Sequência
+
+Cada passo define:
+
+- **Canal** — E-mail, WhatsApp ou SMS
+- **Conteúdo** — A mensagem a ser enviada
+- **Delay** — Tempo de espera antes do envio (minutos, horas ou dias)
+
+## Inscrevendo Contatos
+
+Contatos podem ser inscritos:
+
+- **Manualmente** — Selecione contatos e inscreva na sequência
+- **Via Automação** — Use a ação "Inscrever em Sequência" em automações
+- **Via Flow Builder** — Adicione como ação em fluxos visuais
+
+💡 Dica: Combine sequências com Lead Scoring para criar jornadas inteligentes de nutrição.`,
+  },
+  {
+    id: 'ab-tests',
+    categoryId: 'settings',
+    title: 'Testes A/B',
+    icon: SplitSquareVertical,
+    description: 'Compare variantes de mensagens para otimizar conversões.',
+    readTime: '3 min',
+    content: `Os Testes A/B permitem comparar duas versões de uma mensagem para descobrir qual tem melhor desempenho.
+
+## Como funciona
+
+1. Acesse "Testes A/B" no menu lateral
+2. Clique em "Novo Teste"
+3. Defina o nome e canal (WhatsApp, E-mail ou Instagram)
+4. Crie a Variante A e a Variante B com conteúdos diferentes
+5. Inicie o teste
+
+## Métricas
+
+O sistema acompanha automaticamente:
+
+- **Envios** — Quantidade enviada de cada variante
+- **Respostas** — Taxa de resposta de cada variante
+- **Conversões** — Conversões geradas
+- **Vencedor** — Variante com melhor performance
+
+## Boas práticas
+
+- Teste apenas **uma variável** por vez (assunto, CTA, imagem)
+- Aguarde um volume mínimo de envios antes de declarar vencedor
+- Use o vencedor como base para próximos testes
+
+💡 Dica: Testes A/B também estão disponíveis como ação inline dentro de automações (Split Test).`,
+  },
+  {
+    id: 'growth-tools',
+    categoryId: 'settings',
+    title: 'Growth Tools',
+    icon: Megaphone,
+    description: 'Ferramentas de captura: links, QR codes e widgets.',
+    readTime: '3 min',
+    content: `Growth Tools são ferramentas de captura de leads para atrair contatos para o seu WhatsApp e CRM.
+
+## Tipos de ferramentas
+
+### Links de captura
+- Gere links personalizados com mensagem pré-preenchida
+- Ao clicar, o contato inicia conversa no WhatsApp
+- O contato é criado automaticamente no CRM
+
+### QR Codes
+- Gere QR Codes dinâmicos vinculados ao seu WhatsApp
+- Ideal para materiais impressos, eventos e vitrines
+- Acompanhe escaneamentos e conversões
+
+### Widgets para site
+- Botões flutuantes de WhatsApp para seu site
+- Configuração visual de cores, posição e mensagem
+- Instalação via código embed
+
+## Métricas
+
+Cada ferramenta rastreia:
+
+- **Cliques** — Quantas vezes foi acessada
+- **Conversões** — Contatos gerados
+
+💡 Dica: Use Growth Tools com automações para que novos contatos entrem automaticamente em fluxos de nutrição.`,
+  },
+  {
+    id: 'agency-management',
+    categoryId: 'settings',
+    title: 'Gestão de Agência',
+    icon: Briefcase,
+    description: 'Modo multi-tenant para agências que gerenciam múltiplas organizações.',
+    readTime: '4 min',
+    content: `O modo Agência permite gerenciar múltiplas organizações-cliente a partir de uma única conta.
+
+## Adicionando clientes
+
+1. Acesse "Clientes Agência" no menu lateral
+2. Clique em "Convidar Cliente"
+3. Insira o e-mail do cliente
+4. O cliente receberá um convite para vincular sua organização
+
+## Níveis de acesso
+
+- **Operacional** — Acesso para operar o CRM e automações do cliente
+- **Completo** — Acesso total, incluindo configurações e planos
+
+## Alternando entre clientes
+
+- Use o seletor de organização no topo da sidebar
+- Alterne instantaneamente entre seus clientes
+- Todas as ações ficam isoladas por organização
+
+## Plano necessário
+
+O modo Agência requer o plano **Agência (R$997/mês)** e está protegido por Feature Gate.
+
+> Cada organização-cliente mantém seus dados completamente isolados. A agência acessa mas não mistura dados entre clientes.`,
   },
   {
     id: 'api-webhooks',

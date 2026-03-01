@@ -400,8 +400,38 @@ Construtor visual drag-and-drop estilo ManyChat para criação de funis multi-ca
 - Múltiplos fluxos independentes por organização
 - Filtro por \`trigger_config.flow_builder = true\`
 - Nós visuais: Trigger, Ação, Condição, Delay
-- Suporte a gatilhos de Instagram (comentário, DM), WhatsApp (keyword), e CRM (contato criado, tag adicionada)
 - Persistência do canvas como JSON no campo \`actions\`
+
+### Gatilhos Expandidos
+
+**Instagram:**
+- Comentário em qualquer post ou post específico (por URL/ID)
+- DM recebida (com filtro de palavra-chave)
+- Resposta a Story específico (por URL/ID, com tipo de interação: texto, emoji, quick reply)
+- Menção em Story específico (por URL/ID)
+- Novo seguidor
+
+**WhatsApp:**
+- Mensagem recebida (geral)
+- Palavra-chave específica com tipos de correspondência: exata, contém, inicia com
+- Automação fonte — dispara quando contato veio de automação específica (seletor de automação existente)
+- Origem da mensagem — filtra por fonte: campanha, grupo, broadcast, mensagem direta
+
+**CRM:**
+- Novo contato criado
+- Formulário submetido — com seletor de formulário específico (\`form_id\`, \`form_name\` via hook \`useForms\`)
+- Fonte do contato — filtra pela origem do lead (website, anúncios, landing page, indicação, manual, API, importação)
+
+### Configuração dos Gatilhos
+Todos os gatilhos possuem campos de configuração editáveis no \`NodeConfigDialog\`, com metadados persistidos em \`trigger_config\`:
+- \`form_id\` / \`form_name\` — Formulário selecionado
+- \`contact_source\` — Fonte do contato
+- \`source_automation_id\` / \`source_automation_name\` — Automação de origem
+- \`message_source\` — Origem da mensagem WhatsApp
+- \`story_url\` — URL/ID do Story do Instagram
+- \`interaction_type\` — Tipo de interação com Story (reply, reaction, mention)
+- \`response_type\` — Tipo de resposta ao Story (text, emoji, quick_reply)
+- \`match_type\` — Tipo de correspondência de keyword (exact, contains, starts_with)
 
 ## 4.11 Sequências (Drip Campaigns)
 

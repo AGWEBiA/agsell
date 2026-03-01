@@ -5,7 +5,7 @@ import {
   Link as LinkIcon, Settings, Bot, Brain, Trophy, Shield, Key,
   Webhook, SlidersHorizontal, Instagram, ListChecks, Search,
   BookOpen, ChevronRight, Lightbulb, Bell, Globe, Lock, Database,
-  HelpCircle, Megaphone, Wrench, Workflow, Vote, SplitSquareVertical,
+  HelpCircle, Megaphone, Wrench, Workflow, Vote, SplitSquareVertical, Briefcase,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -175,9 +175,9 @@ const guideSections: GuideSection[] = [
     features: [
       { title: 'Canvas visual intuitivo', description: 'Monte funis de automação arrastando e conectando blocos em um editor visual, sem precisar de código.' },
       { title: 'Múltiplos fluxos', description: 'Crie e gerencie quantos fluxos quiser. Cada um com seu gatilho, ações e configurações independentes.' },
-      { title: 'Gatilhos Instagram', description: 'Comentários (geral ou post específico), DMs recebidas, respostas a stories e novos seguidores.' },
-      { title: 'Gatilhos WhatsApp', description: 'Mensagens recebidas e palavras-chave específicas para ativar fluxos automaticamente.' },
-      { title: 'Gatilhos CRM', description: 'Novo contato criado ou formulário submetido para iniciar sequências de nutrição.' },
+      { title: 'Gatilhos Instagram', description: 'Comentários (geral ou post específico), DMs recebidas, respostas a stories específicos, menções e novos seguidores.' },
+      { title: 'Gatilhos WhatsApp', description: 'Mensagens recebidas, palavras-chave (exata, contém, inicia com), automação fonte e origem da mensagem (campanha, grupo, broadcast, direto).' },
+      { title: 'Gatilhos CRM', description: 'Novo contato criado, formulário submetido (com seleção de formulário específico) e filtro por fonte/origem do contato.' },
       { title: 'Ações encadeadas', description: 'Enviar DM, responder comentário, enviar WhatsApp/e-mail, adicionar tags, atualizar score, criar tarefas.' },
       { title: 'Condições lógicas', description: 'Ramifique o fluxo com verificações de tag, palavra-chave ou lead score.' },
       { title: 'Delays configuráveis', description: 'Insira pausas em minutos, horas ou dias entre as ações do fluxo.' },
@@ -329,6 +329,68 @@ const guideSections: GuideSection[] = [
       { title: 'Mapeamento de campos', description: 'Configure como os dados recebidos devem ser mapeados para o CRM.' },
       { title: 'Token de segurança', description: 'Proteja seus webhooks com tokens de autenticação.' },
       { title: 'Histórico de requisições', description: 'Visualize todas as requisições recebidas com detalhes.' },
+    ],
+  },
+  {
+    id: 'sequences',
+    title: 'Sequências (Drip)',
+    icon: ListChecks,
+    badge: 'NOVO',
+    description: 'Envio automatizado de mensagens em intervalos programados para nutrição de leads.',
+    features: [
+      { title: 'Criação de sequências', description: 'Monte sequências com múltiplos passos de envio (e-mail, WhatsApp, SMS) com intervalos configuráveis.' },
+      { title: 'Inscrição de contatos', description: 'Inscreva contatos manualmente ou automaticamente via automações e flows.' },
+      { title: 'Progresso por contato', description: 'Acompanhe em qual etapa cada contato inscrito está e o status de cada envio.' },
+      { title: 'Integração com automações', description: 'Use ações "Inscrever em Sequência" e "Remover de Sequência" dentro de automações e flows.' },
+    ],
+  },
+  {
+    id: 'ab-tests',
+    title: 'Testes A/B',
+    icon: SplitSquareVertical,
+    badge: 'NOVO',
+    description: 'Compare variantes de mensagens para otimizar conversões em WhatsApp, E-mail e Instagram.',
+    features: [
+      { title: 'Criação de testes', description: 'Defina duas variantes (A e B) com conteúdo diferente para o mesmo canal.' },
+      { title: 'Distribuição automática', description: 'O sistema divide automaticamente os envios entre as variantes.' },
+      { title: 'Métricas comparativas', description: 'Acompanhe envios, respostas e conversões de cada variante em tempo real.' },
+      { title: 'Vencedor automático', description: 'O sistema identifica e destaca a variante com melhor desempenho.' },
+    ],
+  },
+  {
+    id: 'growth-tools',
+    title: 'Growth Tools',
+    icon: Megaphone,
+    badge: 'NOVO',
+    description: 'Ferramentas de captura de leads: links, QR codes e widgets para WhatsApp e Instagram.',
+    features: [
+      { title: 'Links de captura', description: 'Gere links com mensagem pré-preenchida para WhatsApp que criam contatos automaticamente.' },
+      { title: 'QR Codes', description: 'Gere QR Codes dinâmicos para uso em materiais impressos, eventos e displays.' },
+      { title: 'Widgets para site', description: 'Botões flutuantes de WhatsApp para incorporar em sites e landing pages.' },
+      { title: 'Métricas de performance', description: 'Acompanhe cliques e conversões de cada ferramenta de captura.' },
+    ],
+  },
+  {
+    id: 'channels',
+    title: 'Canais',
+    icon: Globe,
+    description: 'Gestão centralizada de todos os canais de comunicação conectados.',
+    features: [
+      { title: 'Visão consolidada', description: 'Veja o status de todos os canais (WhatsApp, Instagram, E-mail, Telegram) em um único painel.' },
+      { title: 'Configuração rápida', description: 'Acesse a configuração de cada canal diretamente a partir da visão geral.' },
+      { title: 'Status em tempo real', description: 'Monitore se cada canal está conectado, desconectado ou com erros.' },
+    ],
+  },
+  {
+    id: 'agency',
+    title: 'Gestão de Agência',
+    icon: Briefcase,
+    description: 'Modo multi-tenant para agências que gerenciam múltiplas organizações-cliente.',
+    features: [
+      { title: 'Clientes da agência', description: 'Adicione e gerencie organizações-cliente a partir da sua organização de agência.' },
+      { title: 'Convites por e-mail', description: 'Envie convites para novos clientes se vincularem à agência.' },
+      { title: 'Níveis de acesso', description: 'Defina acesso operacional ou completo para cada organização-cliente.' },
+      { title: 'Troca de contexto', description: 'Alterne entre organizações-cliente sem precisar fazer logout.' },
     ],
   },
   {
