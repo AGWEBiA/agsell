@@ -11,6 +11,7 @@ import { AdminViewProvider } from "@/contexts/AdminViewContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { FeatureRequiredPage } from "@/components/permissions/FeatureRequiredPage";
 
 // Auth Pages
 import Index from "./pages/Index";
@@ -95,16 +96,16 @@ const App = () => (
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="inbox" element={<Inbox />} />
                     <Route path="inbox-settings" element={<InboxSettings />} />
-                    <Route path="email" element={<Email />} />
-                    <Route path="whatsapp" element={<WhatsApp />} />
-                    <Route path="instagram" element={<InstagramPage />} />
-                    <Route path="whatsapp-flows" element={<WhatsAppFlowsPage />} />
-                    <Route path="automations" element={<Automations />} />
-                    <Route path="lead-scoring" element={<LeadScoring />} />
+                    <Route path="email" element={<FeatureRequiredPage feature="email_marketing" featureLabel="E-mail Marketing"><Email /></FeatureRequiredPage>} />
+                    <Route path="whatsapp" element={<FeatureRequiredPage feature="whatsapp" featureLabel="WhatsApp Business"><WhatsApp /></FeatureRequiredPage>} />
+                    <Route path="instagram" element={<FeatureRequiredPage feature="instagram" featureLabel="Instagram"><InstagramPage /></FeatureRequiredPage>} />
+                    <Route path="whatsapp-flows" element={<FeatureRequiredPage feature="whatsapp" featureLabel="WhatsApp Flows"><WhatsAppFlowsPage /></FeatureRequiredPage>} />
+                    <Route path="automations" element={<FeatureRequiredPage feature="automacoes" featureLabel="Automações"><Automations /></FeatureRequiredPage>} />
+                    <Route path="lead-scoring" element={<FeatureRequiredPage feature="lead_scoring" featureLabel="Lead Scoring"><LeadScoring /></FeatureRequiredPage>} />
                     <Route path="forms" element={<Forms />} />
-                    <Route path="analytics" element={<Analytics />} />
+                    <Route path="analytics" element={<FeatureRequiredPage feature="analytics" featureLabel="Analytics"><Analytics /></FeatureRequiredPage>} />
                     <Route path="gamification" element={<Gamification />} />
-                    <Route path="integrations" element={<Integrations />} />
+                    <Route path="integrations" element={<FeatureRequiredPage feature="integrações" featureLabel="Integrações"><Integrations /></FeatureRequiredPage>} />
                     <Route path="ai-assistant" element={<AIAssistant />} />
                     <Route path="ai-agents" element={<AIAgents />} />
                     <Route path="settings" element={<Settings />} />
@@ -112,11 +113,11 @@ const App = () => (
                     <Route path="plans" element={<Plans />} />
                     <Route path="permissions" element={<Permissions />} />
                     <Route path="admin" element={<Admin />} />
-                    <Route path="api-keys" element={<ApiKeys />} />
-                    <Route path="webhooks" element={<Webhooks />} />
-                    <Route path="email-domain" element={<EmailDomain />} />
+                    <Route path="api-keys" element={<FeatureRequiredPage feature="api" featureLabel="API Keys"><ApiKeys /></FeatureRequiredPage>} />
+                    <Route path="webhooks" element={<FeatureRequiredPage feature="api" featureLabel="Webhooks"><Webhooks /></FeatureRequiredPage>} />
+                    <Route path="email-domain" element={<FeatureRequiredPage feature="email_marketing" featureLabel="Domínio de E-mail"><EmailDomain /></FeatureRequiredPage>} />
                     <Route path="system-guide" element={<SystemGuide />} />
-                    <Route path="agency-clients" element={<AgencyClients />} />
+                    <Route path="agency-clients" element={<FeatureRequiredPage feature="agency_management" featureLabel="Gestão de Agência"><AgencyClients /></FeatureRequiredPage>} />
                   </Route>
                   
                   {/* Plans accessible even with expired subscription */}

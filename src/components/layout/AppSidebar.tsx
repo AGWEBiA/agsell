@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo, LogoIcon } from '@/components/ui/Logo';
 import { useAdminView } from '@/contexts/AdminViewContext';
-import { usePlanFeature } from '@/hooks/usePlans';
+import { usePlans } from '@/hooks/usePlans';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -68,9 +68,9 @@ const menuSections: MenuSection[] = [
     icon: MessageSquare,
     items: [
       { label: 'SAC', icon: Inbox, path: '/inbox' },
-      { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp' },
-      { label: 'E-mail', icon: Mail, path: '/email' },
-      { label: 'Instagram', icon: Instagram, path: '/instagram' },
+      { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp', featureRequired: 'whatsapp' },
+      { label: 'E-mail', icon: Mail, path: '/email', featureRequired: 'email_marketing' },
+      { label: 'Instagram', icon: Instagram, path: '/instagram', featureRequired: 'instagram' },
     ],
   },
   {
@@ -78,9 +78,9 @@ const menuSections: MenuSection[] = [
     label: 'Marketing',
     icon: Megaphone,
     items: [
-      { label: 'Automações', icon: Zap, path: '/automations' },
-      { label: 'WhatsApp Flows', icon: ListChecks, path: '/whatsapp-flows' },
-      { label: 'Lead Scoring', icon: Target, path: '/lead-scoring' },
+      { label: 'Automações', icon: Zap, path: '/automations', featureRequired: 'automacoes' },
+      { label: 'WhatsApp Flows', icon: ListChecks, path: '/whatsapp-flows', featureRequired: 'whatsapp' },
+      { label: 'Lead Scoring', icon: Target, path: '/lead-scoring', featureRequired: 'lead_scoring' },
       { label: 'Formulários', icon: FileText, path: '/forms' },
     ],
   },
@@ -89,7 +89,7 @@ const menuSections: MenuSection[] = [
     label: 'Inteligência',
     icon: Lightbulb,
     items: [
-      { label: 'Analytics', icon: BarChart3, path: '/analytics' },
+      { label: 'Analytics', icon: BarChart3, path: '/analytics', featureRequired: 'analytics' },
       { label: 'Assistente IA', icon: Bot, path: '/ai-assistant' },
       { label: 'Agentes IA', icon: Brain, path: '/ai-agents' },
       { label: 'Gamificação', icon: Trophy, path: '/gamification' },
@@ -101,14 +101,14 @@ const menuSections: MenuSection[] = [
     icon: Wrench,
     items: [
       { label: 'Clientes (Agência)', icon: Briefcase, path: '/agency-clients', featureRequired: 'agency_management' },
-      { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
+      { label: 'Integrações', icon: LinkIcon, path: '/integrations', featureRequired: 'integrações' },
       { label: 'Organização', icon: Building2, path: '/organization', orgAdminOnly: true },
       { label: 'Planos', icon: Target, path: '/plans' },
       { label: 'Permissões', icon: Shield, path: '/permissions', orgAdminOnly: true },
       { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings', orgAdminOnly: true },
-      { label: 'Domínio E-mail', icon: Mail, path: '/email-domain' },
-      { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true },
-      { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
+      { label: 'Domínio E-mail', icon: Mail, path: '/email-domain', featureRequired: 'email_marketing' },
+      { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true, featureRequired: 'api' },
+      { label: 'Webhooks', icon: Webhook, path: '/webhooks', featureRequired: 'api' },
       { label: 'Guia do Sistema', icon: HelpCircle, path: '/system-guide' },
       { label: 'Configurações', icon: Settings, path: '/settings' },
       { label: 'Admin', icon: Shield, path: '/admin', adminOnly: true },
@@ -213,9 +213,8 @@ function MenuItemLink({
 
 export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose }: SidebarProps) {
   const location = useLocation();
-  const { user, isAdmin } = useAuth();
-  const { isUserMode } = useAdminView();
-  const { hasFeature: hasAgency } = usePlanFeature('agency_management');
+  const { currentPlan } = usePlans();
+  const planFeatures = currentPlan?.features ?? [];
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -230,16 +229,15 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const featureMap: Record<string, boolean> = {
-    agency_management: hasAgency,
-  };
+  const { user, isAdmin } = useAuth();
+  const { isUserMode } = useAdminView();
 
   const filteredSections = menuSections.map((section) => ({
     ...section,
     items: section.items.filter((item) => {
       if (item.adminOnly && (!isAdmin || isUserMode)) return false;
       if (item.orgAdminOnly && isUserMode) return false;
-      if (item.featureRequired && !featureMap[item.featureRequired]) return false;
+      if (item.featureRequired && !planFeatures.includes(item.featureRequired)) return false;
       return true;
     }),
   }));
