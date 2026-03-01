@@ -259,6 +259,10 @@ interface Plan {
   max_users: number;
   max_contacts: number;
   max_ai_requests_per_month: number;
+  max_emails_per_month: number;
+  max_whatsapp_messages: number;
+  max_automations: number;
+  max_forms: number;
   features: string[];
 }
 
@@ -298,7 +302,11 @@ function PlansSection() {
           price_yearly: p.price_yearly || 0,
           max_users: p.max_users || 1,
           max_contacts: p.max_contacts || 100,
-          max_ai_requests_per_month: (p as any).max_ai_requests_per_month || 0,
+          max_ai_requests_per_month: p.max_ai_requests_per_month || 0,
+          max_emails_per_month: p.max_emails_per_month || 0,
+          max_whatsapp_messages: p.max_whatsapp_messages || 0,
+          max_automations: p.max_automations || 0,
+          max_forms: p.max_forms || 0,
         })));
       }
       setIsLoading(false);
@@ -391,15 +399,31 @@ function PlansSection() {
                   <div className="space-y-2 text-left text-xs">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-primary shrink-0" />
-                      <span>{plan.max_users === -1 ? 'Ilimitados' : `${plan.max_users} usuário${plan.max_users > 1 ? 's' : ''}`}</span>
+                      <span>{plan.max_users === -1 ? 'Usuários ilimitados' : `${plan.max_users} usuário${plan.max_users > 1 ? 's' : ''}`}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-primary shrink-0" />
                       <span>{plan.max_contacts === -1 ? 'Contatos ilimitados' : `${plan.max_contacts.toLocaleString()} contatos`}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary shrink-0" />
+                      <span>{plan.max_emails_per_month === -1 ? 'E-mails ilimitados' : plan.max_emails_per_month === 0 ? 'Sem e-mail marketing' : `${plan.max_emails_per_month.toLocaleString()} e-mails/mês`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary shrink-0" />
+                      <span>{plan.max_whatsapp_messages === -1 ? 'WhatsApp ilimitado' : plan.max_whatsapp_messages === 0 ? 'Sem WhatsApp' : `${plan.max_whatsapp_messages.toLocaleString()} msgs WhatsApp/mês`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <Brain className="h-4 w-4 text-primary shrink-0" />
                       <span>{plan.max_ai_requests_per_month === -1 ? 'IA ilimitada' : `${plan.max_ai_requests_per_month.toLocaleString()} req. IA/mês`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-primary shrink-0" />
+                      <span>{plan.max_automations === -1 ? 'Automações ilimitadas' : plan.max_automations === 0 ? 'Sem automações' : `${plan.max_automations} automações`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <span>{plan.max_forms === -1 ? 'Formulários ilimitados' : plan.max_forms === 0 ? 'Sem formulários' : `${plan.max_forms} formulários`}</span>
                     </div>
                   </div>
 
