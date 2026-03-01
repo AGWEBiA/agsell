@@ -8,6 +8,7 @@ import {
   ChevronDown, Trophy, Shield, Key, Webhook, SlidersHorizontal,
   Instagram, ListChecks, Home, Megaphone, Lightbulb, Wrench,
   HelpCircle, Briefcase, X, FlaskConical, Rocket, GitBranch, Send,
+  Lock, BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -104,6 +105,7 @@ const menuSections: MenuSection[] = [
     icon: HelpCircle,
     items: [
       { label: 'Central de Ajuda', icon: HelpCircle, path: '/help-center' },
+      { label: 'Guia do Sistema', icon: BookOpen, path: '/system-guide' },
     ],
   },
   {
@@ -184,27 +186,34 @@ function SectionHeader({
 }
 
 function MenuItemLink({
-  item, isActive, collapsed, onNavigate,
+  item, isActive, collapsed, onNavigate, isLocked,
 }: {
-  item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate?: () => void;
+  item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate?: () => void; isLocked?: boolean;
 }) {
   const Icon = item.icon;
 
   const linkContent = (
     <Link
-      to={item.path}
+      to={isLocked ? '/plans' : item.path}
       onClick={onNavigate}
       className={cn(
         'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
         collapsed ? 'justify-center' : 'ml-2',
-        isActive
-          ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+        isLocked
+          ? 'text-sidebar-foreground/40 hover:text-sidebar-foreground/60 hover:bg-sidebar-accent/50'
+          : isActive
+            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
       )}
       aria-current={isActive ? 'page' : undefined}
     >
       <Icon className="h-4.5 w-4.5 shrink-0" />
-      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && (
+        <>
+          <span className="flex-1">{item.label}</span>
+          {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+        </>
+      )}
     </Link>
   );
 
@@ -213,7 +222,7 @@ function MenuItemLink({
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
         <TooltipContent side="right" className="font-medium">
-          {item.label}
+          {item.label}{isLocked ? ' 🔒' : ''}
         </TooltipContent>
       </Tooltip>
     );
@@ -248,7 +257,6 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
     items: section.items.filter((item) => {
       if (item.adminOnly && (!isAdmin || isUserMode)) return false;
       if (item.orgAdminOnly && isUserMode) return false;
-      if (item.featureRequired && !planFeatures.includes(item.featureRequired)) return false;
       return true;
     }),
   }));
@@ -304,6 +312,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                           isActive={location.pathname === item.path}
                           collapsed={false}
                           onNavigate={onClose}
+                          isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
                         />
                       ))}
                     </div>
@@ -369,6 +378,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                         item={item}
                         isActive={location.pathname === item.path}
                         collapsed={collapsed}
+                        isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
                       />
                     ))}
                   </div>
