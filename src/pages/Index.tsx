@@ -41,7 +41,7 @@ function HeroSection() {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
-        <div className="max-w-3xl mx-auto text-center lg:text-left lg:mx-0">
+        <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-6">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
@@ -56,12 +56,12 @@ function HeroSection() {
             <span className="text-primary">Pense menos.</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-8 leading-relaxed mx-auto lg:mx-0">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-8 leading-relaxed mx-auto">
             O CRM que une WhatsApp nativo, automações e agentes de IA para sua equipe
             fechar mais negócios — com menos esforço.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center lg:items-start gap-3 justify-center lg:justify-start">
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
             <Link to="/pricing">
               <Button size="lg" className="h-12 sm:h-14 px-8 sm:px-10 text-sm sm:text-base font-semibold rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all w-full sm:w-auto">
                 Começar agora
@@ -143,7 +143,7 @@ const DIFFERENTIALS = [
 function DifferentialsSection() {
   return (
     <section className="container mx-auto px-4 sm:px-6 py-16 md:py-24">
-      <div className="max-w-xl mb-12">
+      <div className="max-w-xl mx-auto text-center mb-12">
         <p className="text-sm font-medium text-primary mb-3 tracking-wide uppercase">Diferenciais</p>
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
           Por que escolher a AG Sell?
