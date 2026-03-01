@@ -8,7 +8,7 @@ import { CompetitorComparison } from '@/components/pricing/CompetitorComparison'
 import {
   ArrowRight, Check, Users, Target, Bot, MessageSquare, Mail, BarChart3,
   Sparkles, FileText, Calendar, Inbox, Globe, Clock, Zap, Shield,
-  Phone, Star, TrendingUp, Layers, Award, ChevronRight, Crown, Brain, Loader2
+  Phone, Star, Layers, Award, ChevronRight, Brain, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
