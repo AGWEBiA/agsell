@@ -61,6 +61,7 @@ import ABTests from "./pages/ABTests";
 import GrowthTools from "./pages/GrowthTools";
 import Sequences from "./pages/Sequences";
 import Channels from "./pages/Channels";
+import FlowBuilder from "./pages/FlowBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -125,6 +126,7 @@ const App = () => (
                     <Route path="agency-clients" element={<FeatureRequiredPage feature="agency_management" featureLabel="Gestão de Agência"><AgencyClients /></FeatureRequiredPage>} />
                     <Route path="ab-tests" element={<ABTests />} />
                     <Route path="growth-tools" element={<GrowthTools />} />
+                    <Route path="flow-builder" element={<FlowBuilder />} />
                     <Route path="sequences" element={<Sequences />} />
                     <Route path="channels" element={<Channels />} />
                   </Route>

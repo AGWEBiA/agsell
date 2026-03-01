@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ import {
   Mail,
   MessageSquare,
   Instagram,
+  Workflow,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -68,6 +70,7 @@ const triggerTypes = [
 ];
 
 export default function Automations() {
+  const navigate = useNavigate();
   const { automations, isLoading, createAutomation, updateAutomation, toggleAutomation, deleteAutomation } = useAutomations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -169,6 +172,10 @@ export default function Automations() {
         description="Construa fluxos automatizados para seus leads"
         helpText="Automações executam ações automaticamente quando um evento acontece, como enviar um email quando um contato é criado."
       >
+        <Button variant="default" onClick={() => navigate('/flow-builder')} className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white border-0">
+          <Workflow className="h-4 w-4 mr-2" />
+          Flow Builder
+        </Button>
         <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
           <Sparkles className="h-4 w-4 mr-2" />
           Templates
