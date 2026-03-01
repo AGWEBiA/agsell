@@ -1,5 +1,6 @@
-// LGPD - Data Deletion Edge Function
+// LGPD - Data Deletion Edge Function (with Stripe subscription cancellation)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@14.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +45,52 @@ Deno.serve(async (req) => {
 
     const userId = user.id;
 
-    // Delete user data in order (respecting foreign keys)
+    // ---- Step 1: Cancel all active Stripe subscriptions ----
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+
+    // Find all organizations the user belongs to
+    const { data: memberships } = await supabase
+      .from("organization_members")
+      .select("organization_id, role")
+      .eq("user_id", userId);
+
+    if (memberships && stripeSecretKey) {
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+
+      for (const membership of memberships) {
+        // Only cancel subscriptions for orgs where user is owner
+        if (membership.role !== "owner") continue;
+
+        const { data: subscriptions } = await supabase
+          .from("subscriptions")
+          .select("stripe_subscription_id, stripe_customer_id, status")
+          .eq("organization_id", membership.organization_id);
+
+        if (subscriptions) {
+          for (const sub of subscriptions) {
+            // Cancel active Stripe subscriptions immediately
+            if (sub.stripe_subscription_id && ["active", "trialing", "past_due"].includes(sub.status)) {
+              try {
+                await stripe.subscriptions.cancel(sub.stripe_subscription_id, {
+                  prorate: true,
+                });
+                console.log("Stripe subscription canceled:", sub.stripe_subscription_id);
+              } catch (stripeErr) {
+                console.error("Error canceling Stripe subscription:", stripeErr);
+              }
+            }
+
+            // Update local subscription record
+            await supabase
+              .from("subscriptions")
+              .update({ status: "canceled" })
+              .eq("stripe_subscription_id", sub.stripe_subscription_id);
+          }
+        }
+      }
+    }
+
+    // ---- Step 2: Delete user data in order (respecting foreign keys) ----
     const deletions = [
       supabase.from("notifications").delete().eq("user_id", userId),
       supabase.from("activities").delete().eq("user_id", userId),
@@ -70,11 +116,10 @@ Deno.serve(async (req) => {
       const { error } = await deletion;
       if (error) {
         console.error("Deletion error:", error);
-        // Continue with other deletions
       }
     }
 
-    // Finally delete the auth user
+    // ---- Step 3: Delete the auth user ----
     const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
     if (deleteUserError) {
       console.error("Error deleting auth user:", deleteUserError);
@@ -85,7 +130,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Conta e dados excluídos com sucesso." }),
+      JSON.stringify({ success: true, message: "Conta e dados excluídos com sucesso. Todas as cobranças foram canceladas." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,8 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Eye } from 'lucide-react';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { Eye, AlertTriangle } from 'lucide-react';
 
 export function DashboardLayout() {
   const isMobile = useIsMobile();
@@ -18,6 +19,8 @@ export function DashboardLayout() {
   const { currentOrganization } = useOrganization();
   const { progress, isLoading } = useOnboarding();
   const { isUserMode, toggleViewMode, simulatedPlan, exitSimulation } = useAdminView();
+  const { isPastDue } = useSubscriptionStatus();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (currentOrganization && !isLoading) {
@@ -88,11 +91,32 @@ export function DashboardLayout() {
         </div>
       )}
 
+      {/* Past Due Subscription Banner */}
+      {isPastDue && !isUserMode && (
+        <div
+          className={cn(
+            'fixed top-16 right-0 z-20 flex items-center justify-center gap-2 bg-destructive text-destructive-foreground text-sm py-2 px-4 transition-all duration-300',
+            isMobile ? 'left-0' : sidebarCollapsed ? 'left-16' : 'left-64'
+          )}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          <span className="text-xs sm:text-sm">
+            <strong>Pagamento atrasado!</strong> Sua assinatura não foi renovada. Atualize sua forma de pagamento para evitar o bloqueio.
+          </span>
+          <button
+            onClick={() => navigate('/plans')}
+            className="ml-2 underline font-medium hover:opacity-80 text-xs sm:text-sm"
+          >
+            Renovar
+          </button>
+        </div>
+      )}
+
       <main
         className={cn(
           'min-h-screen transition-all duration-300',
           isMobile ? 'pl-0' : sidebarCollapsed ? 'pl-16' : 'pl-64',
-          isUserMode ? 'pt-[calc(4rem+2rem)]' : 'pt-16'
+          isUserMode || isPastDue ? 'pt-[calc(4rem+2rem)]' : 'pt-16'
         )}
       >
         <div className="p-3 sm:p-6">

@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 
 export default function SubscriptionExpired() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { isPastDue } = useSubscriptionStatus();
 
   const handleRenew = () => {
-    navigate('/renew-plans');
+    navigate('/plans');
   };
 
   const handleLogout = async () => {
@@ -24,9 +26,13 @@ export default function SubscriptionExpired() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
             <AlertTriangle className="h-8 w-8 text-destructive" />
           </div>
-          <CardTitle className="text-2xl">Assinatura Expirada</CardTitle>
+          <CardTitle className="text-2xl">
+            {isPastDue ? 'Pagamento Atrasado' : 'Assinatura Expirada'}
+          </CardTitle>
           <CardDescription className="text-base">
-            Sua assinatura não foi renovada e o acesso ao sistema está temporariamente bloqueado.
+            {isPastDue
+              ? 'O pagamento da sua assinatura não foi confirmado pelo gateway de pagamento. Atualize sua forma de pagamento para continuar.'
+              : 'Sua assinatura não foi renovada e o acesso ao sistema está temporariamente bloqueado.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
