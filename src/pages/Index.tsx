@@ -57,17 +57,14 @@ function HeroSection() {
           </div>
 
           <div className="relative">
-            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border/40 bg-card">
+            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-primary/10">
               <img
                 src={heroDashboard}
                 alt="Painel do AG Sell CRM mostrando pipeline de vendas, analytics e integrações"
-                className="w-full h-auto"
+                className="w-full h-auto block rounded-2xl object-cover"
                 loading="eager"
               />
             </div>
-            {/* Decorative blobs */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
           </div>
         </div>
       </div>
