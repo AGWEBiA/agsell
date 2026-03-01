@@ -2,7 +2,9 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const MANUAL_CONTENT = `# MANUAL TÉCNICO COMPLETO — AG SELL
 ## Plataforma CRM + Automação Omnichannel + IA
@@ -1003,6 +1005,19 @@ Checkout → Stripe Session → Webhook checkout.session.completed
 
 export default function TechnicalManual() {
   const navigate = useNavigate();
+  const { isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleCopy = async () => {
     try {
