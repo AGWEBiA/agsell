@@ -8,7 +8,7 @@ import {
   ChevronDown, Trophy, Shield, Key, Webhook, SlidersHorizontal,
   Instagram, ListChecks, Home, Megaphone, Lightbulb, Wrench,
   HelpCircle, Briefcase, X, FlaskConical, Rocket, GitBranch, Send,
-  Lock, BookOpen,
+  Lock, BookOpen, Workflow,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -80,6 +80,7 @@ const menuSections: MenuSection[] = [
     icon: Megaphone,
     items: [
       { label: 'Automações', icon: Zap, path: '/automations', featureRequired: 'automacoes' },
+      { label: 'Flow Builder', icon: Workflow, path: '/flow-builder', featureRequired: 'automacoes' },
       { label: 'WhatsApp Flows', icon: ListChecks, path: '/whatsapp-flows', featureRequired: 'whatsapp' },
       { label: 'Lead Scoring', icon: Target, path: '/lead-scoring', featureRequired: 'lead_scoring' },
       { label: 'Sequências', icon: GitBranch, path: '/sequences' },
