@@ -56,15 +56,13 @@ function HeroSection() {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-primary/10">
-              <img
-                src={heroDashboard}
-                alt="Painel do AG Sell CRM mostrando pipeline de vendas, analytics e integrações"
-                className="w-full h-auto block rounded-2xl object-cover"
-                loading="eager"
-              />
-            </div>
+          <div className="relative flex items-center justify-center">
+            <img
+              src={heroDashboard}
+              alt="Painel do AG Sell CRM mostrando pipeline de vendas, analytics e integrações"
+              className="w-4/5 lg:w-full max-w-md lg:max-w-lg h-auto block"
+              loading="eager"
+            />
           </div>
         </div>
       </div>
