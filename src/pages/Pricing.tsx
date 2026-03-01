@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Logo } from '@/components/ui/Logo';
+import { CompetitorComparison } from '@/components/pricing/CompetitorComparison';
 
 // Features do sistema
 const SYSTEM_FEATURES = [
@@ -597,6 +598,11 @@ export default function Pricing() {
             />
           ))}
         </div>
+      </section>
+
+      {/* Competitor Comparison */}
+      <section className="container mx-auto px-4 pb-20">
+        <CompetitorComparison />
       </section>
 
       {/* Trust Badges */}
