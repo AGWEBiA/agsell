@@ -54,6 +54,7 @@ import Webhooks from "./pages/Webhooks";
 import EmailDomain from "./pages/EmailDomain";
 import InboxSettings from "./pages/InboxSettings";
 import SystemGuide from "./pages/SystemGuide";
+import HelpCenter from "./pages/HelpCenter";
 import AgencyClients from "./pages/AgencyClients";
 import AgencyInvite from "./pages/AgencyInvite";
 import NotFound from "./pages/NotFound";
@@ -117,6 +118,7 @@ const App = () => (
                     <Route path="webhooks" element={<FeatureRequiredPage feature="api" featureLabel="Webhooks"><Webhooks /></FeatureRequiredPage>} />
                     <Route path="email-domain" element={<FeatureRequiredPage feature="email_marketing" featureLabel="Domínio de E-mail"><EmailDomain /></FeatureRequiredPage>} />
                     <Route path="system-guide" element={<SystemGuide />} />
+                    <Route path="help-center" element={<HelpCenter />} />
                     <Route path="agency-clients" element={<FeatureRequiredPage feature="agency_management" featureLabel="Gestão de Agência"><AgencyClients /></FeatureRequiredPage>} />
                   </Route>
                   
