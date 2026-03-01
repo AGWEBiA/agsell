@@ -5,7 +5,7 @@ import {
   Link as LinkIcon, Settings, Bot, Brain, Trophy, Shield, Key,
   Webhook, SlidersHorizontal, Instagram, ListChecks, Search,
   BookOpen, ChevronRight, Lightbulb, Bell, Globe, Lock, Database,
-  HelpCircle, Megaphone, Wrench
+  HelpCircle, Megaphone, Wrench, Workflow, Vote, SplitSquareVertical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -153,12 +153,35 @@ const guideSections: GuideSection[] = [
     id: 'automations',
     title: 'Automações',
     icon: Zap,
-    description: 'Motor de automação com gatilhos, condições e ações encadeadas.',
+    description: 'Motor de automação com 20+ ações, enquetes, condições e ramificações.',
     features: [
       { title: 'Gatilhos configuráveis', description: 'Dispare automações baseadas em eventos como criação de contato, movimentação de deal, recebimento de mensagem e mais.' },
-      { title: 'Ações encadeadas', description: 'Configure sequências de ações: enviar e-mail, WhatsApp, adicionar tag, mover no pipeline, criar tarefa, etc.' },
+      { title: '20+ Ações disponíveis', description: 'Envie e-mail, WhatsApp, DM Instagram, SMS. Adicione tags, defina campos, atualize score. Inscreva em sequências, faça requisições HTTP e mais.' },
+      { title: 'Enquetes interativas', description: 'Envie perguntas com até 4 opções e configure ações diferentes para cada resposta. Ideal para qualificação de leads.' },
+      { title: 'Condições (Se/Senão)', description: 'Ramifique automações por campo do contato, tag, score, resposta de enquete ou última interação com operadores avançados.' },
+      { title: 'Teste A/B (Split)', description: 'Divida o tráfego entre variantes com slider de porcentagem para otimizar conversão.' },
+      { title: 'Atribuição inteligente', description: 'Atribua a agentes via round robin, menos ocupado ou específico. Transfira para humano por departamento.' },
+      { title: 'Requisição HTTP', description: 'Integre com qualquer sistema externo via webhook com método, headers e body customizáveis.' },
       { title: 'Templates prontos', description: 'Utilize templates de automação pré-configurados para cenários comuns.' },
       { title: 'Histórico de execuções', description: 'Monitore todas as execuções com status, erros e resultados detalhados.' },
+    ],
+  },
+  {
+    id: 'flow-builder',
+    title: 'Flow Builder Visual',
+    icon: Workflow,
+    badge: 'NOVO',
+    description: 'Construtor visual de funis estilo ManyChat para Instagram, WhatsApp e CRM.',
+    features: [
+      { title: 'Canvas visual intuitivo', description: 'Monte funis de automação arrastando e conectando blocos em um editor visual, sem precisar de código.' },
+      { title: 'Múltiplos fluxos', description: 'Crie e gerencie quantos fluxos quiser. Cada um com seu gatilho, ações e configurações independentes.' },
+      { title: 'Gatilhos Instagram', description: 'Comentários (geral ou post específico), DMs recebidas, respostas a stories e novos seguidores.' },
+      { title: 'Gatilhos WhatsApp', description: 'Mensagens recebidas e palavras-chave específicas para ativar fluxos automaticamente.' },
+      { title: 'Gatilhos CRM', description: 'Novo contato criado ou formulário submetido para iniciar sequências de nutrição.' },
+      { title: 'Ações encadeadas', description: 'Enviar DM, responder comentário, enviar WhatsApp/e-mail, adicionar tags, atualizar score, criar tarefas.' },
+      { title: 'Condições lógicas', description: 'Ramifique o fluxo com verificações de tag, palavra-chave ou lead score.' },
+      { title: 'Delays configuráveis', description: 'Insira pausas em minutos, horas ou dias entre as ações do fluxo.' },
+      { title: 'Edição de fluxos existentes', description: 'Reabra qualquer fluxo salvo para editar nós, configurações e ativar/desativar.' },
     ],
   },
   {

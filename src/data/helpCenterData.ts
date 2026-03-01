@@ -3,7 +3,8 @@ import {
   Inbox, Mail, MessageSquare, Zap, BarChart3, Target, FileText,
   Link as LinkIcon, Settings, Bot, Brain, Trophy, Shield, Key,
   Webhook, SlidersHorizontal, Instagram, ListChecks, BookOpen,
-  Rocket, Globe, Briefcase, Star, PlayCircle, HelpCircle,
+  Rocket, Globe, Briefcase, Star, PlayCircle, HelpCircle, Workflow,
+  Vote, SplitSquareVertical,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -519,7 +520,7 @@ Acompanhe todas as automações executadas com:
     title: 'Automações',
     icon: Zap,
     description: 'Crie fluxos automatizados com gatilhos, condições e ações.',
-    readTime: '6 min',
+    readTime: '8 min',
     popular: true,
     content: `O motor de automações permite criar fluxos que executam ações automaticamente.
 
@@ -529,39 +530,79 @@ Uma automação é composta por:
 
 - **Gatilho** — O evento que inicia a automação
 - **Ações** — O que deve ser executado
+- **Condições** — Lógica Se/Senão para ramificar o fluxo
+- **Enquetes** — Perguntas interativas com ações por resposta
 
 ## Gatilhos disponíveis
 
-- Contato criado
-- Contato atualizado
+- Contato criado / atualizado
 - Tag adicionada / removida
-- Deal movido no pipeline
-- Deal criado
+- Deal movido no pipeline / criado / ganho
 - Mensagem recebida (WhatsApp/E-mail)
 - Formulário submetido
 - Evento de webhook
 
-## Ações disponíveis
+## Ações disponíveis (20+)
 
-- Enviar e-mail
-- Enviar WhatsApp
-- Adicionar/remover tag
-- Mover deal no pipeline
-- Criar tarefa
-- Notificar membro da equipe
-- Aguardar (delay)
-- Webhook de saída
+### 💬 Mensagens
+- **Enviar E-mail** — Com templates e variáveis
+- **Enviar WhatsApp** — Com botões e templates
+- **Enviar DM Instagram** — Com quick replies e imagens
+- **Enviar SMS** — Via Twilio/Vonage
+- **Enviar Enquete** — Pergunta com até 4 opções e ações por resposta
+- **Notificar Admin** — Via app ou e-mail
+
+### 📇 CRM & Dados
+- **Adicionar/Remover Tag** — Segmentação automática
+- **Definir Campo** — Atualizar campos do contato (status, fonte, custom fields)
+- **Atualizar Lead Score** — Adicionar, subtrair ou definir pontuação
+
+### 🔀 Fluxo & Sequência
+- **Inscrever em Sequência** — Adicionar contato a uma sequência drip
+- **Remover de Sequência** — Cancelar inscrição
+- **Ir para outro Flow** — Redirecionar para outro fluxo visual
+- **Teste A/B (Split)** — Dividir tráfego com slider de porcentagem
+- **Condição (Se/Senão)** — Ramificação por campo, tag, score ou resposta de enquete
+- **Aguardar** — Delay em minutos, horas ou dias
+
+### 👥 Equipe
+- **Atribuir a Agente** — Round robin, menos ocupado ou agente específico
+- **Transferir p/ Humano** — Encaminhar para atendimento por departamento
+- **Criar Tarefa** — Com título, prazo e prioridade
+
+### ⚙️ Avançado
+- **Requisição HTTP** — Webhook externo com método, headers e body customizáveis
 
 [screenshot:Módulo de Automações|/automations]
 
-## Criando uma automação
+## Enquetes com ramificação
 
-1. Acesse "Automações" no menu
-2. Clique em "Nova Automação"
-3. Escolha um template pronto ou comece do zero
-4. Configure o gatilho
-5. Adicione as ações desejadas
-6. Ative a automação
+A ação de **Enquete** permite enviar perguntas interativas e configurar ações diferentes para cada resposta:
+
+1. Defina a pergunta (ex: "Qual produto te interessa?")
+2. Adicione até 4 opções de resposta
+3. Para cada opção, configure uma ação (adicionar tag, ir para flow, enviar mensagem)
+4. A resposta é salva automaticamente em um campo do contato
+
+Exemplo de funil:
+- Enquete: "Qual seu interesse?" → Opções: Produto A, Produto B, Serviço
+- Se "Produto A" → Tag "interesse-produto-a" + Sequência de vendas A
+- Se "Produto B" → Flow de demonstração
+- Se "Serviço" → Transferir para humano
+
+## Condições (Se/Senão)
+
+A ação **Condição** permite criar ramificações lógicas:
+
+- **Campo do contato** — Verificar status, fonte, e-mail, etc.
+- **Tag** — Verificar se possui uma tag específica
+- **Lead Score** — Comparar pontuação
+- **Resposta de enquete** — Agir baseado na resposta
+- **Última interação** — Dias desde último contato
+
+Operadores: igual, diferente, contém, maior que, menor que, existe/não existe.
+
+Para cada condição, defina ações para **Verdadeiro** e **Falso** (adicionar tag, ir para flow, enviar mensagem, parar automação).
 
 ## Templates prontos
 
@@ -573,15 +614,112 @@ Temos templates para cenários comuns:
 - Nutrição de leads
 - Recuperação de carrinho
 
-## Monitoramento
+💡 Dica: Comece com automações simples e vá incrementando. Use enquetes para qualificar leads automaticamente.`,
+  },
+  {
+    id: 'flow-builder',
+    categoryId: 'marketing',
+    title: 'Flow Builder Visual',
+    icon: Workflow,
+    description: 'Construtor visual de funis estilo ManyChat para Instagram, WhatsApp e CRM.',
+    readTime: '7 min',
+    popular: true,
+    content: `O Flow Builder é o construtor visual de automações do AG Sell, inspirado no ManyChat.
 
-Acompanhe as execuções na aba "Histórico":
+## Visão geral
 
-- Status de cada execução
-- Erros e detalhes
-- Contato afetado
+O Flow Builder permite criar funis de automação de forma visual e intuitiva, conectando gatilhos a sequências de ações em um canvas interativo.
 
-💡 Dica: Comece com automações simples (como boas-vindas) e vá incrementando conforme ganha confiança.`,
+[screenshot:Flow Builder Visual|/flow-builder]
+
+## Gerenciando seus fluxos
+
+Ao acessar o Flow Builder, você vê a lista **"Meus Fluxos"** com todos os fluxos criados:
+
+- Cada card mostra o gatilho, número de ações e execuções
+- Ative/desative fluxos pelo menu de cada card
+- Crie quantos fluxos quiser clicando em **"Novo Fluxo"**
+
+## Criando um fluxo
+
+### 1. Escolha o gatilho
+
+O primeiro passo é definir o que inicia seu fluxo:
+
+**Instagram:**
+- 📸 Comentário em qualquer post
+- 📌 Comentário em post específico
+- 💬 DM recebida
+- 📖 Resposta ao story
+- 👤 Novo seguidor
+
+**WhatsApp:**
+- 💬 Mensagem recebida
+- ✨ Palavra-chave específica
+
+**CRM:**
+- 👤 Novo contato criado
+- 📝 Formulário submetido
+
+### 2. Adicione passos
+
+Após definir o gatilho, adicione ações clicando no botão **+** entre os nós:
+
+**Ações:**
+- Enviar DM / Responder comentário
+- Enviar WhatsApp / E-mail
+- Adicionar/Remover tag
+- Atualizar Lead Score
+- Notificar equipe
+- Criar tarefa
+
+**Condições:**
+- Se tem tag
+- Se contém palavra-chave
+- Se score ≥ valor
+
+**Espera:**
+- Aguardar X minutos / horas / dias
+
+### 3. Configure cada passo
+
+Clique em qualquer nó para configurar seus parâmetros:
+- Mensagem a enviar (com variáveis como {{nome}})
+- Tag a adicionar/remover
+- Palavra-chave a verificar
+- Tempo de espera
+
+### 4. Salve e ative
+
+- Dê um nome ao seu fluxo
+- Ative o switch para que o fluxo comece a funcionar
+- Clique em **"Salvar Fluxo"**
+
+## Editando fluxos existentes
+
+- Na lista "Meus Fluxos", clique em qualquer card para abrir o editor
+- Todos os nós e configurações são carregados
+- Faça alterações e clique em **"Atualizar Fluxo"**
+
+## Exemplos de funis
+
+### Funil Instagram → DM
+1. Gatilho: Comentário com palavra "QUERO"
+2. Ação: Responder comentário "Mandei no DM! 🚀"
+3. Ação: Enviar DM com oferta detalhada
+4. Ação: Adicionar tag "interesse-instagram"
+5. Espera: 24 horas
+6. Condição: Se tem tag "comprou" → Parar
+7. Ação: Enviar DM de follow-up
+
+### Funil WhatsApp de Qualificação
+1. Gatilho: Palavra-chave "INFO"
+2. Ação: Enviar WhatsApp de boas-vindas
+3. Ação: Adicionar tag "lead-whatsapp"
+4. Ação: Atualizar score +20
+5. Ação: Criar tarefa "Follow-up em 48h"
+
+💡 Dica: Combine o Flow Builder com enquetes das Automações para criar funis de qualificação interativos.`,
   },
   {
     id: 'whatsapp-flows',
