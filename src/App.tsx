@@ -13,6 +13,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 
 // Auth Pages
+import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
@@ -72,6 +73,7 @@ const App = () => (
                 <GlobalSearch />
                 <Routes>
                 {/* Public Routes */}
+                  <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/pricing" element={<Pricing />} />
@@ -83,8 +85,8 @@ const App = () => (
                   <Route path="/subscription-expired" element={<ProtectedRoute allowExpired><SubscriptionExpired /></ProtectedRoute>} />
                   
                   {/* Protected Routes */}
-                  <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                    <Route index element={<Navigate to="/dashboard" replace />} />
+                  <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                    <Route path="dashboard" element={<Dashboard />} />
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="contacts" element={<Contacts />} />
                     <Route path="companies" element={<Companies />} />
