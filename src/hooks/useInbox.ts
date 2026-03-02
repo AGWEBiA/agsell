@@ -116,22 +116,31 @@ export function useInbox() {
       
       if (error) throw error;
 
-      // Update last_message_at on conversation
+      // Update last_message_at and ensure metadata has sender ID for routing replies
+      const conv = conversationsQuery.data?.find(c => c.id === message.conversation_id);
+      const contactPhone = conv?.contacts?.whatsapp || conv?.contacts?.phone;
+      const cleanPhone = contactPhone ? contactPhone.replace(/\D/g, "") : null;
+      
+      const existingMetadata = (conv?.metadata as Record<string, string> | null) || {};
+      const updatedMetadata: Record<string, string> = conv?.channel === 'whatsapp' && cleanPhone
+        ? { ...existingMetadata, whatsapp_sender_id: cleanPhone }
+        : { ...existingMetadata };
+
       await supabase
         .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
+        .update({ 
+          last_message_at: new Date().toISOString(),
+          metadata: updatedMetadata as unknown as Record<string, string>,
+        })
         .eq('id', message.conversation_id);
 
       // Actually send via WhatsApp if channel is whatsapp
-      const conversation = conversationsQuery.data?.find(c => c.id === message.conversation_id);
-      const whatsappPhone = conversation?.contacts?.whatsapp || conversation?.contacts?.phone;
-      if (conversation?.channel === 'whatsapp' && whatsappPhone) {
-        const phoneNumber = whatsappPhone;
+      if (conv?.channel === 'whatsapp' && contactPhone) {
         try {
           const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
             body: {
               organization_id: currentOrganization?.id,
-              to: phoneNumber,
+              to: contactPhone,
               message: message.content,
             },
           });
