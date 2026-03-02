@@ -127,9 +127,9 @@ async function sendWithEvolutionAPI(
   phoneNumber: string,
   whatsappReq: WhatsAppRequest
 ) {
-  const baseUrl = config.api_url;
+  const baseUrl = config.api_url.replace(/\/+$/, "");
   const apiKey = config.api_key;
-  const instanceName = config.instance_name;
+  const instanceName = encodeURIComponent(config.instance_name);
 
   if (!baseUrl || !apiKey || !instanceName) {
     return new Response(
