@@ -89,8 +89,7 @@ Deno.serve(async (req) => {
     // Handle Evolution API format (webhook events)
     if (body.event === "messages.upsert" || body.event === "message" || body.event === "MESSAGES_UPSERT") {
       const data = body.data || body;
-      const instanceName = body.instance || data.instance;
-      const messageData = data.message || data;
+      const instanceName = (body.instance || data.instance || "").trim();
 
       // Find the org by Evolution API instance name
       const { data: integration } = await supabase
@@ -111,25 +110,46 @@ Deno.serve(async (req) => {
 
         const userId = orgOwner?.user_id;
         if (userId) {
-          const remoteJid = messageData.key?.remoteJid || messageData.remoteJid || "";
-          const senderPhone = remoteJid.replace("@s.whatsapp.net", "").replace("@c.us", "");
-          const isFromMe = messageData.key?.fromMe || false;
+          const keyData = data.key || data.message?.key || {};
+          const messageData = data.message || data;
 
-          if (!isFromMe && senderPhone) {
-            const messageText =
-              messageData.message?.conversation ||
-              messageData.message?.extendedTextMessage?.text ||
-              messageData.body ||
-              "[Mídia recebida]";
+          const remoteJid =
+            keyData.remoteJid ||
+            data.remoteJid ||
+            messageData.remoteJid ||
+            "";
 
+          const senderPhone = String(remoteJid)
+            .replace("@s.whatsapp.net", "")
+            .replace("@c.us", "");
+
+          const isFromMe = keyData.fromMe || data.fromMe || false;
+
+          const messageText =
+            messageData?.conversation ||
+            messageData?.extendedTextMessage?.text ||
+            data.body ||
+            null;
+
+          const hasMedia = Boolean(
+            messageData?.imageMessage ||
+            messageData?.videoMessage ||
+            messageData?.audioMessage ||
+            messageData?.documentMessage
+          );
+
+          // Ignore delivery/read status updates that are not real inbound messages
+          const isStatusOnly = !messageText && !hasMedia;
+
+          if (!isFromMe && senderPhone && !isStatusOnly) {
             await routeToInbox(supabase, {
               organizationId: integration.organization_id,
               userId,
               channel: "whatsapp",
               senderIdentifier: senderPhone,
               identifierField: "whatsapp_phone",
-              messageText,
-              externalMessageId: messageData.key?.id,
+              messageText: messageText || "[Mídia recebida]",
+              externalMessageId: keyData.id,
             });
           }
         }
