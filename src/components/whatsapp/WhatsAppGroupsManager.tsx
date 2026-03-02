@@ -27,6 +27,10 @@ import { useWhatsAppGroups, WhatsAppGroup, WhatsAppGroupEvent, WhatsAppGroupMemb
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
 
 export function WhatsAppGroupsManager() {
   const {
@@ -51,6 +55,9 @@ export function WhatsAppGroupsManager() {
   const [newTagInput, setNewTagInput] = useState('');
   const [editTagInput, setEditTagInput] = useState('');
   const [sendMessageText, setSendMessageText] = useState('');
+  const [sendMode, setSendMode] = useState<'now' | 'schedule'>('now');
+  const [scheduleDate, setScheduleDate] = useState<Date>();
+  const [scheduleTime, setScheduleTime] = useState('09:00');
   const [newGroup, setNewGroup] = useState({ name: '', description: '', group_type: 'group', tags: [] as string[] });
   const [newGroupTagInput, setNewGroupTagInput] = useState('');
 
@@ -127,8 +134,20 @@ export function WhatsAppGroupsManager() {
 
   const handleSendMessage = () => {
     if (!selectedGroup || !sendMessageText.trim()) return;
-    toast.success(`Mensagem enviada para o grupo "${selectedGroup.name}"!`);
+    if (sendMode === 'schedule') {
+      if (!scheduleDate) { toast.error('Selecione uma data para agendar'); return; }
+      const [h, m] = scheduleTime.split(':').map(Number);
+      const scheduledAt = new Date(scheduleDate);
+      scheduledAt.setHours(h, m, 0, 0);
+      if (scheduledAt <= new Date()) { toast.error('A data de agendamento deve ser no futuro'); return; }
+      toast.success(`Mensagem agendada para "${selectedGroup.name}" em ${format(scheduledAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`);
+    } else {
+      toast.success(`Mensagem enviada para o grupo "${selectedGroup.name}"!`);
+    }
     setSendMessageText('');
+    setSendMode('now');
+    setScheduleDate(undefined);
+    setScheduleTime('09:00');
   };
 
   const handleCopyLink = (link: string) => {
@@ -426,7 +445,7 @@ export function WhatsAppGroupsManager() {
                       <div className="text-sm">
                         <p className="font-medium text-green-900 dark:text-green-100">Enviar Mensagem para o Grupo</p>
                         <p className="text-green-700 dark:text-green-300 mt-1">
-                          Envie uma mensagem diretamente para "{selectedGroup?.name}". Use variáveis como {'{{grupo}}'} e {'{{data}}'}.
+                          Envie agora ou agende para "{selectedGroup?.name}". Use variáveis como {'{{grupo}}'} e {'{{data}}'}.
                         </p>
                       </div>
                     </div>
@@ -442,8 +461,108 @@ export function WhatsAppGroupsManager() {
                   />
                   <p className="text-xs text-muted-foreground">Variáveis: {'{{grupo}}'}, {'{{data}}'}, {'{{total_membros}}'}</p>
                 </div>
-                <Button onClick={handleSendMessage} disabled={!sendMessageText.trim()} className="w-full">
-                  <Send className="h-4 w-4 mr-2" />Enviar Mensagem
+
+                {/* Send Mode Selection */}
+                <div className="space-y-3">
+                  <Label>Modo de Envio</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSendMode('now')}
+                      className={cn(
+                        'flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left',
+                        sendMode === 'now'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-muted-foreground/30'
+                      )}
+                    >
+                      <Send className={cn('h-5 w-5', sendMode === 'now' ? 'text-primary' : 'text-muted-foreground')} />
+                      <div>
+                        <p className={cn('font-medium text-sm', sendMode === 'now' ? 'text-primary' : 'text-foreground')}>Enviar Agora</p>
+                        <p className="text-xs text-muted-foreground">Envia imediatamente</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSendMode('schedule')}
+                      className={cn(
+                        'flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left',
+                        sendMode === 'schedule'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-muted-foreground/30'
+                      )}
+                    >
+                      <Clock className={cn('h-5 w-5', sendMode === 'schedule' ? 'text-primary' : 'text-muted-foreground')} />
+                      <div>
+                        <p className={cn('font-medium text-sm', sendMode === 'schedule' ? 'text-primary' : 'text-foreground')}>Agendar Envio</p>
+                        <p className="text-xs text-muted-foreground">Programe data e hora</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Schedule Options */}
+                {sendMode === 'schedule' && (
+                  <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CalendarIcon className="h-4 w-4 text-primary" />
+                      <Label className="font-semibold">Agendar para</Label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Data</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                'w-full justify-start text-left font-normal',
+                                !scheduleDate && 'text-muted-foreground'
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy') : 'Selecionar data'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={scheduleDate}
+                              onSelect={setScheduleDate}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                              className={cn('p-3 pointer-events-auto')}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Horário</Label>
+                        <Input
+                          type="time"
+                          value={scheduleTime}
+                          onChange={e => setScheduleTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    {scheduleDate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Agendado para: <span className="font-medium text-foreground">{format(scheduleDate, "dd/MM/yyyy", { locale: ptBR })} às {scheduleTime}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!sendMessageText.trim() || (sendMode === 'schedule' && !scheduleDate)}
+                  className="w-full"
+                >
+                  {sendMode === 'schedule' ? (
+                    <><Clock className="h-4 w-4 mr-2" />Agendar Mensagem</>
+                  ) : (
+                    <><Send className="h-4 w-4 mr-2" />Enviar Agora</>
+                  )}
                 </Button>
               </div>
             </TabsContent>
