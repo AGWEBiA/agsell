@@ -91,14 +91,21 @@ Deno.serve(async (req) => {
       const data = body.data || body;
       const instanceName = (body.instance || data.instance || "").trim();
 
-      // Find the org by Evolution API instance name
-      const { data: integration } = await supabase
+      // Find the org by Evolution API instance name (normalized match to avoid space/case issues)
+      const normalizeInstanceName = (value: string) => value.toLowerCase().replace(/[\s_-]+/g, "");
+      const normalizedIncomingInstance = normalizeInstanceName(instanceName);
+
+      const { data: activeIntegrations } = await supabase
         .from("organization_integrations")
         .select("organization_id, config")
         .eq("integration_type", "evolution_api")
-        .eq("is_active", true)
-        .filter("config->>instance_name", "eq", instanceName)
-        .maybeSingle();
+        .eq("is_active", true);
+
+      const integration = (activeIntegrations || []).find((item) => {
+        const config = (item.config || {}) as Record<string, unknown>;
+        const configuredInstance = typeof config.instance_name === "string" ? config.instance_name : "";
+        return normalizeInstanceName(configuredInstance) === normalizedIncomingInstance;
+      });
 
       if (integration) {
         const { data: orgOwner } = await supabase
