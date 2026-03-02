@@ -246,7 +246,25 @@ async function resolveProvider(supabase: ReturnType<typeof createClient>, orgId:
     .maybeSingle();
 
   if (evolutionInt) {
-    return { type: "evolution_api", config: evolutionInt.config as Record<string, string> };
+    // Merge with global Evolution API config (URL + key from platform_settings)
+    const { data: globalConfig } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "evolution_api")
+      .single();
+
+    const globalEvo = globalConfig?.value as Record<string, string> | null;
+    const orgConfig = evolutionInt.config as Record<string, string>;
+
+    const mergedConfig: Record<string, string> = {
+      api_url: globalEvo?.api_url || orgConfig.api_url || "",
+      api_key: globalEvo?.api_key || orgConfig.api_key || "",
+      instance_name: (orgConfig.instance_name || "").trim(),
+    };
+
+    if (mergedConfig.api_url && mergedConfig.api_key && mergedConfig.instance_name) {
+      return { type: "evolution_api", config: mergedConfig };
+    }
   }
 
   // Try WhatsApp Business API
@@ -285,7 +303,8 @@ async function sendViaEvolution(
   message: string,
   mediaUrl?: string | null
 ): Promise<boolean> {
-  const { api_url: baseUrl, api_key: apiKey, instance_name: instanceName } = config;
+  const { api_url: baseUrl, api_key: apiKey, instance_name: rawInstanceName } = config;
+  const instanceName = (rawInstanceName || "").trim();
   if (!baseUrl || !apiKey || !instanceName) return false;
 
   if (mediaUrl) {
