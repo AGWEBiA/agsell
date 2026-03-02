@@ -120,6 +120,31 @@ export function useInbox() {
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', message.conversation_id);
 
+      // Actually send via WhatsApp if channel is whatsapp
+      const conversation = conversationsQuery.data?.find(c => c.id === message.conversation_id);
+      if (conversation?.channel === 'whatsapp' && conversation?.contacts?.phone) {
+        const phoneNumber = conversation.contacts.phone;
+        try {
+          const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
+            body: {
+              organization_id: currentOrganization?.id,
+              to: phoneNumber,
+              message: message.content,
+            },
+          });
+          if (whatsappError) {
+            console.error('WhatsApp send error:', whatsappError);
+            toast.error('Mensagem salva, mas falhou ao enviar via WhatsApp');
+          } else if (whatsappResult?.error) {
+            console.error('WhatsApp API error:', whatsappResult.error);
+            toast.error(`Erro WhatsApp: ${whatsappResult.error}`);
+          }
+        } catch (err) {
+          console.error('WhatsApp invoke error:', err);
+          toast.error('Falha ao enviar mensagem via WhatsApp');
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
