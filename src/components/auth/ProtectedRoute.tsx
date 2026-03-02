@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowExpired = false }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const { isBlocked, isLoading: subLoading } = useSubscriptionStatus();
 
   if (loading || subLoading) {
@@ -28,7 +28,7 @@ export function ProtectedRoute({ children, allowExpired = false }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
-  if (isBlocked && !allowExpired) {
+  if (isBlocked && !allowExpired && !isAdmin) {
     return <Navigate to="/subscription-expired" replace />;
   }
 
