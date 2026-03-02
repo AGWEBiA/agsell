@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,9 +30,11 @@ import {
   Server,
   Smartphone,
   QrCode,
+  AlertTriangle,
 } from 'lucide-react';
 import { useWhatsAppInstances, WhatsAppInstance } from '@/hooks/useWhatsAppInstances';
 import { usePlans } from '@/hooks/usePlans';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -64,6 +66,7 @@ export function WhatsAppProviderSetup() {
     isLoading 
   } = useWhatsAppInstances();
   const { currentPlan, isLoading: plansLoading } = usePlans();
+  const { currentOrganization } = useOrganization();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('evolution');
@@ -74,6 +77,119 @@ export function WhatsAppProviderSetup() {
   const [instanceName, setInstanceName] = useState('');
   const [evolutionInstanceName, setEvolutionInstanceName] = useState('');
   const [evolutionPhone, setEvolutionPhone] = useState('');
+  
+  // QR Code states
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+  const [qrPairingCode, setQrPairingCode] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrStatus, setQrStatus] = useState<'idle' | 'waiting' | 'connected' | 'error'>('idle');
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [qrInstanceName, setQrInstanceName] = useState('');
+  const [qrOrgId, setQrOrgId] = useState('');
+  const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Stop polling on unmount or dialog close
+  useEffect(() => {
+    return () => {
+      if (statusPollRef.current) clearInterval(statusPollRef.current);
+    };
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    if (statusPollRef.current) {
+      clearInterval(statusPollRef.current);
+      statusPollRef.current = null;
+    }
+  }, []);
+
+  const fetchQRCode = useCallback(async (instName: string, orgId: string, action: 'create' | 'connect' = 'connect') => {
+    setQrLoading(true);
+    setQrError(null);
+    setQrCodeBase64(null);
+    setQrPairingCode(null);
+    setQrStatus('waiting');
+    stopPolling();
+
+    try {
+      const { data, error } = await supabase.functions.invoke('evolution-qrcode', {
+        body: {
+          instance_name: instName,
+          organization_id: orgId,
+          action,
+        },
+      });
+
+      if (error) throw error;
+
+      if (!data?.success) {
+        setQrError(data?.error || 'Erro ao obter QR Code');
+        setQrStatus('error');
+        return;
+      }
+
+      if (data.action === 'connected') {
+        setQrStatus('connected');
+        toast.success('Instância já está conectada!');
+        return;
+      }
+
+      if (data.qrcode) {
+        // base64 QR from Evolution API
+        const base64 = data.qrcode.startsWith('data:') ? data.qrcode : `data:image/png;base64,${data.qrcode}`;
+        setQrCodeBase64(base64);
+      }
+      if (data.pairingCode) {
+        setQrPairingCode(data.pairingCode);
+      }
+      if (data.code) {
+        // raw QR code string — we'd need a QR renderer, but base64 is preferred
+        if (!data.qrcode) {
+          setQrError('QR code retornado em formato de texto. Atualize a Evolution API para versão mais recente.');
+          setQrStatus('error');
+          return;
+        }
+      }
+
+      // Start polling for connection status
+      statusPollRef.current = setInterval(async () => {
+        try {
+          const { data: statusData } = await supabase.functions.invoke('evolution-qrcode', {
+            body: {
+              instance_name: instName,
+              organization_id: orgId,
+              action: 'status',
+            },
+          });
+
+          if (statusData?.data?.instance?.state === 'open') {
+            setQrStatus('connected');
+            stopPolling();
+            toast.success('WhatsApp conectado com sucesso!');
+          }
+        } catch {
+          // ignore polling errors
+        }
+      }, 5000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      setQrError(msg);
+      setQrStatus('error');
+    } finally {
+      setQrLoading(false);
+    }
+  }, [stopPolling]);
+
+  const handleCloseQRDialog = useCallback(() => {
+    stopPolling();
+    setShowQRDialog(false);
+    setQrCodeBase64(null);
+    setQrPairingCode(null);
+    setQrStatus('idle');
+    setQrError(null);
+    setQrInstanceName('');
+    setQrOrgId('');
+  }, [stopPolling]);
 
   // Fetch global Evolution API config
   const { data: globalEvolutionConfig } = useQuery({
@@ -158,13 +274,19 @@ export function WhatsAppProviderSetup() {
         config: {
           instance_name: evolutionInstanceName,
           phone_number: evolutionPhone,
-          // URL and key come from global config — not stored per org
         } as Record<string, string>,
         phone_number: evolutionPhone || evolutionInstanceName,
         is_default: isDefault || instances.length === 0,
       });
       setIsDialogOpen(false);
       resetForm();
+
+      // Open QR dialog to create/connect the instance
+      setQrInstanceName(evolutionInstanceName);
+      const orgId = currentOrganization?.id || '';
+      setQrOrgId(orgId);
+      setShowQRDialog(true);
+      await fetchQRCode(evolutionInstanceName, orgId, 'create');
     } finally {
       setIsSaving(false);
     }
@@ -197,11 +319,6 @@ export function WhatsAppProviderSetup() {
   };
 
   const handleTestEvolution = async (instance: WhatsAppInstance) => {
-    if (!globalEvolutionConfig?.api_url || !globalEvolutionConfig?.api_key) {
-      toast.error('Evolution API não configurada globalmente. Contate o administrador.');
-      return;
-    }
-
     const instanceNameEvo = instance.config.instance_name;
     if (!instanceNameEvo) {
       toast.error('Nome da instância não configurado');
@@ -210,25 +327,38 @@ export function WhatsAppProviderSetup() {
 
     setIsTesting(instance.id);
     try {
-      const response = await fetch(`${globalEvolutionConfig.api_url}/instance/connectionState/${instanceNameEvo}`, {
-        headers: { apikey: globalEvolutionConfig.api_key },
+      const { data, error } = await supabase.functions.invoke('evolution-qrcode', {
+        body: {
+          instance_name: instanceNameEvo,
+          organization_id: instance.organization_id || '',
+          action: 'status',
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.instance?.state === 'open') {
-          toast.success('Conexão ativa! WhatsApp conectado.');
-        } else {
-          toast.warning(`Status: ${data.instance?.state || 'desconectado'}. Escaneie o QR Code.`);
-        }
+      if (error) throw error;
+
+      if (data?.data?.instance?.state === 'open') {
+        toast.success('Conexão ativa! WhatsApp conectado.');
       } else {
-        toast.error('Erro ao conectar com Evolution API');
+        toast.warning(`Status: ${data?.data?.instance?.state || 'desconectado'}. Escaneie o QR Code.`);
       }
     } catch {
-      toast.error('Não foi possível conectar. Verifique a configuração.');
+      toast.error('Não foi possível verificar o status.');
     } finally {
       setIsTesting(null);
     }
+  };
+
+  const handleConnectQR = (instance: WhatsAppInstance) => {
+    const instName = instance.config.instance_name;
+    if (!instName) {
+      toast.error('Nome da instância não configurado');
+      return;
+    }
+    setQrInstanceName(instName);
+    setQrOrgId(instance.organization_id || '');
+    setShowQRDialog(true);
+    fetchQRCode(instName, instance.organization_id || '', 'connect');
   };
 
   const handleTestBusiness = async (instance: WhatsAppInstance) => {
@@ -323,6 +453,16 @@ export function WhatsAppProviderSetup() {
               )}
             </Badge>
             <div className="flex gap-1">
+              {isEvolution && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleConnectQR(instance)}
+                  title="Conectar / QR Code"
+                >
+                  <QrCode className="h-4 w-4" />
+                </Button>
+              )}
               {!instance.is_default && instance.is_active && (
                 <Button
                   variant="ghost"
@@ -357,6 +497,7 @@ export function WhatsAppProviderSetup() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -602,5 +743,90 @@ export function WhatsAppProviderSetup() {
         </DialogContent>
       </Dialog>
     </div>
+
+      {/* QR Code Dialog */}
+      <Dialog open={showQRDialog} onOpenChange={(open) => { if (!open) handleCloseQRDialog(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Conectar WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Escaneie o QR Code com seu WhatsApp para conectar a instância <strong>{qrInstanceName}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {qrStatus === 'connected' ? (
+              <div className="text-center py-6">
+                <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-green-100 dark:bg-green-900 mb-4">
+                  <CheckCircle2 className="h-10 w-10 text-green-600" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Conectado com Sucesso!</h3>
+                <p className="text-muted-foreground">
+                  Seu WhatsApp foi conectado ao AG Sell
+                </p>
+              </div>
+            ) : qrLoading ? (
+              <div className="flex flex-col items-center py-10">
+                <RefreshCw className="h-10 w-10 animate-spin text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Gerando QR Code...</p>
+              </div>
+            ) : qrError ? (
+              <div className="text-center py-6">
+                <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-destructive/10 mb-4">
+                  <AlertTriangle className="h-8 w-8 text-destructive" />
+                </div>
+                <p className="text-destructive font-medium mb-2">Erro</p>
+                <p className="text-sm text-muted-foreground mb-4">{qrError}</p>
+                <Button onClick={() => fetchQRCode(qrInstanceName, qrOrgId, 'connect')}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Tentar Novamente
+                </Button>
+              </div>
+            ) : qrCodeBase64 ? (
+              <div className="text-center">
+                <div className="relative inline-block bg-white p-2 rounded-lg">
+                  <img
+                    src={qrCodeBase64}
+                    alt="QR Code WhatsApp"
+                    className="w-64 h-64 mx-auto"
+                  />
+                </div>
+                {qrPairingCode && (
+                  <div className="mt-3 p-2 bg-muted rounded text-sm">
+                    <p className="text-muted-foreground">Código de pareamento:</p>
+                    <p className="font-mono font-bold text-lg tracking-wider">{qrPairingCode}</p>
+                  </div>
+                )}
+                <div className="mt-4 text-sm text-muted-foreground space-y-1">
+                  <p>1. Abra o WhatsApp no seu celular</p>
+                  <p>2. Vá em <strong>Configurações → Dispositivos Conectados</strong></p>
+                  <p>3. Toque em <strong>"Conectar um Dispositivo"</strong></p>
+                  <p>4. Escaneie este QR Code</p>
+                </div>
+                <div className="mt-4 flex justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => fetchQRCode(qrInstanceName, qrOrgId, 'connect')}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Atualizar QR Code
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 flex items-center justify-center gap-1">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  Aguardando conexão...
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseQRDialog}>
+              {qrStatus === 'connected' ? 'Fechar' : 'Cancelar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
