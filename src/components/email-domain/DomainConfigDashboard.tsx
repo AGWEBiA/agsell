@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -20,6 +22,8 @@ interface DomainConfigDashboardProps {
 const menuItems = [
   { key: 'dns', label: 'DNS de E-mail', description: 'Configurações DNS para envio de email.', icon: Shield },
   { key: 'mailboxes', label: 'Caixas postais', description: 'Faça a configuração das suas caixas postais.', icon: Mail },
+  { key: 'dns_page', label: 'DNS da Página/Site', description: 'Faça a configuração do seu domínio para utilizar ele nas páginas criadas no seu Funil.', icon: Globe },
+  { key: 'home', label: 'Home', description: 'Faça a configuração da página home do seu domínio.', icon: Globe },
   { key: 'health', label: 'Saúde do domínio', description: 'Acompanhe a saúde do seu domínio com base nos envios realizados.', icon: Activity },
   { key: 'limits', label: 'Configuração de limite de e-mails', description: 'Faça alterações referentes aos envios de e-mail deste domínio.', icon: Settings },
 ];
@@ -82,6 +86,38 @@ export default function DomainConfigDashboard({ domain, onVerify, onDelete, isVe
 
               {activeSection === 'mailboxes' && (
                 <MailboxManager domainId={domain.id} domain={domain.domain} />
+              )}
+
+              {activeSection === 'dns_page' && (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Globe className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm font-semibold">DNS da Página/Site</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Configure o domínio para utilizar ele nas páginas criadas no seu Funil no sistema.
+                    </p>
+                    <div className="mt-4 p-3 rounded-lg border text-left">
+                      <p className="text-xs text-muted-foreground mb-2">Aponte o registro abaixo no DNS do seu domínio:</p>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div><span className="font-medium">Tipo</span><p className="text-muted-foreground">A</p></div>
+                        <div><span className="font-medium">Nome</span><p className="text-muted-foreground">@</p></div>
+                        <div><span className="font-medium">Valor</span><p className="text-muted-foreground">185.158.133.1</p></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeSection === 'home' && (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Globe className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm font-semibold">Página Home</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Configure a página home do seu domínio. Quando alguém acessar {domain.domain}, será redirecionado para a página configurada aqui.
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
               {activeSection === 'health' && (

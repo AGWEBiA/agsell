@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Globe, ArrowRight, ArrowLeft, Copy, CheckCircle, XCircle,
-  RefreshCw, Loader2, Mail, Shield, Info
+  RefreshCw, Loader2, Mail, Shield, Info, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -67,38 +67,118 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
   );
 }
 
-function DnsRecordRow({ type, name, value, purpose }: { type: string; name: string; value: string; purpose: string }) {
+interface DnsRecord {
+  type: string;
+  name: string;
+  value: string;
+  purpose: string;
+  priority?: string;
+}
+
+function DnsRecordTable({ records, type }: { records: DnsRecord[]; type: string }) {
+  const hasPriority = records.some(r => r.priority);
+
   return (
-    <div className="border rounded-lg p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-mono text-xs">{type}</Badge>
-          <span className="text-sm font-medium text-primary">{purpose}</span>
+    <div className="space-y-3">
+      {records.map((record, i) => (
+        <div key={i} className="rounded-lg border overflow-hidden">
+          <div className="grid gap-3 p-3" style={{ gridTemplateColumns: hasPriority ? '80px 1fr 80px 1fr' : '80px 1fr 1fr' }}>
+            {/* Type */}
+            <div>
+              <p className="text-[10px] font-medium text-red-500 uppercase mb-1">Tipo</p>
+              <div className="flex items-center gap-1 bg-muted/50 rounded px-2 py-1.5">
+                <span className="text-xs font-mono">{record.type}</span>
+              </div>
+            </div>
+            {/* Name/Prefix */}
+            <div>
+              <p className="text-[10px] font-medium text-red-500 uppercase mb-1">Prefixo ou Nome</p>
+              <div className="flex items-center gap-1 bg-muted/50 rounded px-2 py-1.5">
+                <span className="text-xs font-mono flex-1 truncate">{record.name}</span>
+                <button onClick={() => copyToClipboard(record.name)} className="shrink-0 hover:text-primary">
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+            {/* Priority (MX only) */}
+            {hasPriority && (
+              <div>
+                <p className="text-[10px] font-medium text-red-500 uppercase mb-1">Prioridade</p>
+                <div className="flex items-center gap-1 bg-muted/50 rounded px-2 py-1.5">
+                  <span className="text-xs font-mono flex-1">{record.priority || '-'}</span>
+                  {record.priority && (
+                    <button onClick={() => copyToClipboard(record.priority!)} className="shrink-0 hover:text-primary">
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Value */}
+            <div>
+              <p className="text-[10px] font-medium text-red-500 uppercase mb-1">{hasPriority ? 'Valor / Nome do Servidor' : 'Valor'}</p>
+              <div className="flex items-center gap-1 bg-muted/50 rounded px-2 py-1.5">
+                <span className="text-xs font-mono flex-1 truncate">{record.value}</span>
+                <button onClick={() => copyToClipboard(record.value)} className="shrink-0 hover:text-primary">
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => copyToClipboard(value)} className="h-7">
-          <Copy className="h-3 w-3 mr-1" />
-          Copiar valor
-        </Button>
+      ))}
+    </div>
+  );
+}
+
+function DnsStepHeader({ title, badgeColor, description }: { title: string; badgeColor: string; description: string }) {
+  return (
+    <div className="space-y-3">
+      {/* Warmup warning banner */}
+      <div className="rounded-lg bg-orange-500 p-3 flex items-start gap-2">
+        <Info className="h-4 w-4 text-white mt-0.5 shrink-0" />
+        <div className="text-sm text-white">
+          <p>Seu e-mail foi verificado e está em processo de aquecimento, a fim de prevenir spams e bloqueios em seu domínio.</p>
+          <a href="#" className="underline text-white/90 text-xs">Saiba mais sobre aquecimento clicando aqui.</a>
+        </div>
       </div>
-      <div className="grid gap-2">
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Nome / Host</p>
-          <div className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2">
-            <code className="text-xs flex-1 break-all">{name}</code>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(name)}>
-              <Copy className="h-3 w-3" />
-            </Button>
-          </div>
+
+      {/* DNS info box */}
+      <div className="rounded-lg border p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Info className="h-4 w-4" />
+          <span className="text-sm font-semibold">Configuração de DNS:</span>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Valor</p>
-          <div className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2">
-            <code className="text-xs flex-1 break-all">{value}</code>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(value)}>
-              <Copy className="h-3 w-3" />
-            </Button>
-          </div>
+        <p className="text-xs text-muted-foreground">
+          No site onde você comprou o domínio, acesse a seção de Configuração de DNS. Lá, adicione os registros com os dados fornecidos abaixo para habilitar o envio de e-mails através do sistema. O campo TTL pode ser mantido como padrão, pois não influencia neste processo.
+        </p>
+      </div>
+
+      {/* Type badge + description */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Configuração do tipo:</span>
+          <Badge className={badgeColor}>{title}</Badge>
         </div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function DnsStepFooter({ onBack, onNext, nextLabel = 'Próximo', isPending = false }: { onBack: () => void; onNext: () => void; nextLabel?: string; isPending?: boolean }) {
+  return (
+    <div className="flex items-center justify-between pt-4">
+      <Button variant="outline" onClick={onBack}>VOLTAR</Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={() => window.open('https://docs.agsell.com.br/configurar-dns', '_blank')}>
+          <ExternalLink className="h-4 w-4 mr-1" />
+          COMO CONFIGURAR
+        </Button>
+        <Button onClick={onNext} disabled={isPending}>
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          {nextLabel}
+        </Button>
       </div>
     </div>
   );
@@ -113,52 +193,21 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
   const cleanDomain = domain.trim().toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/.*$/, '');
   const isValidDomain = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(cleanDomain);
 
-  const txtRecords = [
-    {
-      type: 'TXT',
-      name: cleanDomain,
-      value: `v=spf1 include:amazonses.com include:resend.com ~all`,
-      purpose: 'SPF',
-    },
-    {
-      type: 'TXT',
-      name: `sfx._domainkey.${cleanDomain}`,
-      value: `v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCZ...`,
-      purpose: 'DKIM',
-    },
-    {
-      type: 'TXT',
-      name: `_dmarc.${cleanDomain}`,
-      value: `v=DMARC1; p=none; sp=none; rua=mailto:suporte@${cleanDomain}; ruf=mailto:ruf@${cleanDomain}`,
-      purpose: 'DMARC',
-    },
+  const txtRecords: DnsRecord[] = [
+    { type: 'TXT', name: cleanDomain, value: `v=spf1 include:api-mail.com ~all`, purpose: 'SPF' },
+    { type: 'TXT', name: `sfx._domainkey.${cleanDomain}`, value: `v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCZ...`, purpose: 'DKIM' },
+    { type: 'TXT', name: `2019._domainkey.${cleanDomain}`, value: `v=DKIM1;k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDtxUPa+eN7CAvz2Xv...`, purpose: 'DKIM 2' },
+    { type: 'TXT', name: `_dmarc.${cleanDomain}`, value: `v=DMARC1; p=none; sp=none; rua=mailto:suporte@${cleanDomain}; ruf=mailto:ruf@${cleanDomain}`, purpose: 'DMARC' },
   ];
 
-  const cnameRecords = [
-    {
-      type: 'CNAME',
-      name: `email.${cleanDomain}`,
-      value: 'email2.api-mail.com',
-      purpose: 'Email Routing',
-    },
+  const cnameRecords: DnsRecord[] = [
+    { type: 'CNAME', name: `email`, value: 'email2.api-mail.com', purpose: 'Email Routing' },
   ];
 
-  const mxRecords = [
-    {
-      type: 'MX',
-      name: cleanDomain,
-      value: 'mxa.api-mail.com (prioridade 10)',
-      purpose: 'MX Primário',
-    },
-    {
-      type: 'MX',
-      name: cleanDomain,
-      value: 'mxb.api-mail.com (prioridade 10)',
-      purpose: 'MX Secundário',
-    },
+  const mxRecords: DnsRecord[] = [
+    { type: 'MX', name: cleanDomain, value: 'mxa.api-mail.com', priority: '10', purpose: 'MX Primário' },
+    { type: 'MX', name: cleanDomain, value: 'mxb.api-mail.com', priority: '10', purpose: 'MX Secundário' },
   ];
-
-  const allDnsRecords = [...txtRecords, ...cnameRecords, ...mxRecords];
 
   const handleSubmit = () => {
     onComplete({
@@ -184,7 +233,6 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
                 Insira o domínio do qual deseja enviar e-mails (ex: suaempresa.com.br)
               </p>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="domain-input">Domínio</Label>
               <Input
@@ -202,7 +250,6 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
                 </p>
               )}
             </div>
-
             <div className="flex justify-between pt-2">
               <Button variant="ghost" onClick={onCancel}>Cancelar</Button>
               <Button onClick={() => setStep('sender')} disabled={!isValidDomain}>
@@ -226,32 +273,17 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
                 Defina como seus e-mails aparecerão para os destinatários
               </p>
             </div>
-
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="from-email">E-mail remetente</Label>
-                <Input
-                  id="from-email"
-                  placeholder={`noreply@${cleanDomain}`}
-                  value={fromEmail}
-                  onChange={(e) => setFromEmail(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Padrão: noreply@{cleanDomain}
-                </p>
+                <Input id="from-email" placeholder={`noreply@${cleanDomain}`} value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} />
+                <p className="text-xs text-muted-foreground">Padrão: noreply@{cleanDomain}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="from-name">Nome do remetente</Label>
-                <Input
-                  id="from-name"
-                  placeholder="Sua Empresa"
-                  value={fromName}
-                  onChange={(e) => setFromName(e.target.value)}
-                />
+                <Input id="from-name" placeholder="Sua Empresa" value={fromName} onChange={(e) => setFromName(e.target.value)} />
               </div>
             </div>
-
-            {/* Preview */}
             <div className="border rounded-lg p-4 bg-muted/30">
               <p className="text-xs text-muted-foreground mb-2">Pré-visualização:</p>
               <div className="flex items-center gap-3">
@@ -264,15 +296,12 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
                 </div>
               </div>
             </div>
-
             <div className="flex justify-between pt-2">
               <Button variant="ghost" onClick={() => setStep('domain')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
+                <ArrowLeft className="h-4 w-4 mr-2" />Voltar
               </Button>
               <Button onClick={() => setStep('dns_txt')}>
-                Continuar
-                <ArrowRight className="h-4 w-4 ml-2" />
+                Continuar<ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </CardContent>
@@ -281,116 +310,53 @@ export default function DomainSetupWizard({ onComplete, onCancel, isPending }: D
 
       {/* DNS TXT Step */}
       {step === 'dns_txt' && (
-        <Card>
-          <CardContent className="pt-6 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Configuração do tipo: <Badge>TXT</Badge></h2>
-              <p className="text-sm text-muted-foreground">
-                O registro TXT é um tipo de configuração no DNS que permite armazenar informações textuais, como verificações de propriedade, políticas de email (SPF, DKIM).
-              </p>
-            </div>
-            <div className="space-y-3">
-              {txtRecords.map((record, i) => (
-                <DnsRecordRow key={i} {...record} />
-              ))}
-            </div>
-            <div className="flex justify-between pt-2">
-              <Button variant="ghost" onClick={() => setStep('sender')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-              <Button onClick={() => setStep('dns_cname')}>
-                Próximo
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">DNS de E-mail · {cleanDomain}</h2>
+            <Badge variant="outline" className="gap-1"><Mail className="h-3 w-3" />example@{cleanDomain}</Badge>
+          </div>
+          <DnsStepHeader
+            title="TXT"
+            badgeColor="bg-primary"
+            description="O registro TXT é um tipo de configuração no DNS que permite armazenar informações textuais associadas a um domínio. É comumente utilizado para especificar dados diversos, como verificações de propriedade, políticas de email (SPF, DKIM), e outras instruções relevantes."
+          />
+          <DnsRecordTable records={txtRecords} type="TXT" />
+          <DnsStepFooter onBack={() => setStep('sender')} onNext={() => setStep('dns_cname')} />
+        </div>
       )}
 
       {/* DNS CNAME Step */}
       {step === 'dns_cname' && (
-        <Card>
-          <CardContent className="pt-6 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Configuração do tipo: <Badge className="bg-green-600">CNAME</Badge></h2>
-              <p className="text-sm text-muted-foreground">
-                O registro CNAME no DNS permite que um domínio ou subdomínio aponte para outro domínio. Isso simplifica a gestão de subdomínios.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {cnameRecords.map((record, i) => (
-                <DnsRecordRow key={i} {...record} />
-              ))}
-            </div>
-            <div className="flex justify-between pt-2">
-              <Button variant="ghost" onClick={() => setStep('dns_txt')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-              <Button onClick={() => setStep('dns_mx')}>
-                Próximo
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">DNS de E-mail · {cleanDomain}</h2>
+            <Badge variant="outline" className="gap-1"><Mail className="h-3 w-3" />example@{cleanDomain}</Badge>
+          </div>
+          <DnsStepHeader
+            title="CNAME"
+            badgeColor="bg-green-600"
+            description="O registro CNAME no DNS permite que um domínio ou subdomínio aponte para outro domínio. Isso simplifica a gestão de subdomínios e facilita redirecionamentos, pois todas as alterações são centralizadas no domínio principal."
+          />
+          <DnsRecordTable records={cnameRecords} type="CNAME" />
+          <DnsStepFooter onBack={() => setStep('dns_txt')} onNext={() => setStep('dns_mx')} />
+        </div>
       )}
 
       {/* DNS MX Step */}
       {step === 'dns_mx' && (
-        <Card>
-          <CardContent className="pt-6 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Configuração do tipo: <Badge className="bg-orange-600">MX</Badge></h2>
-              <p className="text-sm text-muted-foreground">
-                O registro MX no DNS especifica servidores de email responsáveis por receber mensagens para um domínio, garantindo a entrega eficiente dos emails.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {mxRecords.map((record, i) => (
-                <DnsRecordRow key={i} {...record} />
-              ))}
-            </div>
-
-            <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
-              <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-              <div className="text-sm space-y-1">
-                <p className="font-medium text-amber-800 dark:text-amber-400">Importante</p>
-                <p className="text-muted-foreground">A propagação DNS pode levar até 48 horas, mas normalmente acontece em menos de 1 hora.</p>
-              </div>
-            </div>
-
-            <div className="flex justify-between pt-2">
-              <Button variant="ghost" onClick={() => setStep('dns_cname')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-              <Button onClick={handleSubmit} disabled={isPending}>
-                {isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Adicionando...
-                  </>
-                ) : (
-                  <>
-                    Concluir
-                    <CheckCircle className="h-4 w-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">DNS de E-mail · {cleanDomain}</h2>
+            <Badge variant="outline" className="gap-1"><Mail className="h-3 w-3" />example@{cleanDomain}</Badge>
+          </div>
+          <DnsStepHeader
+            title="MX"
+            badgeColor="bg-orange-600"
+            description="O registro MX (Mail Exchange) no DNS especifica servidores de email responsáveis por receber mensagens para um domínio. Ele prioriza quais servidores devem ser contactados primeiro, garantindo a entrega eficiente dos emails."
+          />
+          <DnsRecordTable records={mxRecords} type="MX" />
+          <DnsStepFooter onBack={() => setStep('dns_cname')} onNext={handleSubmit} nextLabel="CONCLUIR" isPending={isPending} />
+        </div>
       )}
     </div>
   );

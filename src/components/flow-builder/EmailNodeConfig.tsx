@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Info, Clock, AlertCircle, Mail, ChevronDown, Shield, Flame } from 'lucide-react';
+import { Info, Clock, AlertCircle, Mail, ChevronDown, Shield, Flame, ExternalLink, Eye } from 'lucide-react';
 import { TEMPLATE_VARIABLES } from './flowNodeTypes';
 import { useEmailMailboxes } from '@/hooks/useEmailMailboxes';
+import { useNavigate } from 'react-router-dom';
 
 interface EmailNodeConfigProps {
   config: Record<string, unknown>;
@@ -82,13 +83,13 @@ function SpamScoreGauge({ score }: { score: number }) {
 export function EmailNodeConfig({ config, onChange, mode }: EmailNodeConfigProps) {
   const { allMailboxes } = useEmailMailboxes();
   const [bestTimesOpen, setBestTimesOpen] = useState(false);
+  const navigate = useNavigate();
 
   const insertVariable = (key: string) => {
     const current = String(config.message || '');
     onChange({ ...config, message: current + key });
   };
 
-  // Simple spam score estimate based on content
   const estimateSpamScore = (): number => {
     const msg = String(config.message || '');
     const subject = String(config.subject || '');
@@ -102,6 +103,8 @@ export function EmailNodeConfig({ config, onChange, mode }: EmailNodeConfigProps
     if (!config.mailbox_id) score += 1;
     return Math.min(score, 20);
   };
+
+  const selectedMailbox = allMailboxes.find((m: any) => m.id === config.mailbox_id);
 
   return (
     <div className="space-y-5">
@@ -144,6 +147,17 @@ export function EmailNodeConfig({ config, onChange, mode }: EmailNodeConfigProps
             )}
           </SelectContent>
         </Select>
+
+        {/* Manage Mailboxes Button */}
+        <Button
+          variant="default"
+          size="sm"
+          className="w-full bg-primary hover:bg-primary/90"
+          onClick={() => navigate('/email-domain')}
+        >
+          <Mail className="h-4 w-4 mr-2" />
+          GERENCIAR CAIXAS POSTAIS
+        </Button>
       </div>
 
       {/* Subject (marketing only) */}
@@ -242,6 +256,48 @@ export function EmailNodeConfig({ config, onChange, mode }: EmailNodeConfigProps
         {config._spam_checked && (
           <SpamScoreGauge score={estimateSpamScore()} />
         )}
+      </div>
+
+      {/* Edit Email Button (marketing) */}
+      {mode === 'marketing' && (
+        <Button
+          variant="default"
+          className="w-full bg-primary hover:bg-primary/90"
+          onClick={() => onChange({ ...config, _editing_template: true })}
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          CLIQUE AQUI PARA EDITAR SEU E-MAIL
+        </Button>
+      )}
+
+      {/* Email Preview */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <Eye className="h-4 w-4" />
+          Preview do E-mail:
+        </Label>
+        <div className="rounded-lg border bg-background p-4 min-h-[120px]">
+          {config.subject || config.message ? (
+            <div className="space-y-3">
+              {selectedMailbox && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground border-b pb-2">
+                  <Mail className="h-3 w-3" />
+                  <span>De: {selectedMailbox.name} &lt;{(selectedMailbox as any).from_email || `${selectedMailbox.prefix}@`}&gt;</span>
+                </div>
+              )}
+              {config.subject && (
+                <p className="text-sm font-semibold">{String(config.subject)}</p>
+              )}
+              {config.message && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{String(config.message)}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Preencha os campos acima para visualizar o preview do e-mail.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Schedule deadline */}
