@@ -160,33 +160,24 @@ async function executeStepAction(
 
       if (!contact) throw new Error("Contact not found");
 
-      if (sequence.channel === "whatsapp" && contact.whatsapp) {
-        // Get org's WhatsApp config
+      const whatsappNumber = contact.whatsapp || contact.phone;
+      if (sequence.channel === "whatsapp" && whatsappNumber) {
+        // Check if org has any WhatsApp integration configured
         const { data: orgIntegrations } = await supabase
           .from("organization_integrations")
-          .select("*")
+          .select("id")
           .eq("organization_id", sequence.organization_id)
-          .eq("provider", "evolution_api")
+          .in("integration_type", ["evolution_api", "whatsapp_business"])
           .eq("is_active", true)
           .limit(1);
 
         if (orgIntegrations && orgIntegrations.length > 0) {
           const message = (content.message || "")
-            .replace("{{nome}}", contact.first_name || "")
-            .replace("{{telefone}}", contact.whatsapp || "");
+            .replace(/\{\{nome\}\}/g, contact.first_name || "")
+            .replace(/\{\{telefone\}\}/g, whatsappNumber || "");
 
-          await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
-            body: JSON.stringify({
-              to: contact.whatsapp,
-              message,
-              organization_id: sequence.organization_id,
-            }),
-          });
+          // Send directly via Evolution API or Business API (bypassing auth since this is a server-side cron)
+          await sendWhatsAppDirect(supabase, sequence.organization_id, whatsappNumber, message);
         }
       }
       break;
@@ -241,4 +232,84 @@ async function executeStepAction(
     default:
       console.log("Unknown step action:", step.action_type);
   }
+}
+
+// Direct WhatsApp sending without auth (server-side only, uses service role)
+async function sendWhatsAppDirect(
+  supabase: any,
+  organizationId: string,
+  phoneNumber: string,
+  message: string
+) {
+  const cleanPhone = phoneNumber.replace(/\D/g, "");
+
+  // Try Evolution API first
+  const { data: evolutionInt } = await supabase
+    .from("organization_integrations")
+    .select("config")
+    .eq("organization_id", organizationId)
+    .eq("integration_type", "evolution_api")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (evolutionInt) {
+    // Fetch global Evolution API config
+    const { data: globalConfig } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "evolution_api")
+      .single();
+
+    const globalEvo = globalConfig?.value as Record<string, string> | null;
+    const orgConfig = evolutionInt.config as Record<string, string>;
+
+    const apiUrl = globalEvo?.api_url || orgConfig.api_url || "";
+    const apiKey = globalEvo?.api_key || orgConfig.api_key || "";
+    const instanceName = (orgConfig.instance_name || "").trim();
+
+    if (apiUrl && apiKey && instanceName) {
+      const resp = await fetch(`${apiUrl.replace(/\/+$/, "")}/message/sendText/${instanceName}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify({ number: cleanPhone, text: message }),
+      });
+      const body = await resp.text();
+      if (!resp.ok) console.error("Evolution API error (sequence):", body);
+      else console.log("WhatsApp sent via Evolution API (sequence)");
+      return;
+    }
+  }
+
+  // Try WhatsApp Business API
+  const { data: businessInt } = await supabase
+    .from("organization_integrations")
+    .select("config")
+    .eq("organization_id", organizationId)
+    .eq("integration_type", "whatsapp_business")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (businessInt) {
+    const config = businessInt.config as Record<string, string>;
+    const { access_token, phone_number_id } = config;
+    if (access_token && phone_number_id) {
+      const resp = await fetch(`https://graph.facebook.com/v18.0/${phone_number_id}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanPhone,
+          type: "text",
+          text: { preview_url: true, body: message },
+        }),
+      });
+      const body = await resp.text();
+      if (!resp.ok) console.error("WhatsApp Business API error (sequence):", body);
+      else console.log("WhatsApp sent via Business API (sequence)");
+      return;
+    }
+  }
+
+  console.error("No WhatsApp integration configured for org:", organizationId);
 }

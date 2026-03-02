@@ -18,6 +18,7 @@ type ConversationWithContact = Conversation & {
     last_name: string | null;
     email: string | null;
     phone: string | null;
+    whatsapp: string | null;
     lead_score: number | null;
   } | null;
   messages: Message[];
@@ -42,6 +43,7 @@ export function useInbox() {
             last_name,
             email,
             phone,
+            whatsapp,
             lead_score
           ),
           messages (
@@ -122,8 +124,9 @@ export function useInbox() {
 
       // Actually send via WhatsApp if channel is whatsapp
       const conversation = conversationsQuery.data?.find(c => c.id === message.conversation_id);
-      if (conversation?.channel === 'whatsapp' && conversation?.contacts?.phone) {
-        const phoneNumber = conversation.contacts.phone;
+      const whatsappPhone = conversation?.contacts?.whatsapp || conversation?.contacts?.phone;
+      if (conversation?.channel === 'whatsapp' && whatsappPhone) {
+        const phoneNumber = whatsappPhone;
         try {
           const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
             body: {

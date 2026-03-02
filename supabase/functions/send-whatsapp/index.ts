@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       const mergedConfig: Record<string, string> = {
         api_url: globalEvo?.api_url || orgConfig.api_url || "",
         api_key: globalEvo?.api_key || orgConfig.api_key || "",
-        instance_name: orgConfig.instance_name || "",
+        instance_name: (orgConfig.instance_name || "").trim(),
       };
 
       if (mergedConfig.api_url && mergedConfig.api_key && mergedConfig.instance_name) {
