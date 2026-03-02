@@ -38,6 +38,7 @@ import { EmailProviderConfig } from '@/components/admin/EmailProviderConfig';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { AssignPlanDialog } from '@/components/admin/AssignPlanDialog';
 import { FinancialDashboard } from '@/components/admin/FinancialDashboard';
+import { EvolutionAPIGlobalConfig } from '@/components/admin/EvolutionAPIGlobalConfig';
 
 export default function Admin() {
   const { user, isAdmin, loading: isCheckingAdmin } = useAuth();
@@ -200,6 +201,10 @@ export default function Admin() {
           <TabsTrigger value="email-provider" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Provedor E-mail
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            WhatsApp
           </TabsTrigger>
         </TabsList>
 
@@ -417,6 +422,9 @@ export default function Admin() {
 
         <TabsContent value="email-provider">
           <EmailProviderConfig />
+        </TabsContent>
+        <TabsContent value="whatsapp">
+          <EvolutionAPIGlobalConfig />
         </TabsContent>
       </Tabs>
 

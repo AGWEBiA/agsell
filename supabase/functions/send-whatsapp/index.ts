@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface WhatsAppRequest {
   organization_id: string;
-  to: string; // Phone number with country code
+  to: string;
   message: string;
   media_url?: string;
   media_type?: "image" | "video" | "audio" | "document";
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     // Format phone number
     const phoneNumber = whatsappReq.to.replace(/\D/g, "");
 
-    // Try Evolution API first
+    // Try Evolution API first — use GLOBAL config + org instance name
     const { data: evolutionInt } = await supabase
       .from("organization_integrations")
       .select("config")
@@ -73,7 +73,26 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (evolutionInt) {
-      return await sendWithEvolutionAPI(evolutionInt.config as Record<string, string>, phoneNumber, whatsappReq);
+      // Fetch global Evolution API config
+      const { data: globalConfig } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "evolution_api")
+        .single();
+
+      const globalEvo = globalConfig?.value as Record<string, string> | null;
+      const orgConfig = evolutionInt.config as Record<string, string>;
+
+      // Merge: global URL + key, org instance_name
+      const mergedConfig: Record<string, string> = {
+        api_url: globalEvo?.api_url || orgConfig.api_url || "",
+        api_key: globalEvo?.api_key || orgConfig.api_key || "",
+        instance_name: orgConfig.instance_name || "",
+      };
+
+      if (mergedConfig.api_url && mergedConfig.api_key && mergedConfig.instance_name) {
+        return await sendWithEvolutionAPI(mergedConfig, phoneNumber, whatsappReq);
+      }
     }
 
     // Try WhatsApp Business API
@@ -150,8 +169,7 @@ async function sendWithEvolutionAPI(
   }
 
   // Send media message
-  const mediaEndpoint = whatsappReq.media_type === "image" ? "sendMedia" : "sendMedia";
-  const response = await fetch(`${baseUrl}/message/${mediaEndpoint}/${instanceName}`, {
+  const response = await fetch(`${baseUrl}/message/sendMedia/${instanceName}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -201,7 +219,6 @@ async function sendWithBusinessAPI(
   let messageBody: Record<string, unknown>;
 
   if (whatsappReq.template_name) {
-    // Send template message
     messageBody = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -224,7 +241,6 @@ async function sendWithBusinessAPI(
       },
     };
   } else if (whatsappReq.media_url) {
-    // Send media message
     const mediaType = whatsappReq.media_type || "image";
     messageBody = {
       messaging_product: "whatsapp",
@@ -237,7 +253,6 @@ async function sendWithBusinessAPI(
       },
     };
   } else {
-    // Send text message
     messageBody = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
