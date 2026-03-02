@@ -138,63 +138,82 @@ async function sendWithEvolutionAPI(
     );
   }
 
-  // Send text message
+  const rawInstanceName = decodeURIComponent(config.instance_name).trim();
+  const instanceCandidates = Array.from(
+    new Set([
+      rawInstanceName,
+      rawInstanceName.replace(/\s+/g, "-"),
+      rawInstanceName.replace(/\s+/g, "_"),
+      rawInstanceName.replace(/\s+/g, ""),
+    ].filter(Boolean))
+  );
+
+  const sendWithInstanceFallback = async (endpoint: "sendText" | "sendMedia", payload: Record<string, unknown>) => {
+    let lastError: { status: number; data: any; instance: string } | null = null;
+
+    for (const candidate of instanceCandidates) {
+      const response = await fetch(`${baseUrl}/message/${endpoint}/${encodeURIComponent(candidate)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": apiKey,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return { ok: true as const, data, instance: candidate };
+      }
+
+      lastError = { status: response.status, data, instance: candidate };
+
+      const message = data?.response?.message?.[0] || data?.message || "";
+      const isInstanceNotFound = response.status === 404 && /instance does not exist/i.test(String(message));
+      if (!isInstanceNotFound) break;
+    }
+
+    return { ok: false as const, ...(lastError || { status: 500, data: { message: "Unknown Evolution API error" }, instance: rawInstanceName }) };
+  };
+
   if (!whatsappReq.media_url) {
-    const response = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": apiKey,
-      },
-      body: JSON.stringify({
-        number: phoneNumber,
-        text: whatsappReq.message,
-      }),
+    const result = await sendWithInstanceFallback("sendText", {
+      number: phoneNumber,
+      text: whatsappReq.message,
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Evolution API error:", data);
+    if (!result.ok) {
+      console.error("Evolution API error:", result.data);
       return new Response(
-        JSON.stringify({ error: `Evolution API error: ${data.message || response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `Evolution API error: ${result.data?.message || result.status}` }),
+        { status: result.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({ success: true, provider: "evolution_api", data }),
+      JSON.stringify({ success: true, provider: "evolution_api", data: result.data, instance_used: result.instance }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Send media message
-  const response = await fetch(`${baseUrl}/message/sendMedia/${instanceName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": apiKey,
-    },
-    body: JSON.stringify({
-      number: phoneNumber,
-      mediatype: whatsappReq.media_type || "image",
-      media: whatsappReq.media_url,
-      caption: whatsappReq.message,
-    }),
+  const result = await sendWithInstanceFallback("sendMedia", {
+    number: phoneNumber,
+    mediatype: whatsappReq.media_type || "image",
+    media: whatsappReq.media_url,
+    caption: whatsappReq.message,
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Evolution API error:", data);
+  if (!result.ok) {
+    console.error("Evolution API error:", result.data);
     return new Response(
-      JSON.stringify({ error: `Evolution API error: ${data.message || response.status}` }),
-      { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: `Evolution API error: ${result.data?.message || result.status}` }),
+      { status: result.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   return new Response(
-    JSON.stringify({ success: true, provider: "evolution_api", data }),
+    JSON.stringify({ success: true, provider: "evolution_api", data: result.data, instance_used: result.instance }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
