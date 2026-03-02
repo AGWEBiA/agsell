@@ -44,7 +44,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const emailReq = (await req.json()) as EmailRequest;
+  const emailReq = (await req.json()) as EmailRequest;
+
+    // Validate 'to' field
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const toList = Array.isArray(emailReq.to) ? emailReq.to : [emailReq.to];
+    const validTo = toList.filter((addr) => typeof addr === "string" && emailRegex.test(addr.trim()));
+    if (validTo.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No valid email addresses provided in 'to' field" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    emailReq.to = validTo.length === 1 ? validTo[0] : validTo;
 
     // Validate organization membership
     if (emailReq.organization_id) {
