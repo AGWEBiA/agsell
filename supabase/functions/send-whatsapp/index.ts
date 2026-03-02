@@ -193,6 +193,30 @@ async function sendWithEvolutionAPI(
     ].filter(Boolean))
   );
 
+  // Auto-configure webhook on Evolution API instance
+  try {
+    const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-webhook`;
+    const primaryInstance = instanceCandidates[0];
+    const webhookResponse = await fetch(`${baseUrl}/webhook/set/${encodeURIComponent(primaryInstance)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: apiKey },
+      body: JSON.stringify({
+        url: webhookUrl,
+        webhook_by_events: false,
+        webhook_base64: false,
+        events: ["MESSAGES_UPSERT"],
+      }),
+    });
+    if (webhookResponse.ok) {
+      console.log(`Webhook auto-configured for instance: ${primaryInstance}`);
+    } else {
+      const webhookErr = await webhookResponse.text();
+      console.log(`Webhook config attempt (non-blocking): ${webhookResponse.status} - ${webhookErr}`);
+    }
+  } catch (e) {
+    console.log("Webhook auto-config failed (non-blocking):", e);
+  }
+
   const sendWithInstanceFallback = async (endpoint: "sendText" | "sendMedia", payload: Record<string, unknown>) => {
     let lastError: { status: number; data: any; instance: string } | null = null;
 
@@ -219,7 +243,7 @@ async function sendWithEvolutionAPI(
       if (!isInstanceNotFound) break;
     }
 
-    return { ok: false as const, ...(lastError || { status: 500, data: { message: "Unknown Evolution API error" }, instance: rawInstanceName }) };
+    return { ok: false as const, ...(lastError || { status: 500, data: { message: "Unknown Evolution API error" }, instance: configuredInstanceName }) };
   };
 
   if (!whatsappReq.media_url) {

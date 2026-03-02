@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     }
 
     // Handle Evolution API format (webhook events)
-    if (body.event === "messages.upsert" || body.event === "message") {
+    if (body.event === "messages.upsert" || body.event === "message" || body.event === "MESSAGES_UPSERT") {
       const data = body.data || body;
       const instanceName = body.instance || data.instance;
       const messageData = data.message || data;
