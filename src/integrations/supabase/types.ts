@@ -3440,6 +3440,7 @@ export type Database = {
           organization_id: string
           settings: Json | null
           synced_at: string | null
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -3456,6 +3457,7 @@ export type Database = {
           organization_id: string
           settings?: Json | null
           synced_at?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -3472,6 +3474,7 @@ export type Database = {
           organization_id?: string
           settings?: Json | null
           synced_at?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Relationships: [

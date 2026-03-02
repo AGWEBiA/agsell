@@ -20,6 +20,7 @@ export interface WhatsAppGroup {
   synced_at: string | null;
   is_active: boolean;
   settings: Record<string, unknown>;
+  tags: string[];
 }
 
 export interface WhatsAppGroupMember {
@@ -65,7 +66,6 @@ export function useWhatsAppGroups() {
   const queryClient = useQueryClient();
   const orgId = currentOrganization?.id;
 
-  // Fetch groups
   const { data: groups = [], isLoading: isLoadingGroups, refetch: refetchGroups } = useQuery({
     queryKey: ['whatsapp-groups', orgId],
     queryFn: async () => {
@@ -75,14 +75,15 @@ export function useWhatsAppGroups() {
         .select('*')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
-      
       if (error) throw error;
-      return data as WhatsAppGroup[];
+      return (data as unknown as WhatsAppGroup[]).map(g => ({
+        ...g,
+        tags: (g as any).tags || [],
+      }));
     },
     enabled: !!orgId,
   });
 
-  // Fetch group messages/templates
   const { data: groupMessages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ['whatsapp-group-messages', orgId],
     queryFn: async () => {
@@ -92,30 +93,28 @@ export function useWhatsAppGroups() {
         .select('*')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
-      
       if (error) throw error;
       return data as WhatsAppGroupMessage[];
     },
     enabled: !!orgId,
   });
 
-  // Create group
   const createGroupMutation = useMutation({
-    mutationFn: async (group: { name: string; description?: string; group_type?: string }) => {
+    mutationFn: async (group: { name: string; description?: string; group_type?: string; tags?: string[] }) => {
       if (!orgId) throw new Error('Organização não encontrada');
-      
+      const insertData: Record<string, unknown> = {
+        name: group.name,
+        description: group.description,
+        group_type: group.group_type || 'group',
+        organization_id: orgId,
+        settings: {} as Json,
+      };
+      if (group.tags) insertData.tags = group.tags;
       const { data, error } = await supabase
         .from('whatsapp_groups')
-        .insert({
-          name: group.name,
-          description: group.description,
-          group_type: group.group_type || 'group',
-          organization_id: orgId,
-          settings: {} as Json,
-        })
+        .insert(insertData as any)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
@@ -123,21 +122,25 @@ export function useWhatsAppGroups() {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-groups', orgId] });
       toast.success('Grupo criado com sucesso!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao criar grupo: ${error.message}`);
-    },
+    onError: (error: Error) => { toast.error(`Erro ao criar grupo: ${error.message}`); },
   });
 
-  // Update group
   const updateGroupMutation = useMutation({
-    mutationFn: async ({ id, name, description, is_active }: { id: string; name?: string; description?: string; is_active?: boolean }) => {
+    mutationFn: async ({ id, name, description, is_active, tags, settings }: {
+      id: string; name?: string; description?: string; is_active?: boolean; tags?: string[]; settings?: Record<string, unknown>;
+    }) => {
+      const updateData: Record<string, unknown> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (is_active !== undefined) updateData.is_active = is_active;
+      if (tags !== undefined) updateData.tags = tags;
+      if (settings !== undefined) updateData.settings = settings as Json;
       const { data, error } = await supabase
         .from('whatsapp_groups')
-        .update({ name, description, is_active })
+        .update(updateData as any)
         .eq('id', id)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
@@ -145,35 +148,24 @@ export function useWhatsAppGroups() {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-groups', orgId] });
       toast.success('Grupo atualizado!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao atualizar grupo: ${error.message}`);
-    },
+    onError: (error: Error) => { toast.error(`Erro ao atualizar grupo: ${error.message}`); },
   });
 
-  // Delete group
   const deleteGroupMutation = useMutation({
     mutationFn: async (groupId: string) => {
-      const { error } = await supabase
-        .from('whatsapp_groups')
-        .delete()
-        .eq('id', groupId);
-      
+      const { error } = await supabase.from('whatsapp_groups').delete().eq('id', groupId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-groups', orgId] });
       toast.success('Grupo removido!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao remover grupo: ${error.message}`);
-    },
+    onError: (error: Error) => { toast.error(`Erro ao remover grupo: ${error.message}`); },
   });
 
-  // Create group message template
   const createGroupMessageMutation = useMutation({
     mutationFn: async (message: { name: string; content: string; message_type?: string; trigger_event?: string; is_active?: boolean; target_groups?: string[] }) => {
       if (!orgId) throw new Error('Organização não encontrada');
-      
       const { data, error } = await supabase
         .from('whatsapp_group_messages')
         .insert({
@@ -187,7 +179,6 @@ export function useWhatsAppGroups() {
         })
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },
@@ -195,24 +186,19 @@ export function useWhatsAppGroups() {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-group-messages', orgId] });
       toast.success('Mensagem criada com sucesso!');
     },
-    onError: (error: Error) => {
-      toast.error(`Erro ao criar mensagem: ${error.message}`);
-    },
+    onError: (error: Error) => { toast.error(`Erro ao criar mensagem: ${error.message}`); },
   });
 
-  // Fetch group members
   const fetchGroupMembers = useCallback(async (groupId: string) => {
     const { data, error } = await supabase
       .from('whatsapp_group_members')
       .select('*')
       .eq('group_id', groupId)
       .order('joined_at', { ascending: false });
-    
     if (error) throw error;
     return data as WhatsAppGroupMember[];
   }, []);
 
-  // Fetch group events
   const fetchGroupEvents = useCallback(async (groupId: string, limit = 50) => {
     const { data, error } = await supabase
       .from('whatsapp_group_events')
@@ -220,10 +206,12 @@ export function useWhatsAppGroups() {
       .eq('group_id', groupId)
       .order('created_at', { ascending: false })
       .limit(limit);
-    
     if (error) throw error;
     return data as WhatsAppGroupEvent[];
   }, []);
+
+  // Get all unique tags across groups
+  const allTags = [...new Set(groups.flatMap(g => g.tags || []))];
 
   return {
     groups,
@@ -231,6 +219,7 @@ export function useWhatsAppGroups() {
     refetchGroups,
     groupMessages,
     isLoadingMessages,
+    allTags,
     createGroup: createGroupMutation.mutate,
     updateGroup: updateGroupMutation.mutate,
     deleteGroup: deleteGroupMutation.mutate,
