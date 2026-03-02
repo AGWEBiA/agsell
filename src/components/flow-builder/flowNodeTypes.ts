@@ -2,7 +2,9 @@ import {
   Zap, MessageSquare, Mail, Instagram, Send,
   Heart, Eye, UserPlus, MessageCircle, Sparkles,
   Tag, Star, Bell, Clock, CheckSquare, GitBranch,
-  Timer, Flame, MailCheck, Filter,
+  Timer, Flame, MailCheck, Filter, Smartphone,
+  Globe, MousePointer, LogOut, List, LayoutTemplate,
+  Package, Code,
 } from 'lucide-react';
 
 export interface FlowNode {
@@ -32,23 +34,71 @@ export const triggerOptions = [
   { id: 'form_submitted', label: 'Formulário Enviado', icon: CheckSquare, channel: 'crm', color: 'from-indigo-500 to-blue-500', description: 'Quando um formulário específico é preenchido' },
 ];
 
-export const actionOptions = [
-  { id: 'send_dm', label: 'Enviar DM', icon: Send, color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' },
-  { id: 'reply_comment', label: 'Responder Comentário', icon: Heart, color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
-  { id: 'send_whatsapp', label: 'Enviar WhatsApp', icon: MessageSquare, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
-  { id: 'send_email_marketing', label: 'Email Marketing', icon: Mail, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
-  { id: 'send_email_performance', label: 'Email Performance', icon: MailCheck, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-  { id: 'send_email', label: 'Enviar E-mail', icon: Mail, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-  { id: 'timer', label: 'Timer', icon: Timer, color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
-  { id: 'warmup', label: 'Aquecimento', icon: Flame, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-  { id: 'tag_filter', label: 'Filtro de Tag', icon: Filter, color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
-  { id: 'add_tag', label: 'Adicionar Tag', icon: Tag, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  { id: 'remove_tag', label: 'Remover Tag', icon: Tag, color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
-  { id: 'update_score', label: 'Atualizar Score', icon: Star, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
-  { id: 'send_notification', label: 'Notificar Equipe', icon: Bell, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
-  { id: 'create_task', label: 'Criar Tarefa', icon: CheckSquare, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
-  { id: 'wait', label: 'Aguardar (Intervalo)', icon: Clock, color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+// ── Node categories matching SellFlux sidebar ──
+export const nodeCategories = [
+  {
+    label: 'Entrada',
+    nodes: [
+      { id: 'tag_filter', label: 'Filtro de Tag', icon: Filter, color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
+    ],
+  },
+  {
+    label: 'Controle',
+    nodes: [
+      { id: 'timer', label: 'Timer', icon: Timer, color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
+      { id: 'warmup', label: 'Aquecimento', icon: Flame, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+    ],
+  },
+  {
+    label: 'WhatsApp',
+    nodes: [
+      { id: 'send_whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+      { id: 'send_whatsapp_oficial', label: 'WhatsApp Oficial', icon: MessageSquare, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+    ],
+  },
+  {
+    label: 'E-mail',
+    nodes: [
+      { id: 'send_email_performance', label: 'Performance', icon: MailCheck, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+      { id: 'send_email_marketing', label: 'Marketing', icon: Mail, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+    ],
+  },
+  {
+    label: 'SMS',
+    nodes: [
+      { id: 'send_sms', label: 'SMS', icon: Smartphone, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300' },
+    ],
+  },
+  {
+    label: 'Tags',
+    nodes: [
+      { id: 'add_tag', label: 'Add Tag', icon: Tag, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+      { id: 'remove_tag', label: 'Remover Tag', icon: Tag, color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+      { id: 'list_tag', label: 'Listar Tag', icon: List, color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+    ],
+  },
+  {
+    label: 'Avançado',
+    nodes: [
+      { id: 'conditional', label: 'Condicional', icon: GitBranch, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+      { id: 'full_page', label: 'Full Page', icon: LayoutTemplate, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
+      { id: 'pixel', label: 'Pixel', icon: MousePointer, color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
+      { id: 'abandonment', label: 'Abandono', icon: LogOut, color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
+    ],
+  },
+  {
+    label: 'CRM',
+    nodes: [
+      { id: 'update_score', label: 'Atualizar Score', icon: Star, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
+      { id: 'send_notification', label: 'Notificar Equipe', icon: Bell, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+      { id: 'create_task', label: 'Criar Tarefa', icon: CheckSquare, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
+      { id: 'wait', label: 'Aguardar', icon: Clock, color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+    ],
+  },
 ];
+
+// Flat list for backward compat
+export const actionOptions = nodeCategories.flatMap(c => c.nodes);
 
 export const conditionOptions = [
   { id: 'if_tag', label: 'Se tem Tag', icon: GitBranch, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
@@ -91,4 +141,13 @@ export const WEEKDAYS = [
   { key: 'qui', label: 'Qui' },
   { key: 'sex', label: 'Sex' },
   { key: 'sab', label: 'Sáb' },
+];
+
+// Flow templates
+export const flowTemplates = [
+  { id: 'welcome_whatsapp', name: 'Boas-vindas WhatsApp', description: 'Envie uma mensagem de boas-vindas quando um lead entrar', category: 'whatsapp' },
+  { id: 'lead_nurture_email', name: 'Nutrição de Leads', description: 'Sequência de emails para nutrir leads frios', category: 'email' },
+  { id: 'abandoned_cart', name: 'Carrinho Abandonado', description: 'Recupere vendas perdidas com lembretes automáticos', category: 'vendas' },
+  { id: 'instagram_engagement', name: 'Engajamento Instagram', description: 'Responda automaticamente a comentários e DMs', category: 'instagram' },
+  { id: 'onboarding', name: 'Onboarding de Cliente', description: 'Guie novos clientes com uma sequência multicanal', category: 'crm' },
 ];

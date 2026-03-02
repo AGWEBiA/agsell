@@ -21,7 +21,7 @@ import {
   Heart, Eye, UserPlus, MessageCircle, Sparkles,
   Tag, Star, Bell, Clock, CheckSquare, GitBranch,
   Settings, X, Play, Pause, MoreVertical,
-  Workflow, Timer, Flame, MailCheck, Filter,
+  Workflow, Timer, Flame, MailCheck, Filter, Code,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,8 +33,9 @@ import {
 import {
   type FlowNode,
   triggerOptions, actionOptions, conditionOptions, triggerTypeMap,
-  TEMPLATE_VARIABLES, WEEKDAYS,
+  TEMPLATE_VARIABLES, WEEKDAYS, nodeCategories, flowTemplates,
 } from '@/components/flow-builder/flowNodeTypes';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimerNodeConfig } from '@/components/flow-builder/TimerNodeConfig';
 import { WarmupNodeConfig } from '@/components/flow-builder/WarmupNodeConfig';
 import { EmailNodeConfig } from '@/components/flow-builder/EmailNodeConfig';
@@ -172,63 +173,148 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter }: {
   );
 }
 
-// ─── Add Step Dialog ───
+// ─── Add Step Dialog (Sidebar-style like SellFlux) ───
 function AddStepDialog({ open, onClose, onAdd }: {
   open: boolean;
   onClose: () => void;
   onAdd: (type: 'action' | 'condition' | 'delay' | 'timer' | 'warmup', subtype: string) => void;
 }) {
-  const [tab, setTab] = useState<'actions' | 'conditions' | 'tools'>('actions');
-
-  const mainActions = actionOptions.filter(a => !['timer', 'warmup', 'tag_filter', 'wait'].includes(a.id));
-  const toolActions = actionOptions.filter(a => ['timer', 'warmup', 'tag_filter', 'wait'].includes(a.id));
+  const getNodeType = (id: string): FlowNode['type'] => {
+    if (id === 'timer') return 'timer';
+    if (id === 'warmup') return 'warmup';
+    if (id === 'wait') return 'delay';
+    if (id === 'conditional' || conditionOptions.some(c => c.id === id)) return 'condition';
+    return 'action';
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Adicionar Passo</DialogTitle>
-          <DialogDescription>Escolha o que acontece a seguir no seu fluxo</DialogDescription>
+          <DialogDescription>Escolha o tipo de nó para adicionar ao fluxo</DialogDescription>
         </DialogHeader>
-        <div className="flex gap-2 mb-4">
-          {([
-            { key: 'actions' as const, label: 'Mensagens', icon: MessageSquare },
-            { key: 'tools' as const, label: 'Ferramentas', icon: Settings },
-            { key: 'conditions' as const, label: 'Condições', icon: GitBranch },
-          ]).map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={cn('flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors', tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-muted-foreground')}>
-              <t.icon className="h-4 w-4" />{t.label}
-            </button>
-          ))}
+        <ScrollArea className="max-h-[60vh] pr-2">
+          <div className="space-y-4">
+            {nodeCategories.map(cat => (
+              <div key={cat.label}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat.label}</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {cat.nodes.map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => { onAdd(getNodeType(opt.id) as any, opt.id); onClose(); }}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left"
+                    >
+                      <div className={cn('flex items-center justify-center h-8 w-8 rounded-md shrink-0', opt.color)}>
+                        <opt.icon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-xs font-medium">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Condições</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {conditionOptions.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { onAdd('condition', opt.id); onClose(); }}
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left"
+                  >
+                    <div className={cn('flex items-center justify-center h-8 w-8 rounded-md shrink-0', opt.color)}>
+                      <opt.icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-medium">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── New Campaign Modal ───
+function NewCampaignModal({ open, onClose, onCreate }: {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (name: string, method: 'blank' | 'template' | 'code', templateId?: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [importCode, setImportCode] = useState('');
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nova campanha</DialogTitle>
+          <DialogDescription>Crie um novo fluxo de automação</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>Nome</Label>
+            <Input placeholder="Nome do fluxo" value={name} onChange={e => setName(e.target.value)} />
+          </div>
+          <Tabs defaultValue="create">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="create">Criar campanha</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
+            </TabsList>
+            <TabsContent value="create" className="space-y-3 mt-3">
+              <button
+                onClick={() => onCreate(name || 'Meu Fluxo', 'blank')}
+                className="w-full flex items-center gap-3 p-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-left"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center shrink-0">
+                  <Plus className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Campanha em branco</p>
+                  <p className="text-xs opacity-80">Crie uma campanha nova, sem nenhuma predefinição</p>
+                </div>
+              </button>
+              <button
+                className="w-full flex items-center gap-3 p-4 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-colors text-left"
+              >
+                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <Code className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Via código</p>
+                  <p className="text-xs text-muted-foreground">Crie uma campanha utilizando o código de outra, mantendo as configurações originais</p>
+                </div>
+              </button>
+            </TabsContent>
+            <TabsContent value="templates" className="space-y-2 mt-3">
+              {flowTemplates.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => onCreate(name || t.name, 'template', t.id)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-colors text-left"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Zap className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.description}</p>
+                  </div>
+                </button>
+              ))}
+            </TabsContent>
+          </Tabs>
         </div>
-        <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
-          {tab === 'actions' && mainActions.map(opt => (
-            <button key={opt.id} onClick={() => {
-              const type = opt.id === 'timer' ? 'timer' : opt.id === 'warmup' ? 'warmup' : 'action';
-              onAdd(type as any, opt.id);
-              onClose();
-            }} className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left">
-              <div className={cn('flex items-center justify-center h-9 w-9 rounded-lg', opt.color)}><opt.icon className="h-4 w-4" /></div>
-              <span className="text-sm font-medium">{opt.label}</span>
-            </button>
-          ))}
-          {tab === 'tools' && toolActions.map(opt => (
-            <button key={opt.id} onClick={() => {
-              const type = opt.id === 'timer' ? 'timer' : opt.id === 'warmup' ? 'warmup' : opt.id === 'wait' ? 'delay' : 'action';
-              onAdd(type as any, opt.id);
-              onClose();
-            }} className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left">
-              <div className={cn('flex items-center justify-center h-9 w-9 rounded-lg', opt.color)}><opt.icon className="h-4 w-4" /></div>
-              <span className="text-sm font-medium">{opt.label}</span>
-            </button>
-          ))}
-          {tab === 'conditions' && conditionOptions.map(opt => (
-            <button key={opt.id} onClick={() => { onAdd('condition', opt.id); onClose(); }} className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left">
-              <div className={cn('flex items-center justify-center h-9 w-9 rounded-lg', opt.color)}><opt.icon className="h-4 w-4" /></div>
-              <span className="text-sm font-medium">{opt.label}</span>
-            </button>
-          ))}
-        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => onCreate(name || 'Meu Fluxo', 'blank')}>
+            <Plus className="h-4 w-4 mr-2" />Criar
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -301,6 +387,23 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
         return (<div className="space-y-4"><div><Label>Formulário *</Label><Select value={String(config.form_id || '')} onValueChange={v => { const form = forms.find(f => f.id === v); setConfig({ ...config, form_id: v, form_name: form?.name || '' }); }}><SelectTrigger><SelectValue placeholder="Selecione um formulário" /></SelectTrigger><SelectContent>{forms.map(f => (<SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>))}{forms.length === 0 && (<SelectItem value="_none" disabled>Nenhum formulário criado</SelectItem>)}</SelectContent></Select></div></div>);
 
       // ── Simple actions ──
+      // ── New node types ──
+      case 'send_whatsapp_oficial':
+        return <WhatsAppNodeConfig config={config} onChange={setConfig} />;
+      case 'send_sms':
+        return (<div className="space-y-4"><div><Label>Mensagem SMS</Label><Textarea placeholder="Digite a mensagem SMS..." rows={3} maxLength={160} value={String(config.message || '')} onChange={e => setConfig({ ...config, message: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">{String(config.message || '').length}/160 caracteres</p></div></div>);
+      case 'list_tag':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Lista todas as tags do lead para uso em condições subsequentes.</p><div><Label>Filtrar por prefixo (opcional)</Label><Input placeholder="Ex: campanha_" value={String(config.tag_prefix || '')} onChange={e => setConfig({ ...config, tag_prefix: e.target.value })} /></div></div>);
+      case 'full_page':
+        return (<div className="space-y-4"><div><Label>URL da página</Label><Input placeholder="https://suapagina.com/obrigado" value={String(config.page_url || '')} onChange={e => setConfig({ ...config, page_url: e.target.value })} /></div><div><Label>Tempo de exibição (segundos)</Label><Input type="number" min={1} value={String(config.display_seconds || 10)} onChange={e => setConfig({ ...config, display_seconds: parseInt(e.target.value) || 10 })} /></div></div>);
+      case 'pixel':
+        return (<div className="space-y-4"><div><Label>Evento do Pixel</Label><Select value={String(config.pixel_event || 'PageView')} onValueChange={v => setConfig({ ...config, pixel_event: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PageView">PageView</SelectItem><SelectItem value="Lead">Lead</SelectItem><SelectItem value="Purchase">Purchase</SelectItem><SelectItem value="InitiateCheckout">InitiateCheckout</SelectItem><SelectItem value="AddToCart">AddToCart</SelectItem><SelectItem value="CompleteRegistration">CompleteRegistration</SelectItem><SelectItem value="custom">Personalizado</SelectItem></SelectContent></Select></div>{config.pixel_event === 'custom' && (<div><Label>Nome do evento</Label><Input placeholder="meu_evento" value={String(config.custom_event || '')} onChange={e => setConfig({ ...config, custom_event: e.target.value })} /></div>)}</div>);
+      case 'abandonment':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Detecta leads que abandonaram o fluxo sem converter.</p><div className="flex gap-2"><div className="flex-1"><Label>Tempo de inatividade</Label><Input type="number" min={1} value={String(config.inactivity_duration || 30)} onChange={e => setConfig({ ...config, inactivity_duration: parseInt(e.target.value) || 30 })} /></div><div className="flex-1"><Label>Unidade</Label><Select value={String(config.inactivity_unit || 'minutes')} onValueChange={v => setConfig({ ...config, inactivity_unit: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="minutes">Minutos</SelectItem><SelectItem value="hours">Horas</SelectItem><SelectItem value="days">Dias</SelectItem></SelectContent></Select></div></div></div>);
+      case 'conditional':
+        return (<div className="space-y-4"><div><Label>Campo para verificar</Label><Select value={String(config.field || 'tag')} onValueChange={v => setConfig({ ...config, field: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="tag">Tem Tag</SelectItem><SelectItem value="score">Score ≥</SelectItem><SelectItem value="email">Tem Email</SelectItem><SelectItem value="whatsapp">Tem WhatsApp</SelectItem><SelectItem value="source">Fonte do contato</SelectItem></SelectContent></Select></div>{config.field === 'tag' && (<div><Label>Tag</Label><Input placeholder="Ex: comprador" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div>)}{config.field === 'score' && (<div><Label>Score mínimo</Label><Input type="number" placeholder="50" value={String(config.min_score || '')} onChange={e => setConfig({ ...config, min_score: parseInt(e.target.value) || 0 })} /></div>)}</div>);
+
+      // ── Simple actions ──
       case 'send_email':
         return (<div className="space-y-4"><div><Label>Assunto</Label><Input placeholder="Assunto do email" value={String(config.subject || '')} onChange={e => setConfig({ ...config, subject: e.target.value })} /></div><div><Label>Conteúdo</Label><Textarea placeholder="Conteúdo do email..." rows={4} value={String(config.content || '')} onChange={e => setConfig({ ...config, content: e.target.value })} /></div></div>);
       case 'add_tag': case 'remove_tag':
@@ -332,7 +435,14 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       send_email_performance: 'Configurar Email Performance',
       tag_filter: 'Configurar Tag',
       send_whatsapp: 'Configurar WhatsApp',
+      send_whatsapp_oficial: 'Configurar WhatsApp Oficial',
       send_dm: 'Configurar DM',
+      send_sms: 'Configurar SMS',
+      pixel: 'Configurar Pixel',
+      full_page: 'Configurar Full Page',
+      abandonment: 'Configurar Abandono',
+      conditional: 'Condicional',
+      list_tag: 'Listar Tag',
     };
     return titles[node.subtype] || `Configurar: ${node.label}`;
   };
@@ -506,6 +616,7 @@ export default function FlowBuilder() {
   const [addAfterIndex, setAddAfterIndex] = useState<number>(-1);
   const [editingNode, setEditingNode] = useState<FlowNode | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [newCampaignOpen, setNewCampaignOpen] = useState(false);
 
   useEffect(() => {
     if (currentFlowId && automations.length > 0) {
@@ -625,8 +736,13 @@ export default function FlowBuilder() {
   };
 
   const handleCreateNew = () => {
+    setNewCampaignOpen(true);
+  };
+
+  const handleCampaignCreate = (name: string, _method: string, _templateId?: string) => {
+    setNewCampaignOpen(false);
     setCurrentFlowId(null);
-    setFlowName('Meu Fluxo');
+    setFlowName(name);
     setNodes([]);
     setIsActive(false);
     setMode('editor');
@@ -645,7 +761,12 @@ export default function FlowBuilder() {
   };
 
   if (mode === 'list') {
-    return <FlowList onCreateNew={handleCreateNew} onEditFlow={handleEditFlow} />;
+    return (
+      <>
+        <FlowList onCreateNew={handleCreateNew} onEditFlow={handleEditFlow} />
+        <NewCampaignModal open={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} onCreate={handleCampaignCreate} />
+      </>
+    );
   }
 
   return (
