@@ -29,17 +29,19 @@ import {
   Shield,
   Server,
   Smartphone,
+  QrCode,
 } from 'lucide-react';
 import { useWhatsAppInstances, WhatsAppInstance } from '@/hooks/useWhatsAppInstances';
 import { usePlans } from '@/hooks/usePlans';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EvolutionAPIConfig {
   api_url: string;
   api_key: string;
-  instance_name: string;
-  phone_number: string;
+  is_configured: boolean;
 }
 
 interface WhatsAppBusinessConfig {
@@ -70,20 +72,30 @@ export function WhatsAppProviderSetup() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDefault, setIsDefault] = useState(false);
   const [instanceName, setInstanceName] = useState('');
+  const [evolutionInstanceName, setEvolutionInstanceName] = useState('');
+  const [evolutionPhone, setEvolutionPhone] = useState('');
+
+  // Fetch global Evolution API config
+  const { data: globalEvolutionConfig } = useQuery({
+    queryKey: ['platform_settings', 'evolution_api'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('*')
+        .eq('key', 'evolution_api')
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value as unknown as EvolutionAPIConfig | null;
+    },
+  });
+
+  const isEvolutionGlobalConfigured = globalEvolutionConfig?.is_configured === true;
 
   // Check if plan includes WhatsApp feature
   const hasWhatsAppFeature = currentPlan?.features?.includes('whatsapp') || 
                              currentPlan?.slug === 'professional' || 
                              currentPlan?.slug === 'enterprise' ||
                              (currentPlan?.max_whatsapp_messages ?? 0) > 0;
-
-  // Evolution API Config
-  const [evolutionConfig, setEvolutionConfig] = useState<EvolutionAPIConfig>({
-    api_url: '',
-    api_key: '',
-    instance_name: '',
-    phone_number: '',
-  });
 
   // WhatsApp Business Config
   const [businessConfig, setBusinessConfig] = useState<WhatsAppBusinessConfig>({
@@ -120,18 +132,19 @@ export function WhatsAppProviderSetup() {
   }
 
   const resetForm = () => {
-    setEvolutionConfig({ api_url: '', api_key: '', instance_name: '', phone_number: '' });
     setBusinessConfig({ access_token: '', phone_number_id: '', business_account_id: '', webhook_verify_token: '', phone_number: '' });
     setInstanceName('');
+    setEvolutionInstanceName('');
+    setEvolutionPhone('');
     setIsDefault(false);
   };
 
+  // Simplified Evolution save — only needs instance name (global config provides URL + key)
   const handleSaveEvolution = async () => {
-    if (!evolutionConfig.api_url || !evolutionConfig.api_key || !evolutionConfig.instance_name) {
-      toast.error('Preencha todos os campos obrigatórios');
+    if (!evolutionInstanceName) {
+      toast.error('Informe o nome da instância na Evolution API');
       return;
     }
-
     if (!instanceName) {
       toast.error('Digite um nome para identificar esta instância');
       return;
@@ -142,8 +155,12 @@ export function WhatsAppProviderSetup() {
       await createInstance.mutateAsync({
         name: instanceName,
         integration_type: 'evolution_api',
-        config: { ...evolutionConfig } as Record<string, string>,
-        phone_number: evolutionConfig.phone_number || evolutionConfig.instance_name,
+        config: {
+          instance_name: evolutionInstanceName,
+          phone_number: evolutionPhone,
+          // URL and key come from global config — not stored per org
+        } as Record<string, string>,
+        phone_number: evolutionPhone || evolutionInstanceName,
         is_default: isDefault || instances.length === 0,
       });
       setIsDialogOpen(false);
@@ -158,7 +175,6 @@ export function WhatsAppProviderSetup() {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
-
     if (!instanceName) {
       toast.error('Digite um nome para identificar esta instância');
       return;
@@ -181,18 +197,21 @@ export function WhatsAppProviderSetup() {
   };
 
   const handleTestEvolution = async (instance: WhatsAppInstance) => {
-    const config = instance.config;
-    if (!config.api_url || !config.api_key) {
-      toast.error('Configuração incompleta');
+    if (!globalEvolutionConfig?.api_url || !globalEvolutionConfig?.api_key) {
+      toast.error('Evolution API não configurada globalmente. Contate o administrador.');
+      return;
+    }
+
+    const instanceNameEvo = instance.config.instance_name;
+    if (!instanceNameEvo) {
+      toast.error('Nome da instância não configurado');
       return;
     }
 
     setIsTesting(instance.id);
     try {
-      const response = await fetch(`${config.api_url}/instance/connectionState/${config.instance_name}`, {
-        headers: {
-          'apikey': config.api_key,
-        },
+      const response = await fetch(`${globalEvolutionConfig.api_url}/instance/connectionState/${instanceNameEvo}`, {
+        headers: { apikey: globalEvolutionConfig.api_key },
       });
 
       if (response.ok) {
@@ -205,8 +224,8 @@ export function WhatsAppProviderSetup() {
       } else {
         toast.error('Erro ao conectar com Evolution API');
       }
-    } catch (error) {
-      toast.error('Não foi possível conectar. Verifique a URL e a chave.');
+    } catch {
+      toast.error('Não foi possível conectar. Verifique a configuração.');
     } finally {
       setIsTesting(null);
     }
@@ -223,11 +242,7 @@ export function WhatsAppProviderSetup() {
     try {
       const response = await fetch(
         `https://graph.facebook.com/v18.0/${config.phone_number_id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${config.access_token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${config.access_token}` } }
       );
 
       if (response.ok) {
@@ -237,7 +252,7 @@ export function WhatsAppProviderSetup() {
         const error = await response.json();
         toast.error(`Erro: ${error.error?.message || 'Token inválido'}`);
       }
-    } catch (error) {
+    } catch {
       toast.error('Não foi possível conectar. Verifique as credenciais.');
     } finally {
       setIsTesting(null);
@@ -264,7 +279,7 @@ export function WhatsAppProviderSetup() {
     return (
       <Card 
         key={instance.id} 
-        className={`${instance.is_active ? 'border-green-200 dark:border-green-800' : ''} ${instance.is_default ? 'ring-2 ring-yellow-400' : ''}`}
+        className={`${instance.is_active ? 'border-green-200 dark:border-green-800' : ''} ${instance.is_default ? 'ring-2 ring-primary/40' : ''}`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -360,22 +375,39 @@ export function WhatsAppProviderSetup() {
         </Button>
       </div>
 
-      {/* Meta Billing Notice */}
-      <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
-        <CardContent className="pt-5 pb-5">
-          <div className="flex gap-3">
-            <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="text-amber-800 dark:text-amber-200">
-                <strong>API Oficial (Meta):</strong> mensagens cobradas diretamente pela Meta ao titular da conta conforme o volume de conversas.
-              </p>
-              <p className="text-amber-700 dark:text-amber-300 mt-1">
-                <strong>Evolution API (QR Code):</strong> sem custos por mensagem — apenas hospedagem da sua instância.
-              </p>
+      {/* Info notices */}
+      {isEvolutionGlobalConfigured && (
+        <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="text-green-800 dark:text-green-200">
+                  <strong>Evolution API configurada globalmente.</strong> Para adicionar um número, basta informar o nome da instância e escanear o QR Code.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isEvolutionGlobalConfigured && (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex gap-3">
+              <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="text-amber-800 dark:text-amber-200">
+                  <strong>Evolution API não configurada.</strong> O administrador da plataforma precisa configurar a Evolution API nas configurações globais para habilitar conexões via QR Code.
+                </p>
+                <p className="text-amber-700 dark:text-amber-300 mt-1">
+                  Enquanto isso, você pode usar a <strong>WhatsApp Business API</strong> (Meta) informando suas próprias credenciais.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {instances.length === 0 ? (
         <Card className="border-dashed">
@@ -408,19 +440,14 @@ export function WhatsAppProviderSetup() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <h4 className="font-medium text-purple-600">Evolution API</h4>
+              <h4 className="font-medium text-purple-600">Evolution API (QR Code)</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>✅ Conexão via QR Code (sem aprovação)</li>
+                <li>✅ Basta informar o nome da instância</li>
+                <li>✅ Escaneie o QR Code e pronto</li>
                 <li>✅ Não precisa de conta Business</li>
-                <li>✅ Menor custo (self-hosted)</li>
-                <li>⚠️ Requer servidor próprio ou cloud</li>
-                <li>⚠️ Pode ter instabilidades</li>
+                <li>✅ Sem custos por mensagem</li>
+                <li>{isEvolutionGlobalConfigured ? '✅ Configurada pelo admin' : '⚠️ Requer configuração do admin'}</li>
               </ul>
-              <Button variant="link" className="p-0 h-auto" asChild>
-                <a href="https://doc.evolution-api.com" target="_blank" rel="noopener noreferrer">
-                  Ver documentação <ExternalLink className="h-3 w-3 ml-1" />
-                </a>
-              </Button>
             </div>
             <div className="space-y-2">
               <h4 className="font-medium text-blue-600">WhatsApp Business API</h4>
@@ -431,11 +458,6 @@ export function WhatsAppProviderSetup() {
                 <li>⚠️ Requer aprovação da Meta</li>
                 <li>⚠️ Custo por mensagem</li>
               </ul>
-              <Button variant="link" className="p-0 h-auto" asChild>
-                <a href="https://developers.facebook.com/docs/whatsapp" target="_blank" rel="noopener noreferrer">
-                  Ver documentação <ExternalLink className="h-3 w-3 ml-1" />
-                </a>
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -466,48 +488,44 @@ export function WhatsAppProviderSetup() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="evolution">Evolution API</TabsTrigger>
-              <TabsTrigger value="business">Business API</TabsTrigger>
+              <TabsTrigger value="evolution" disabled={!isEvolutionGlobalConfigured}>
+                <QrCode className="h-4 w-4 mr-2" />
+                QR Code
+              </TabsTrigger>
+              <TabsTrigger value="business">
+                <Smartphone className="h-4 w-4 mr-2" />
+                Business API
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="evolution" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="evo-url">URL da API *</Label>
-                <Input
-                  id="evo-url"
-                  placeholder="https://api.evolution.com.br"
-                  value={evolutionConfig.api_url}
-                  onChange={(e) => setEvolutionConfig({ ...evolutionConfig, api_url: e.target.value })}
-                />
+              <div className="bg-green-50 dark:bg-green-950 rounded-lg p-3 text-sm text-green-800 dark:text-green-200">
+                <p className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Evolution API configurada globalmente. Apenas informe o nome da instância.
+                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="evo-key">API Key *</Label>
+                <Label htmlFor="evo-instance-name">Nome da Instância na Evolution API *</Label>
                 <Input
-                  id="evo-key"
-                  type="password"
-                  placeholder="Sua chave de API"
-                  value={evolutionConfig.api_key}
-                  onChange={(e) => setEvolutionConfig({ ...evolutionConfig, api_key: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="evo-instance">Nome da Instância *</Label>
-                <Input
-                  id="evo-instance"
+                  id="evo-instance-name"
                   placeholder="minha-instancia"
-                  value={evolutionConfig.instance_name}
-                  onChange={(e) => setEvolutionConfig({ ...evolutionConfig, instance_name: e.target.value })}
+                  value={evolutionInstanceName}
+                  onChange={(e) => setEvolutionInstanceName(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Nome da instância criada no servidor Evolution API
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="evo-phone">Número do WhatsApp</Label>
                 <Input
                   id="evo-phone"
                   placeholder="+55 11 99999-9999"
-                  value={evolutionConfig.phone_number}
-                  onChange={(e) => setEvolutionConfig({ ...evolutionConfig, phone_number: e.target.value })}
+                  value={evolutionPhone}
+                  onChange={(e) => setEvolutionPhone(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">Opcional - para identificação</p>
+                <p className="text-xs text-muted-foreground">Opcional — para identificação</p>
               </div>
             </TabsContent>
 
