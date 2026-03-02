@@ -138,13 +138,58 @@ async function sendWithEvolutionAPI(
     );
   }
 
-  const rawInstanceName = decodeURIComponent(config.instance_name).trim();
+  const normalizeInstanceName = (value: string) =>
+    value.toLowerCase().replace(/[\s_-]+/g, "");
+
+  const configuredInstanceName = decodeURIComponent(config.instance_name).trim();
+  let resolvedInstanceName = configuredInstanceName;
+
+  try {
+    const instancesResponse = await fetch(`${baseUrl}/instance/fetchInstances`, {
+      method: "GET",
+      headers: { apikey: apiKey },
+    });
+
+    if (instancesResponse.ok) {
+      const rawInstances = await instancesResponse.json();
+      const instances = Array.isArray(rawInstances) ? rawInstances : [];
+
+      const extractName = (item: Record<string, unknown>): string | null => {
+        if (typeof item.instanceName === "string") return item.instanceName;
+        if (typeof item.name === "string") return item.name;
+
+        const nestedInstance = item.instance as Record<string, unknown> | undefined;
+        if (nestedInstance) {
+          if (typeof nestedInstance.instanceName === "string") return nestedInstance.instanceName;
+          if (typeof nestedInstance.name === "string") return nestedInstance.name;
+        }
+
+        return null;
+      };
+
+      const targetNormalized = normalizeInstanceName(configuredInstanceName);
+      const matched = instances
+        .map((instance) => extractName(instance as Record<string, unknown>))
+        .find((name) => !!name && normalizeInstanceName(name) === targetNormalized);
+
+      if (matched) {
+        resolvedInstanceName = matched;
+      }
+    } else {
+      await instancesResponse.text();
+    }
+  } catch {
+    // Se falhar a descoberta, segue com fallback local
+  }
+
   const instanceCandidates = Array.from(
     new Set([
-      rawInstanceName,
-      rawInstanceName.replace(/\s+/g, "-"),
-      rawInstanceName.replace(/\s+/g, "_"),
-      rawInstanceName.replace(/\s+/g, ""),
+      resolvedInstanceName,
+      configuredInstanceName,
+      configuredInstanceName.toLowerCase(),
+      configuredInstanceName.replace(/\s+/g, "-"),
+      configuredInstanceName.replace(/\s+/g, "_"),
+      configuredInstanceName.replace(/\s+/g, ""),
     ].filter(Boolean))
   );
 
