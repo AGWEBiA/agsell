@@ -217,7 +217,7 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
                       </div>
                       <div className="grid gap-2">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Nome</p>
+                          <p className="text-xs text-muted-foreground mb-1">Nome (FQDN)</p>
                           <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
                             <code className="text-xs flex-1 break-all">{record.name}</code>
                             <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.name)}>
@@ -225,6 +225,22 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
                             </Button>
                           </div>
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Host</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">{record.host || record.name}</code>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Zona</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">{record.zone || domain.domain}</code>
+                            </div>
+                          </div>
+                        </div>
+
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Valor</p>
                           <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
@@ -234,6 +250,27 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
                             </Button>
                           </div>
                         </div>
+
+                        {(record.priority || record.ttl) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {record.priority && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Prioridade</p>
+                                <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                                  <code className="text-xs flex-1">{record.priority}</code>
+                                </div>
+                              </div>
+                            )}
+                            {record.ttl && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">TTL</p>
+                                <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                                  <code className="text-xs flex-1">{record.ttl}</code>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))

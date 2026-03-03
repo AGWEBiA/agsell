@@ -42,6 +42,16 @@ function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function toFqdn(recordName: string, zone: string): string {
+  const cleanZone = zone.replace(/\.$/, "");
+  const cleanName = (recordName || "@").replace(/\.$/, "");
+
+  if (cleanName === "@") return cleanZone;
+  if (cleanName.endsWith(cleanZone)) return cleanName;
+
+  return `${cleanName}.${cleanZone}`;
+}
+
 // --- Resend API helpers ---
 async function getResendApiKey(supabase: any): Promise<string | null> {
   const { data } = await supabase
@@ -56,7 +66,11 @@ async function getResendApiKey(supabase: any): Promise<string | null> {
   return config?.api_key || null;
 }
 
-async function registerDomainOnResend(apiKey: string, domain: string): Promise<{ id: string; records: any[] } | null> {
+async function registerDomainOnResend(
+  apiKey: string,
+  domain: string,
+  attempt = 1
+): Promise<{ id: string; records: any[]; status?: string } | null> {
   try {
     const response = await fetch("https://api.resend.com/domains", {
       method: "POST",
@@ -64,27 +78,32 @@ async function registerDomainOnResend(apiKey: string, domain: string): Promise<{
       body: JSON.stringify({ name: domain, region: "sa-east-1" }),
     });
     const data = await response.json();
+
     if (!response.ok) {
       if (data?.message?.includes("already") || response.status === 409 || response.status === 422) {
-        await delay(600);
+        await delay(700);
         return await findDomainOnResend(apiKey, domain);
       }
-      if (response.status === 429) {
-        console.warn(`Rate limited registering ${domain}, retrying after delay...`);
-        await delay(1500);
-        return await registerDomainOnResend(apiKey, domain);
+
+      if (response.status === 429 && attempt < 6) {
+        const waitMs = 1200 * attempt;
+        console.warn(`Rate limited registering ${domain}. Retry ${attempt}/5 in ${waitMs}ms`);
+        await delay(waitMs);
+        return await registerDomainOnResend(apiKey, domain, attempt + 1);
       }
+
       console.error("Failed to register domain on Resend:", data);
       return null;
     }
-    return { id: data.id, records: data.records || [] };
+
+    return { id: data.id, records: data.records || [], status: data.status || null };
   } catch (error) {
     console.error("Error registering domain on Resend:", error);
     return null;
   }
 }
 
-async function findDomainOnResend(apiKey: string, domain: string): Promise<{ id: string; records: any[] } | null> {
+async function findDomainOnResend(apiKey: string, domain: string): Promise<{ id: string; records: any[]; status?: string } | null> {
   try {
     const response = await fetch("https://api.resend.com/domains", {
       headers: { "Authorization": `Bearer ${apiKey}` },
@@ -92,7 +111,7 @@ async function findDomainOnResend(apiKey: string, domain: string): Promise<{ id:
     if (!response.ok) return null;
     const data = await response.json();
     const found = data.data?.find((d: any) => d.name === domain);
-    if (found) return { id: found.id, records: found.records || [] };
+    if (found) return { id: found.id, records: found.records || [], status: found.status || null };
     return null;
   } catch {
     return null;
@@ -193,26 +212,31 @@ Deno.serve(async (req) => {
     let inboundRecords: any[] = [];
 
     if (resendApiKey) {
-      // --- Register main sending domain ---
+      // --- Register or recover main sending domain (mandatory) ---
       if (!providerDomainId) {
-        // First try to find if it already exists
         const existing = await findDomainOnResend(resendApiKey, domain);
         if (existing) {
           providerDomainId = existing.id;
           resendRecords = existing.records;
+          resendStatus = existing.status || null;
           console.log(`Domain ${domain} already exists on Resend: ${providerDomainId}`);
         } else {
-          await delay(600);
+          await delay(700);
           const result = await registerDomainOnResend(resendApiKey, domain);
           if (result) {
             providerDomainId = result.id;
             resendRecords = result.records;
+            resendStatus = result.status || null;
             console.log(`Domain ${domain} registered on Resend: ${providerDomainId}`);
           }
         }
       }
 
-      await delay(600);
+      if (!providerDomainId) {
+        throw new Error(`Não foi possível criar/localizar o domínio raiz ${domain} no provedor de e-mail. Tente novamente em alguns segundos.`);
+      }
+
+      await delay(700);
 
       // --- Register inbound subdomain for receiving emails ---
       const inboundSubdomain = `inbound.${domain}`;
@@ -221,7 +245,7 @@ Deno.serve(async (req) => {
         inboundDomainId = foundInbound.id;
         inboundRecords = foundInbound.records;
       } else {
-        await delay(600);
+        await delay(700);
         const inboundResult = await registerDomainOnResend(resendApiKey, inboundSubdomain);
         if (inboundResult) {
           inboundDomainId = inboundResult.id;
@@ -232,17 +256,13 @@ Deno.serve(async (req) => {
 
       // Enable receiving on inbound subdomain
       if (inboundDomainId) {
-        await delay(600);
+        await delay(700);
         await enableReceiving(resendApiKey, inboundDomainId);
-        await delay(600);
-        await verifyDomainOnResend(resendApiKey, inboundDomainId);
       }
 
-      // Verify main domain and get latest records
-      if (providerDomainId) {
-        await delay(600);
-        await verifyDomainOnResend(resendApiKey, providerDomainId);
-        await delay(600);
+      // For existing root domain, refresh status/records from provider
+      if (providerDomainId && resendRecords.length === 0) {
+        await delay(700);
         const details = await getDomainDetails(resendApiKey, providerDomainId);
         resendStatus = details.status;
         if (details.records.length > 0) resendRecords = details.records;
@@ -283,15 +303,23 @@ Deno.serve(async (req) => {
     if (allRecords.length > 0) {
       updateData.dns_records = allRecords.map((r: any) => {
         const isInbound = r._source === 'inbound';
+        const zone = isInbound ? `inbound.${domain}` : domain;
+        const rawName = r.name || r.record || '@';
+        const normalizedName = toFqdn(rawName, zone);
+
         return {
           type: r.type || 'TXT',
-          name: r.name || r.record || '',
+          host: rawName,
+          name: normalizedName,
           value: r.value || r.data || '',
-          purpose: r.type === 'MX' ? 'MX (Inbound)' : (r.name?.includes('_domainkey') ? 'DKIM' : (r.name?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
+          zone,
+          ttl: r.ttl || 'auto',
+          priority: r.priority || null,
+          purpose: r.type === 'MX' ? 'MX (Inbound)' : (rawName?.includes('_domainkey') ? 'DKIM' : (rawName?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
           description: r.type === 'MX'
             ? `Registro MX para recebimento via inbound.${domain}`
-            : r.name?.includes('_domainkey') ? `DKIM${isInbound ? ' (inbound)' : ''}`
-            : r.name?.includes('_dmarc') ? `DMARC${isInbound ? ' (inbound)' : ''}`
+            : rawName?.includes('_domainkey') ? `DKIM${isInbound ? ' (inbound)' : ''}`
+            : rawName?.includes('_dmarc') ? `DMARC${isInbound ? ' (inbound)' : ''}`
             : `SPF${isInbound ? ' (inbound)' : ''}`,
           status: r.status || 'pending',
           is_inbound: isInbound,
