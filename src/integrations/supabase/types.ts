@@ -1181,6 +1181,7 @@ export type Database = {
           from_email: string | null
           from_name: string | null
           id: string
+          inbound_subdomain: string | null
           is_active: boolean | null
           last_verified_at: string | null
           mx_verified: boolean | null
@@ -1201,6 +1202,7 @@ export type Database = {
           from_email?: string | null
           from_name?: string | null
           id?: string
+          inbound_subdomain?: string | null
           is_active?: boolean | null
           last_verified_at?: string | null
           mx_verified?: boolean | null
@@ -1221,6 +1223,7 @@ export type Database = {
           from_email?: string | null
           from_name?: string | null
           id?: string
+          inbound_subdomain?: string | null
           is_active?: boolean | null
           last_verified_at?: string | null
           mx_verified?: boolean | null
