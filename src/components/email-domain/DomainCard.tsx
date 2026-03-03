@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Globe, CheckCircle, XCircle, Clock, RefreshCw, Trash2, Copy,
-  Shield, Mail, AlertTriangle, ChevronDown, ChevronUp, Info
+  Shield, Mail, AlertTriangle, Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -54,7 +54,6 @@ interface DomainCardProps {
 }
 
 export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: DomainCardProps) {
-  const [expanded, setExpanded] = useState(domain.status !== 'verified');
 
   const dnsChecks = [
     { label: 'SPF', verified: domain.spf_verified },
@@ -74,6 +73,40 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
   ];
 
   const allVerified = domain.status === 'verified';
+
+  const isPendingRecord = (record: any) => {
+    const purpose = String(record?.purpose || '').toLowerCase();
+    if (purpose.includes('spf')) return !domain.spf_verified;
+    if (purpose.includes('dkim')) return !domain.dkim_verified;
+    if (purpose.includes('dmarc')) return !domain.dmarc_verified;
+    if (purpose.includes('mx')) return !domain.mx_verified;
+    return false;
+  };
+
+  const pendingRecords = displayDnsRecords.filter(isPendingRecord);
+
+  const formatRecordForCopy = (record: any) => {
+    return [
+      `Tipo: ${record.type || ''}`,
+      `Host: ${record.host || record.name || ''}`,
+      `Valor: ${record.value || ''}`,
+      `Prioridade: ${record.priority ?? '-'}`,
+      `TTL: ${record.ttl || 'auto'}`,
+    ].join('\n');
+  };
+
+  const copyAllPendingRecords = () => {
+    if (!pendingRecords.length) {
+      toast.success('Nenhum registro pendente.');
+      return;
+    }
+
+    const text = pendingRecords
+      .map((record: any) => `--- ${record.purpose || record.type} ---\n${formatRecordForCopy(record)}`)
+      .join('\n\n');
+
+    copyToClipboard(text);
+  };
 
   return (
     <Card className={`transition-all ${allVerified ? 'border-green-200 dark:border-green-900' : 'border-yellow-200 dark:border-yellow-900'}`}>
@@ -201,217 +234,68 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
           </div>
         )}
 
-        {/* Expandable DNS Records */}
+        {/* DNS Copy Checklist */}
         {!allVerified && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-between text-primary"
-              onClick={() => setExpanded(!expanded)}
-            >
-              <span>Registros DNS necessários</span>
-              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2 p-3 rounded-lg border bg-muted/20">
+              <div>
+                <p className="text-sm font-medium">Registros DNS para configurar agora</p>
+                <p className="text-xs text-muted-foreground">Copie e cole no seu provedor DNS. Depois clique em "Verificar".</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={copyAllPendingRecords} disabled={pendingRecords.length === 0}>
+                <Copy className="h-4 w-4 mr-1" />
+                Copiar pendentes
+              </Button>
+            </div>
 
-            {expanded && (
-              <div className="space-y-3 animate-fade-in">
-                {displayDnsRecords.length > 0 ? (
-                  displayDnsRecords.map((record: any, i: number) => (
-                    <div key={i} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-xs">{record.type}</Badge>
-                          <span className="text-sm font-medium text-primary">{record.purpose}</span>
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Host / Nome <span className="text-[10px] opacity-60">(cole no seu provedor DNS)</span></p>
-                          <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded px-3 py-1.5">
-                            <code className="text-xs flex-1 break-all font-semibold">{record.host || record.name}</code>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.host || record.name)}>
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">FQDN <span className="text-[10px] opacity-60">(referência)</span></p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all opacity-70">{record.name}</code>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Zona</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all opacity-70">{record.zone || domain.domain}</code>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                          <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                            <code className="text-xs flex-1 break-all">{record.value}</code>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.value)}>
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {(record.priority || record.ttl) && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {record.priority && (
-                              <div>
-                                <p className="text-xs text-muted-foreground mb-1">Prioridade</p>
-                                <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                                  <code className="text-xs flex-1">{record.priority}</code>
-                                </div>
-                              </div>
-                            )}
-                            {record.ttl && (
-                              <div>
-                                <p className="text-xs text-muted-foreground mb-1">TTL</p>
-                                <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                                  <code className="text-xs flex-1">{record.ttl}</code>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-sm">
-                      <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600" />
-                      <p className="text-yellow-800 dark:text-yellow-300">
-                        Os registros DNS específicos do provedor ainda não foram carregados. Clique em <strong>"Verificar"</strong> para registrar o domínio no provedor e obter os registros exatos. Enquanto isso, configure os registros abaixo:
-                      </p>
-                    </div>
-
-                    {!domain.spf_verified && (
-                      <div className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-xs">TXT</Badge>
-                          <span className="text-sm font-medium text-primary">SPF</span>
-                        </div>
-                        <div className="grid gap-2">
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">{domain.domain}</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(domain.domain)}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">v=spf1 include:resend.com ~all</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard('v=spf1 include:resend.com ~all')}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {!domain.dkim_verified && (
-                      <div className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-xs">CNAME</Badge>
-                          <span className="text-sm font-medium text-primary">DKIM</span>
-                        </div>
-                        <div className="grid gap-2">
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">resend._domainkey.{domain.domain}</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`resend._domainkey.${domain.domain}`)}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-950/30 rounded px-3 py-1.5 border border-yellow-200 dark:border-yellow-800">
-                              <code className="text-xs flex-1 break-all text-yellow-700 dark:text-yellow-400">Clique em "Verificar" para obter o valor DKIM do provedor</code>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {!domain.dmarc_verified && (
-                      <div className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-xs">TXT</Badge>
-                          <span className="text-sm font-medium text-primary">DMARC</span>
-                        </div>
-                        <div className="grid gap-2">
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">_dmarc.{domain.domain}</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`_dmarc.${domain.domain}`)}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">v=DMARC1; p=quarantine</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard('v=DMARC1; p=quarantine')}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {!domain.mx_verified && (
-                      <div className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-xs">MX</Badge>
-                          <span className="text-sm font-medium text-primary">MX (Recebimento)</span>
-                        </div>
-                        <div className="grid gap-2">
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
-                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">mail.{domain.domain}</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`mail.${domain.domain}`)}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-950/30 rounded px-3 py-1.5 border border-yellow-200 dark:border-yellow-800">
-                              <code className="text-xs flex-1 break-all text-yellow-700 dark:text-yellow-400">Clique em "Verificar" para obter os registros MX do provedor</code>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+            {(pendingRecords.length > 0 ? pendingRecords : displayDnsRecords).map((record: any, i: number) => (
+              <div key={i} className="border rounded-lg p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-xs">{record.type}</Badge>
+                    <span className="text-sm font-medium text-primary">{record.purpose}</span>
+                    {isPendingRecord(record) && <Badge variant="destructive">Pendente</Badge>}
                   </div>
-                )}
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(formatRecordForCopy(record))}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copiar registro
+                  </Button>
+                </div>
 
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 text-sm text-muted-foreground">
-                  <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                  <p>Adicione estes registros no painel DNS do seu provedor. A propagação pode levar até 48h. Após configurar, clique em "Verificar" para validar.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                  <div className="rounded bg-muted/50 px-3 py-2">
+                    <p className="text-muted-foreground mb-1">Host (campo principal)</p>
+                    <code className="font-semibold break-all">{record.host || record.name}</code>
+                  </div>
+                  <div className="rounded bg-muted/50 px-3 py-2">
+                    <p className="text-muted-foreground mb-1">Tipo</p>
+                    <code>{record.type}</code>
+                  </div>
+                  <div className="rounded bg-muted/50 px-3 py-2 md:col-span-2">
+                    <p className="text-muted-foreground mb-1">Valor</p>
+                    <code className="break-all">{record.value}</code>
+                  </div>
+                  <div className="rounded bg-muted/50 px-3 py-2">
+                    <p className="text-muted-foreground mb-1">Prioridade</p>
+                    <code>{record.priority ?? '-'}</code>
+                  </div>
+                  <div className="rounded bg-muted/50 px-3 py-2">
+                    <p className="text-muted-foreground mb-1">TTL</p>
+                    <code>{record.ttl || 'auto'}</code>
+                  </div>
+                  <div className="rounded bg-muted/30 px-3 py-2 md:col-span-2">
+                    <p className="text-muted-foreground mb-1">FQDN (referência)</p>
+                    <code className="break-all opacity-75">{record.name}</code>
+                  </div>
                 </div>
               </div>
-            )}
-          </>
+            ))}
+
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 text-sm text-muted-foreground">
+              <Info className="h-4 w-4 mt-0.5 shrink-0" />
+              <p>Use o campo <strong>Host</strong> no seu provedor DNS. O FQDN é só referência. Após salvar os 4 registros, clique em "Verificar".</p>
+            </div>
+          </div>
         )}
 
         {allVerified && (
