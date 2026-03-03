@@ -90,29 +90,31 @@ export function useEmailDomains() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['email_domains', orgId] });
+      
+      const dnsMissing: string[] = [];
+      if (!data.spf_verified) dnsMissing.push('SPF');
+      if (!data.dkim_verified) dnsMissing.push('DKIM');
+      if (!data.dmarc_verified) dnsMissing.push('DMARC');
+      if (!data.mx_verified) dnsMissing.push('MX');
+      
+      const providerPending = data.resend_status && data.resend_status !== 'verified' && data.resend_status !== 'not_started';
+      
       if (data.status === 'verified') {
         toast.success('Domínio verificado com sucesso! Todos os registros DNS estão corretos.');
+      } else if (dnsMissing.length === 0 && providerPending) {
+        // All DNS OK but provider still processing
+        toast.info('Registros DNS configurados corretamente! O provedor de e-mail ainda está processando a verificação. Tente novamente em alguns minutos.', { 
+          duration: 10000,
+        });
       } else {
-        const missing: string[] = [];
-        if (!data.spf_verified) missing.push('SPF');
-        if (!data.dkim_verified) missing.push('DKIM');
-        if (!data.dmarc_verified) missing.push('DMARC');
-        if (!data.mx_verified) missing.push('MX');
-        if (data.resend_status && data.resend_status !== 'verified' && data.resend_status !== 'not_started') {
-          missing.push(`Provedor (${data.resend_status})`);
-        }
-        
         const details: string[] = [];
         if (!data.spf_verified) details.push('⚠️ SPF: Adicione registro TXT com "v=spf1 include:resend.com ~all"');
         if (!data.dkim_verified) details.push('⚠️ DKIM: Adicione o registro CNAME do DKIM fornecido pelo provedor');
         if (!data.dmarc_verified) details.push('⚠️ DMARC: Adicione registro TXT "_dmarc" com "v=DMARC1; p=quarantine"');
         if (!data.mx_verified) details.push('⚠️ MX: Configure registros MX para recebimento de e-mails');
+        if (providerPending) details.push('⏳ Provedor: Aguardando confirmação (pode levar alguns minutos)');
         
-        const missingText = missing.length > 0 
-          ? `Registros pendentes: ${missing.join(', ')}` 
-          : 'Aguardando confirmação do provedor.';
-        
-        toast.warning(`Verificação incompleta. ${missingText}`, { 
+        toast.warning(`Verificação incompleta. Registros pendentes: ${dnsMissing.join(', ')}`, { 
           duration: 10000,
           description: details.join('\n'),
         });
