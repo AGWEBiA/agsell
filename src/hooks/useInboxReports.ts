@@ -100,17 +100,22 @@ export function useInboxReports(days: number = 30) {
         }
       });
 
-      // Get agent names from org members
+      // Get agent names from profiles
       const agentIds = Object.keys(agentMap);
       let agentNames: Record<string, string> = {};
       if (agentIds.length > 0) {
-        const { data: members } = await supabase
-          .from('organization_members')
-          .select('user_id')
-          .eq('organization_id', orgId)
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
           .in('user_id', agentIds);
-        // We don't have profile names easily, use IDs as fallback
-        agentIds.forEach(id => { agentNames[id] = `Atendente ${id.slice(0, 6)}`; });
+        if (profiles) {
+          profiles.forEach(p => {
+            agentNames[p.user_id] = p.full_name || `Atendente ${p.user_id.slice(0, 6)}`;
+          });
+        }
+        agentIds.forEach(id => {
+          if (!agentNames[id]) agentNames[id] = `Atendente ${id.slice(0, 6)}`;
+        });
       }
 
       const agentPerformance = Object.entries(agentMap).map(([agent_id, data]) => ({

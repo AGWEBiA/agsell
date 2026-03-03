@@ -214,15 +214,15 @@ export default function InboxReports() {
       </Card>
 
       {/* Agent performance */}
-      {data.agentPerformance.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Performance dos Atendentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Performance dos Atendentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {data.agentPerformance.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -249,9 +249,13 @@ export default function InboxReports() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-10">
+              Nenhuma conversa atribuída a atendentes no período selecionado. Atribua conversas no Inbox para ver a performance.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
