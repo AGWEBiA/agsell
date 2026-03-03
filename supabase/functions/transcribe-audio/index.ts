@@ -1,5 +1,6 @@
 // Audio Transcription using Lovable AI (Gemini)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,8 +27,8 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: authError } = await supabase.auth.getClaims(token);
-    if (authError || !claims?.claims) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
       // Handle uploaded file
       const arrayBuffer = await audioFile.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      audioBase64 = btoa(String.fromCharCode(...uint8Array));
+      audioBase64 = base64Encode(uint8Array);
       mimeType = audioFile.type || "audio/ogg";
     } else if (audioUrl) {
       // Fetch audio from URL
@@ -63,7 +64,7 @@ Deno.serve(async (req) => {
       }
       const arrayBuffer = await audioResponse.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      audioBase64 = btoa(String.fromCharCode(...uint8Array));
+      audioBase64 = base64Encode(uint8Array);
       mimeType = audioResponse.headers.get("content-type") || "audio/ogg";
     } else {
       throw new Error("No audio source provided");
