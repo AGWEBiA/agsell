@@ -120,20 +120,31 @@ Deno.serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Create price
-    const amount = billingCycle === "yearly"
-      ? Math.round(plan.price_yearly * 100)
-      : Math.round(plan.price_monthly * 100);
+    // Use pre-configured Stripe price ID or create dynamically
+    const stripePriceId = billingCycle === "yearly"
+      ? plan.stripe_price_id_yearly
+      : plan.stripe_price_id_monthly;
 
-    const price = await stripe.prices.create({
-      currency: "brl",
-      unit_amount: amount,
-      recurring: { interval: billingCycle === "yearly" ? "year" : "month" },
-      product_data: {
-        name: `AG Sell - ${plan.name}`,
-        metadata: { plan_id: plan.id },
-      },
-    });
+    let priceId: string;
+    if (stripePriceId) {
+      priceId = stripePriceId;
+      console.log(`Using pre-configured Stripe price: ${priceId}`);
+    } else {
+      const amount = billingCycle === "yearly"
+        ? Math.round(plan.price_yearly * 100)
+        : Math.round(plan.price_monthly * 100);
+
+      const price = await stripe.prices.create({
+        currency: "brl",
+        unit_amount: amount,
+        recurring: { interval: billingCycle === "yearly" ? "year" : "month" },
+        product_data: {
+          name: `AG Sell - ${plan.name}`,
+          metadata: { plan_id: plan.id },
+        },
+      });
+      priceId = price.id;
+    }
 
     // Validate coupon if provided
     let discounts: { coupon: string }[] | undefined;
@@ -154,7 +165,7 @@ Deno.serve(async (req) => {
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      line_items: [{ price: price.id, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       discounts,
       allow_promotion_codes: !discounts,

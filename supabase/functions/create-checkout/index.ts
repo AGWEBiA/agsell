@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-Stripe.prototype;
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -32,8 +30,13 @@ Deno.serve(async (req) => {
       throw new Error("Missing required parameters");
     }
 
-    // Get plan details
-    const { data: plan, error: planError } = await supabaseClient
+    // Get plan details (including Stripe price IDs)
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    const { data: plan, error: planError } = await serviceClient
       .from("plans")
       .select("*")
       .eq("id", planId)
@@ -56,48 +59,28 @@ Deno.serve(async (req) => {
 
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
-      // If no Stripe key, just update the subscription directly (for testing)
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      );
-
-      // Check existing subscription
+      // No Stripe key = test mode: update subscription directly
       const { data: existingSub } = await serviceClient
         .from("subscriptions")
         .select("*")
         .eq("organization_id", organizationId)
         .single();
 
+      const subData = {
+        plan_id: planId,
+        billing_cycle: billingCycle,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
       if (existingSub) {
-        await serviceClient
-          .from("subscriptions")
-          .update({
-            plan_id: planId,
-            billing_cycle: billingCycle,
-            status: "active",
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
-          })
-          .eq("id", existingSub.id);
+        await serviceClient.from("subscriptions").update(subData).eq("id", existingSub.id);
       } else {
-        await serviceClient
-          .from("subscriptions")
-          .insert({
-            organization_id: organizationId,
-            plan_id: planId,
-            billing_cycle: billingCycle,
-            status: "active",
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
-          });
+        await serviceClient.from("subscriptions").insert({ organization_id: organizationId, ...subData });
       }
 
-      // Update organization plan reference
-      await serviceClient
-        .from("organizations")
-        .update({ plan_id: planId })
-        .eq("id", organizationId);
+      await serviceClient.from("organizations").update({ plan_id: planId }).eq("id", organizationId);
 
       return new Response(
         JSON.stringify({ success: true, message: "Plan updated (test mode)" }),
@@ -118,7 +101,6 @@ Deno.serve(async (req) => {
     let customerId = existingSub?.stripe_customer_id;
 
     if (!customerId) {
-      // Create new customer
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -129,34 +111,39 @@ Deno.serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Create or get price
-    const amount = billingCycle === "yearly" 
-      ? Math.round(plan.price_yearly * 100) 
-      : Math.round(plan.price_monthly * 100);
+    // Use the pre-configured Stripe price ID from the plan record
+    const stripePriceId = billingCycle === "yearly"
+      ? plan.stripe_price_id_yearly
+      : plan.stripe_price_id_monthly;
 
-    const price = await stripe.prices.create({
-      currency: "brl",
-      unit_amount: amount,
-      recurring: {
-        interval: billingCycle === "yearly" ? "year" : "month",
-      },
-      product_data: {
-        name: `AG Sell - ${plan.name}`,
-        metadata: {
-          plan_id: plan.id,
+    let priceId: string;
+
+    if (stripePriceId) {
+      priceId = stripePriceId;
+      console.log(`Using pre-configured Stripe price: ${priceId}`);
+    } else {
+      // Fallback: create a price dynamically (legacy)
+      console.log("No Stripe price ID configured, creating dynamically");
+      const amount = billingCycle === "yearly"
+        ? Math.round(plan.price_yearly * 100)
+        : Math.round(plan.price_monthly * 100);
+
+      const price = await stripe.prices.create({
+        currency: "brl",
+        unit_amount: amount,
+        recurring: { interval: billingCycle === "yearly" ? "year" : "month" },
+        product_data: {
+          name: `AG Sell - ${plan.name}`,
+          metadata: { plan_id: plan.id },
         },
-      },
-    });
+      });
+      priceId = price.id;
+    }
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      line_items: [
-        {
-          price: price.id,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/plans?success=true`,
       cancel_url: `${req.headers.get("origin")}/plans?canceled=true`,
