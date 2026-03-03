@@ -206,40 +206,161 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
 
             {expanded && (
               <div className="space-y-3 animate-fade-in">
-                {(domain.dns_records || []).map((record: any, i: number) => (
-                  <div key={i} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-xs">{record.type}</Badge>
-                        <span className="text-sm font-medium text-primary">{record.purpose}</span>
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Nome</p>
-                        <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                          <code className="text-xs flex-1 break-all">{record.name}</code>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.name)}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
+                {(domain.dns_records && domain.dns_records.length > 0) ? (
+                  domain.dns_records.map((record: any, i: number) => (
+                    <div key={i} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs">{record.type}</Badge>
+                          <span className="text-sm font-medium text-primary">{record.purpose}</span>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                        <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                          <code className="text-xs flex-1 break-all">{record.value}</code>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.value)}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
+                      <div className="grid gap-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Nome</p>
+                          <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                            <code className="text-xs flex-1 break-all">{record.name}</code>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.name)}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                          <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                            <code className="text-xs flex-1 break-all">{record.value}</code>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.value)}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-sm">
+                      <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-600" />
+                      <p className="text-yellow-800 dark:text-yellow-300">
+                        Os registros DNS específicos do provedor ainda não foram carregados. Clique em <strong>"Verificar"</strong> para registrar o domínio no provedor e obter os registros exatos. Enquanto isso, configure os registros abaixo:
+                      </p>
+                    </div>
+
+                    {!domain.spf_verified && (
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs">TXT</Badge>
+                          <span className="text-sm font-medium text-primary">SPF</span>
+                        </div>
+                        <div className="grid gap-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">{domain.domain}</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(domain.domain)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">v=spf1 include:resend.com ~all</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard('v=spf1 include:resend.com ~all')}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!domain.dkim_verified && (
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs">CNAME</Badge>
+                          <span className="text-sm font-medium text-primary">DKIM</span>
+                        </div>
+                        <div className="grid gap-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">resend._domainkey.{domain.domain}</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`resend._domainkey.${domain.domain}`)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-950/30 rounded px-3 py-1.5 border border-yellow-200 dark:border-yellow-800">
+                              <code className="text-xs flex-1 break-all text-yellow-700 dark:text-yellow-400">Clique em "Verificar" para obter o valor DKIM do provedor</code>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!domain.dmarc_verified && (
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs">TXT</Badge>
+                          <span className="text-sm font-medium text-primary">DMARC</span>
+                        </div>
+                        <div className="grid gap-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">_dmarc.{domain.domain}</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`_dmarc.${domain.domain}`)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">v=DMARC1; p=quarantine</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard('v=DMARC1; p=quarantine')}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!domain.mx_verified && (
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs">MX</Badge>
+                          <span className="text-sm font-medium text-primary">MX (Recebimento)</span>
+                        </div>
+                        <div className="grid gap-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Nome</p>
+                            <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
+                              <code className="text-xs flex-1 break-all">inbound.{domain.domain}</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`inbound.${domain.domain}`)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-950/30 rounded px-3 py-1.5 border border-yellow-200 dark:border-yellow-800">
+                              <code className="text-xs flex-1 break-all text-yellow-700 dark:text-yellow-400">Clique em "Verificar" para obter os registros MX do provedor</code>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
+                )}
 
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 text-sm text-muted-foreground">
                   <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                  <p>Adicione estes registros no painel DNS do seu provedor. A propagação pode levar até 48h.</p>
+                  <p>Adicione estes registros no painel DNS do seu provedor. A propagação pode levar até 48h. Após configurar, clique em "Verificar" para validar.</p>
                 </div>
               </div>
             )}
