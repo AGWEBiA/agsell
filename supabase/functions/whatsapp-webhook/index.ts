@@ -500,11 +500,21 @@ async function routeToInbox(
     let contactId: string | null = null;
     const cleanPhone = senderIdentifier.replace(/\D/g, "");
 
+    // Normalize phone: extract the core local number (strip country code 55 if present)
     const normalizePhone = (value: string | null | undefined) => (value || "").replace(/\D/g, "");
+    const extractLocal = (phone: string) => {
+      const digits = phone.replace(/\D/g, "");
+      // Brazilian numbers: strip leading 55 if total length > 11 (DDD + 8-9 digits)
+      if (digits.startsWith("55") && digits.length > 11) return digits.slice(2);
+      return digits;
+    };
+
+    const localClean = extractLocal(cleanPhone);
     const comparablePhones = Array.from(
       new Set([
         cleanPhone,
-        cleanPhone.startsWith("55") ? cleanPhone.slice(2) : cleanPhone,
+        `55${localClean}`,
+        localClean,
       ].filter(Boolean))
     );
 
@@ -517,7 +527,10 @@ async function routeToInbox(
     const matchedContact = (orgContacts || []).find((contact) => {
       const phone = normalizePhone(contact.phone);
       const whatsapp = normalizePhone(contact.whatsapp);
-      return comparablePhones.includes(phone) || comparablePhones.includes(whatsapp);
+      const phoneLocal = extractLocal(phone);
+      const whatsappLocal = extractLocal(whatsapp);
+      return comparablePhones.includes(phone) || comparablePhones.includes(whatsapp)
+        || (localClean && (phoneLocal === localClean || whatsappLocal === localClean));
     });
 
     if (matchedContact) {
@@ -545,12 +558,14 @@ async function routeToInbox(
     const metadataKey = `${channel}_sender_id`;
 
     const normalizedSender = senderIdentifier.replace(/\D/g, "");
+    const localSender = extractLocal(normalizedSender);
     const senderCandidates = Array.from(
       new Set(
         [
           senderIdentifier,
           normalizedSender,
-          normalizedSender.startsWith("55") ? normalizedSender.slice(2) : normalizedSender ? `55${normalizedSender}` : "",
+          `55${localSender}`,
+          localSender,
         ].filter(Boolean)
       )
     );
@@ -573,7 +588,10 @@ async function routeToInbox(
       conversations.find((conv) => {
         const metadataValue = (conv.metadata as Record<string, unknown> | null)?.[metadataKey];
         const normalizedMetadata = normalizePhone(typeof metadataValue === "string" ? metadataValue : "");
-        return senderCandidates.includes(String(metadataValue || "")) || senderCandidates.includes(normalizedMetadata);
+        const localMetadata = extractLocal(normalizedMetadata);
+        return senderCandidates.includes(String(metadataValue || ""))
+          || senderCandidates.includes(normalizedMetadata)
+          || (localSender && localMetadata === localSender);
       }) || null;
 
     let existingConv: { id: string; contact_id: string | null; metadata?: unknown } | null = null;
