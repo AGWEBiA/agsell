@@ -182,7 +182,7 @@ function PricingCard({
           </div>
           <div className="flex items-center gap-3 text-sm">
             <MessageSquare className="h-5 w-5 text-primary" />
-            <span>{plan.max_whatsapp_messages === -1 ? 'WhatsApp ilimitado' : `${plan.max_whatsapp_messages.toLocaleString()} mensagens`}</span>
+            <span>WhatsApp ilimitado</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <Bot className="h-5 w-5 text-primary" />

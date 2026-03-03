@@ -93,7 +93,7 @@ function PlanCard({ plan, isCurrentPlan, onSelect }: { plan: Plan; isCurrentPlan
           </div>
           <div className="flex items-center gap-2 text-sm">
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            <span>{plan.max_whatsapp_messages === -1 ? 'WhatsApp ilimitado' : `${plan.max_whatsapp_messages.toLocaleString()} mensagens WhatsApp`}</span>
+            <span>WhatsApp ilimitado</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Bot className="h-4 w-4 text-muted-foreground" />

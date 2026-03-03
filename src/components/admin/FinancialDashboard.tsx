@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -408,6 +409,130 @@ export function FinancialDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Profit Margin per Plan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Margem de Lucro por Plano
+          </CardTitle>
+          <CardDescription>Análise de custos operacionais e margem líquida estimada</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Plano</TableHead>
+                  <TableHead className="text-right">Preço Mensal</TableHead>
+                  <TableHead className="text-right">Assin. Ativas</TableHead>
+                  <TableHead className="text-right">Custo E-mail (est.)</TableHead>
+                  <TableHead className="text-right">Custo IA (est.)</TableHead>
+                  <TableHead className="text-right">Custo Infra (est.)</TableHead>
+                  <TableHead className="text-right">Custo Total</TableHead>
+                  <TableHead className="text-right">Margem</TableHead>
+                  <TableHead className="text-right">Margem %</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(() => {
+                  // Estimated costs per plan based on resource limits
+                  const costEstimates: Record<string, { emailCost: number; aiCost: number; infraCost: number }> = {
+                    starter: { emailCost: 5, aiCost: 3, infraCost: 10 },
+                    professional: { emailCost: 15, aiCost: 10, infraCost: 20 },
+                    enterprise: { emailCost: 40, aiCost: 25, infraCost: 40 },
+                    agencia: { emailCost: 80, aiCost: 40, infraCost: 60 },
+                  };
+
+                  return plans
+                    .filter((p: any) => p.is_active && p.price_monthly > 0)
+                    .map((plan: any) => {
+                      const activeCount = subscriptions.filter(
+                        (s: any) => s.status === 'active' && s.plan_id === plan.id
+                      ).length;
+                      const costs = costEstimates[plan.slug] || { emailCost: 5, aiCost: 5, infraCost: 10 };
+                      const totalCost = costs.emailCost + costs.aiCost + costs.infraCost;
+                      const margin = plan.price_monthly - totalCost;
+                      const marginPct = plan.price_monthly > 0 ? ((margin / plan.price_monthly) * 100) : 0;
+                      const totalRevenue = activeCount * plan.price_monthly;
+                      const totalProfit = activeCount * margin;
+
+                      return (
+                        <TableRow key={plan.id}>
+                          <TableCell className="font-medium">
+                            <Badge variant="outline">{plan.name}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">{fmt(plan.price_monthly)}</TableCell>
+                          <TableCell className="text-right">{activeCount}</TableCell>
+                          <TableCell className="text-right text-muted-foreground">{fmt(costs.emailCost)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground">{fmt(costs.aiCost)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground">{fmt(costs.infraCost)}</TableCell>
+                          <TableCell className="text-right font-medium text-destructive">{fmt(totalCost)}</TableCell>
+                          <TableCell className="text-right font-bold text-green-600 dark:text-green-400">{fmt(margin)}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge className={cn(
+                              marginPct >= 80 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                              marginPct >= 60 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                              'bg-destructive/10 text-destructive'
+                            )}>
+                              {marginPct.toFixed(1)}%
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+                })()}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold mb-2">Resumo de Lucratividade</h4>
+            <div className="grid grid-cols-3 gap-4">
+              {(() => {
+                const costEstimates: Record<string, { emailCost: number; aiCost: number; infraCost: number }> = {
+                  starter: { emailCost: 5, aiCost: 3, infraCost: 10 },
+                  professional: { emailCost: 15, aiCost: 10, infraCost: 20 },
+                  enterprise: { emailCost: 40, aiCost: 25, infraCost: 40 },
+                  agencia: { emailCost: 80, aiCost: 40, infraCost: 60 },
+                };
+                let totalRevenue = 0;
+                let totalCosts = 0;
+                plans.filter((p: any) => p.is_active && p.price_monthly > 0).forEach((plan: any) => {
+                  const activeCount = subscriptions.filter((s: any) => s.status === 'active' && s.plan_id === plan.id).length;
+                  const costs = costEstimates[plan.slug] || { emailCost: 5, aiCost: 5, infraCost: 10 };
+                  totalRevenue += activeCount * plan.price_monthly;
+                  totalCosts += activeCount * (costs.emailCost + costs.aiCost + costs.infraCost);
+                });
+                const totalProfit = totalRevenue - totalCosts;
+                const avgMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
+
+                return (
+                  <>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Receita Total/Mês</p>
+                      <p className="text-lg font-bold">{fmt(totalRevenue)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Custos Totais/Mês</p>
+                      <p className="text-lg font-bold text-destructive">{fmt(totalCosts)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Lucro Líquido Est.</p>
+                      <p className="text-lg font-bold text-green-600 dark:text-green-400">{fmt(totalProfit)} ({avgMargin.toFixed(1)}%)</p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              * Custos estimados baseados em uso médio. Custos reais variam conforme consumo de API (Resend, IA).
+              WhatsApp não tem custo de envio (API não oficial) ou o custo é do cliente (API oficial).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Subscriptions Detail Table */}
       <Card>
