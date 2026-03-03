@@ -265,10 +265,32 @@ export default function FormView() {
             </RadioGroup>
           );
         case 'checkbox':
+          if (field.options && field.options.length > 0) {
+            const selected = value ? value.split(',').map(s => s.trim()) : [];
+            return (
+              <div className="flex flex-col gap-3">
+                {field.options.map(opt => (
+                  <div key={opt} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selected.includes(opt)}
+                      onCheckedChange={(c) => {
+                        const newSelected = c
+                          ? [...selected, opt]
+                          : selected.filter(s => s !== opt);
+                        onChangeFn(newSelected.join(', '));
+                      }}
+                      id={`${field.name}-${opt}`}
+                    />
+                    <Label htmlFor={`${field.name}-${opt}`} className="text-sm font-normal cursor-pointer">{opt}</Label>
+                  </div>
+                ))}
+              </div>
+            );
+          }
           return (
             <div className="flex items-center gap-2">
               <Checkbox checked={value === 'true'} onCheckedChange={(c) => onChangeFn(c ? 'true' : 'false')} />
-              <span className="text-sm text-muted-foreground">{field.placeholder || field.label}</span>
+              <span className="text-sm">{field.placeholder || field.label}</span>
             </div>
           );
         default:

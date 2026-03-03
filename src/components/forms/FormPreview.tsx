@@ -118,10 +118,22 @@ export function FormPreview({ fields, settings, formName = 'Pré-visualização'
             </RadioGroup>
           );
         case 'checkbox':
+          if (field.options && field.options.length > 0) {
+            return (
+              <div className="flex flex-col gap-3 pointer-events-none">
+                {field.options.map(opt => (
+                  <div key={opt} className="flex items-center gap-2">
+                    <Checkbox />
+                    <Label className="text-sm font-normal">{opt}</Label>
+                  </div>
+                ))}
+              </div>
+            );
+          }
           return (
             <div className="flex items-center gap-2 pointer-events-none">
               <Checkbox />
-              <span className="text-sm text-muted-foreground">{field.placeholder || field.label}</span>
+              <span className="text-sm">{field.placeholder || field.label}</span>
             </div>
           );
         default:

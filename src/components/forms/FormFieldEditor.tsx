@@ -164,7 +164,13 @@ export function FormFieldEditor({ fields, onChange }: Props) {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs">Tipo</Label>
-                <Select value={field.type} onValueChange={(v) => updateField(idx, { type: v })}>
+                <Select value={field.type} onValueChange={(v) => {
+                  const updates: Partial<FormField> = { type: v };
+                  if ((v === 'radio' || v === 'select' || v === 'checkbox') && (!field.options || field.options.length === 0)) {
+                    updates.options = ['Opção 1', 'Opção 2', 'Opção 3'];
+                  }
+                  updateField(idx, updates);
+                }}>
                   <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {FIELD_TYPES.map(t => (
@@ -179,7 +185,7 @@ export function FormFieldEditor({ fields, onChange }: Props) {
               </div>
             </div>
 
-            {(field.type === 'select' || field.type === 'radio') && (
+            {(field.type === 'select' || field.type === 'radio' || field.type === 'checkbox') && (
               <div className="space-y-1">
                 <Label className="text-xs">Opções (separadas por vírgula)</Label>
                 <OptionsInput
