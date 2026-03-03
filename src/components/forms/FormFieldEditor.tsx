@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,11 +45,7 @@ function OptionsInput({ options, onCommit }: OptionsInputProps) {
   }, [options]);
 
   const commit = (value: string) => {
-    const parsed = value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
+    const parsed = value.split(',').map((s) => s.trim()).filter(Boolean);
     onCommit(parsed);
   };
 
@@ -71,6 +67,9 @@ function OptionsInput({ options, onCommit }: OptionsInputProps) {
 }
 
 export function FormFieldEditor({ fields, onChange }: Props) {
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+
   const addField = () => {
     const index = fields.length + 1;
     onChange([...fields, { name: `field_${index}`, label: `Campo ${index}`, type: 'text', required: false }]);
@@ -83,6 +82,35 @@ export function FormFieldEditor({ fields, onChange }: Props) {
 
   const removeField = (idx: number) => {
     onChange(fields.filter((_, i) => i !== idx));
+  };
+
+  const handleDragStart = (idx: number) => {
+    setDragIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setOverIdx(idx);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === targetIdx) {
+      setDragIdx(null);
+      setOverIdx(null);
+      return;
+    }
+    const newFields = [...fields];
+    const [moved] = newFields.splice(dragIdx, 1);
+    newFields.splice(targetIdx, 0, moved);
+    onChange(newFields);
+    setDragIdx(null);
+    setOverIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setOverIdx(null);
   };
 
   return (
@@ -99,10 +127,20 @@ export function FormFieldEditor({ fields, onChange }: Props) {
       )}
 
       {fields.map((field, idx) => (
-        <Card key={idx} className="border-border">
+        <Card
+          key={idx}
+          className={`border-border transition-all ${
+            dragIdx === idx ? 'opacity-50' : ''
+          } ${overIdx === idx && dragIdx !== idx ? 'border-primary border-dashed' : ''}`}
+          draggable
+          onDragStart={() => handleDragStart(idx)}
+          onDragOver={(e) => handleDragOver(e, idx)}
+          onDrop={(e) => handleDrop(e, idx)}
+          onDragEnd={handleDragEnd}
+        >
           <CardContent className="pt-3 pb-3 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing">
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground font-mono">{field.name}</span>
               </div>

@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Plus, FileText, Eye, Users, Percent, MoreHorizontal, ExternalLink, Copy, Trash2, Pencil, List, Code,
+  Plus, FileText, Eye, Users, Percent, MoreHorizontal, ExternalLink, Copy, Trash2, Pencil, List, Code, LayoutTemplate,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -25,24 +25,35 @@ import { format } from 'date-fns';
 import type { Json } from '@/integrations/supabase/types';
 import { FormFieldEditor, type FormField } from '@/components/forms/FormFieldEditor';
 import { FormIntegrationDialog } from '@/components/forms/FormIntegrationDialog';
+import { FormTemplates, DEFAULT_SETTINGS, type FormSettings, type FormTemplate } from '@/components/forms/FormTemplates';
+import { FormStyleEditor } from '@/components/forms/FormStyleEditor';
 
 export default function Forms() {
   const { forms, isLoading, createForm, updateForm, toggleForm, deleteForm, getFormSubmissions } = useForms();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newForm, setNewForm] = useState<{ name: string; description: string; fields: FormField[] }>({
+  const [createTab, setCreateTab] = useState<'templates' | 'blank'>('templates');
+  const [newForm, setNewForm] = useState<{ name: string; description: string; fields: FormField[]; settings: FormSettings }>({
     name: '', description: '', fields: [
       { name: 'name', label: 'Nome', type: 'text', required: true },
       { name: 'email', label: 'Email', type: 'email', required: true },
     ],
+    settings: { ...DEFAULT_SETTINGS },
   });
 
-  // Edit state
-  const [editingForm, setEditingForm] = useState<{ id: string; name: string; description: string; fields: FormField[] } | null>(null);
-
-  // Submissions state
+  const [editingForm, setEditingForm] = useState<{ id: string; name: string; description: string; fields: FormField[]; settings: FormSettings } | null>(null);
   const [submissionsData, setSubmissionsData] = useState<{ formName: string; items: any[] } | null>(null);
   const [loadingSubs, setLoadingSubs] = useState(false);
   const [integrationForm, setIntegrationForm] = useState<{ id: string; name: string } | null>(null);
+
+  const handleSelectTemplate = (template: FormTemplate) => {
+    setNewForm({
+      name: template.name,
+      description: template.description,
+      fields: [...template.fields],
+      settings: { ...template.settings },
+    });
+    setCreateTab('blank'); // switch to editor to customize
+  };
 
   const handleCreate = () => {
     if (!newForm.name) return;
@@ -51,12 +62,17 @@ export default function Forms() {
       description: newForm.description || null,
       is_active: true,
       fields: newForm.fields as unknown as Json,
+      settings: newForm.settings as unknown as Json,
     });
-    setNewForm({ name: '', description: '', fields: [
-      { name: 'name', label: 'Nome', type: 'text', required: true },
-      { name: 'email', label: 'Email', type: 'email', required: true },
-    ]});
+    setNewForm({
+      name: '', description: '', fields: [
+        { name: 'name', label: 'Nome', type: 'text', required: true },
+        { name: 'email', label: 'Email', type: 'email', required: true },
+      ],
+      settings: { ...DEFAULT_SETTINGS },
+    });
     setIsCreateOpen(false);
+    setCreateTab('templates');
   };
 
   const handleEdit = () => {
@@ -66,6 +82,7 @@ export default function Forms() {
       name: editingForm.name,
       description: editingForm.description || null,
       fields: editingForm.fields as unknown as Json,
+      settings: editingForm.settings as unknown as Json,
     });
     setEditingForm(null);
   };
@@ -119,36 +136,65 @@ export default function Forms() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Formulários</h1>
-          <p className="text-muted-foreground">Crie formulários de captura para seus leads</p>
+          <p className="text-muted-foreground">Crie formulários adaptáveis para qualquer página</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />Novo Formulário</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Novo Formulário</DialogTitle>
-              <DialogDescription>Crie um novo formulário para capturar leads.</DialogDescription>
+              <DialogDescription>Escolha um modelo ou crie do zero com personalização completa.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input id="name" placeholder="Ex: Formulário de Contato" value={newForm.name} onChange={(e) => setNewForm(prev => ({ ...prev, name: e.target.value }))} />
+
+            <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as any)} className="mt-2">
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="templates" className="gap-1.5">
+                  <LayoutTemplate className="h-4 w-4" />Modelos Prontos
+                </TabsTrigger>
+                <TabsTrigger value="blank" className="gap-1.5">
+                  <Pencil className="h-4 w-4" />Editor
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="templates" className="mt-4">
+                <FormTemplates onSelect={handleSelectTemplate} />
+              </TabsContent>
+
+              <TabsContent value="blank" className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome</Label>
+                    <Input id="name" placeholder="Ex: Formulário de Contato" value={newForm.name} onChange={(e) => setNewForm(prev => ({ ...prev, name: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descrição (opcional)</Label>
+                    <Input id="description" placeholder="Descreva o objetivo" value={newForm.description} onChange={(e) => setNewForm(prev => ({ ...prev, description: e.target.value }))} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição (opcional)</Label>
-                  <Input id="description" placeholder="Descreva o objetivo" value={newForm.description} onChange={(e) => setNewForm(prev => ({ ...prev, description: e.target.value }))} />
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <FormFieldEditor
+                      fields={newForm.fields}
+                      onChange={(fields) => setNewForm(prev => ({ ...prev, fields }))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold mb-3 block">Aparência & Layout</Label>
+                    <FormStyleEditor
+                      settings={newForm.settings}
+                      onChange={(settings) => setNewForm(prev => ({ ...prev, settings }))}
+                    />
+                  </div>
                 </div>
-              </div>
-              <FormFieldEditor
-                fields={newForm.fields}
-                onChange={(fields) => setNewForm(prev => ({ ...prev, fields }))}
-              />
-            </div>
+              </TabsContent>
+            </Tabs>
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
-              <Button onClick={handleCreate} disabled={createForm.isPending}>
+              <Button onClick={handleCreate} disabled={createForm.isPending || !newForm.name}>
                 {createForm.isPending ? 'Criando...' : 'Criar Formulário'}
               </Button>
             </DialogFooter>
@@ -229,6 +275,7 @@ export default function Forms() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Formulário</TableHead>
+                  <TableHead>Layout</TableHead>
                   <TableHead>Campos</TableHead>
                   <TableHead>Submissões</TableHead>
                   <TableHead>Status</TableHead>
@@ -238,6 +285,14 @@ export default function Forms() {
               <TableBody>
                 {forms.map((form) => {
                   const fieldsCount = Array.isArray(form.fields) ? form.fields.length : 0;
+                  const formSettings = form.settings as unknown as Partial<FormSettings> | null;
+                  const layout = formSettings?.layout || 'single';
+                  const layoutLabels: Record<string, string> = {
+                    'single': 'Coluna única',
+                    'two-columns': 'Duas colunas',
+                    'multi-step': 'Multi-step',
+                    'inline': 'Inline',
+                  };
                   return (
                     <TableRow key={form.id}>
                       <TableCell>
@@ -250,6 +305,9 @@ export default function Forms() {
                             <p className="text-sm text-muted-foreground">{form.description || 'Sem descrição'}</p>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">{layoutLabels[layout] || layout}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{fieldsCount} campos</Badge>
@@ -281,7 +339,12 @@ export default function Forms() {
                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIntegrationForm({ id: form.id, name: form.name }); }}>
                               <Code className="mr-2 h-4 w-4" />Integração avançada
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); const formFields = Array.isArray(form.fields) ? (form.fields as unknown as FormField[]) : []; setEditingForm({ id: form.id, name: form.name, description: form.description || '', fields: formFields }); }}>
+                            <DropdownMenuItem onSelect={(e) => {
+                              e.preventDefault();
+                              const formFields = Array.isArray(form.fields) ? (form.fields as unknown as FormField[]) : [];
+                              const formSettings = form.settings ? { ...DEFAULT_SETTINGS, ...(form.settings as unknown as Partial<FormSettings>) } : { ...DEFAULT_SETTINGS };
+                              setEditingForm({ id: form.id, name: form.name, description: form.description || '', fields: formFields, settings: formSettings });
+                            }}>
                               <Pencil className="mr-2 h-4 w-4" />Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleViewSubmissions(form.id, form.name); }}>
@@ -304,10 +367,10 @@ export default function Forms() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingForm} onOpenChange={(open) => !open && setEditingForm(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Formulário</DialogTitle>
-            <DialogDescription>Atualize nome, descrição e campos do formulário.</DialogDescription>
+            <DialogDescription>Atualize campos, layout e aparência do formulário.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
@@ -320,10 +383,22 @@ export default function Forms() {
                 <Input value={editingForm?.description ?? ''} onChange={(e) => setEditingForm(prev => prev ? { ...prev, description: e.target.value } : null)} />
               </div>
             </div>
-            <FormFieldEditor
-              fields={editingForm?.fields ?? []}
-              onChange={(fields) => setEditingForm(prev => prev ? { ...prev, fields } : null)}
-            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <FormFieldEditor
+                  fields={editingForm?.fields ?? []}
+                  onChange={(fields) => setEditingForm(prev => prev ? { ...prev, fields } : null)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold mb-3 block">Aparência & Layout</Label>
+                <FormStyleEditor
+                  settings={editingForm?.settings ?? DEFAULT_SETTINGS}
+                  onChange={(settings) => setEditingForm(prev => prev ? { ...prev, settings } : null)}
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingForm(null)}>Cancelar</Button>
@@ -361,6 +436,7 @@ export default function Forms() {
           )}
         </DialogContent>
       </Dialog>
+
       {/* Integration Dialog */}
       {integrationForm && (
         <FormIntegrationDialog
