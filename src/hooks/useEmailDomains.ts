@@ -81,6 +81,13 @@ export function useEmailDomains() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['email_domains', orgId] });
       
+      if (data.domain_conflict) {
+        toast.error('Este domínio está registrado em outra conta Resend. É necessário removê-lo de lá antes de verificar aqui. Entre em contato com o suporte se precisar de ajuda.', {
+          duration: 15000,
+        });
+        return;
+      }
+
       const dnsMissing: string[] = [];
       if (!data.spf_verified) dnsMissing.push('SPF');
       if (!data.dkim_verified) dnsMissing.push('DKIM');
@@ -92,7 +99,6 @@ export function useEmailDomains() {
       if (data.status === 'verified') {
         toast.success('Domínio verificado com sucesso! Todos os registros DNS estão corretos.');
       } else if (dnsMissing.length === 0 && providerPending) {
-        // All DNS OK but provider still processing
         toast.info('Registros DNS configurados corretamente! O provedor de e-mail ainda está processando a verificação. Tente novamente em alguns minutos.', { 
           duration: 10000,
         });
