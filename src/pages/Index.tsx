@@ -9,8 +9,12 @@ import {
   ArrowRight, Check, Users, Target, Bot, MessageSquare, Mail, BarChart3,
   Sparkles, FileText, Calendar, Inbox, Globe, Clock, Zap, Shield,
   Phone, Star, Layers, Award, ChevronRight, Brain, Loader2,
-  Workflow, Vote, SplitSquareVertical
+  Workflow, Vote, SplitSquareVertical, CreditCard, Tag
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -292,6 +296,11 @@ function PlansSection() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', organizationName: '', couponCode: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCouponField, setShowCouponField] = useState(false);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -320,6 +329,51 @@ function PlansSection() {
     };
     fetchPlans();
   }, []);
+
+  const handleSelectPlan = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setShowCheckout(true);
+    setFormData({ name: '', email: '', organizationName: '', couponCode: '' });
+    setShowCouponField(false);
+  };
+
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlan || !formData.name || !formData.email || !formData.organizationName) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('guest-checkout', {
+        body: {
+          planId: selectedPlan.id,
+          billingCycle,
+          name: formData.name,
+          email: formData.email,
+          organizationName: formData.organizationName,
+          couponCode: formData.couponCode || undefined,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (data?.success) {
+        toast.success('Conta criada! Verifique seu e-mail para as credenciais de acesso.');
+        setShowCheckout(false);
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Erro ao processar. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const checkoutPrice = selectedPlan
+    ? billingCycle === 'monthly' ? selectedPlan.price_monthly : selectedPlan.price_yearly
+    : 0;
+  const isFree = selectedPlan?.price_monthly === 0;
 
   return (
     <section className="container mx-auto px-4 sm:px-6 py-16 md:py-24">
@@ -445,15 +499,14 @@ function PlansSection() {
                 </CardContent>
 
                 <CardFooter className="pb-6">
-                  <Link to="/pricing" className="w-full">
-                    <Button
-                      className="w-full h-10 text-sm"
-                      variant={isPro ? 'default' : 'outline'}
-                    >
-                      {plan.price_monthly === 0 ? 'Começar' : 'Assinar'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <Button
+                    className="w-full h-10 text-sm"
+                    variant={isPro ? 'default' : 'outline'}
+                    onClick={() => handleSelectPlan(plan)}
+                  >
+                    {plan.price_monthly === 0 ? 'Começar' : 'Assinar'}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </CardFooter>
               </Card>
             );
@@ -468,6 +521,81 @@ function PlansSection() {
           <strong>WhatsApp via API Oficial (Meta):</strong> as mensagens são cobradas diretamente pela Meta conforme o uso. Via Evolution API (QR Code), não há custos adicionais por mensagem.
         </p>
       </div>
+
+      {/* Inline Checkout Dialog */}
+      {selectedPlan && (
+        <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                {isFree ? 'Criar Conta Gratuita' : `Assinar ${selectedPlan.name}`}
+              </DialogTitle>
+              <DialogDescription>
+                {isFree
+                  ? 'Preencha seus dados para criar sua conta gratuita'
+                  : 'Preencha seus dados para continuar com o pagamento'
+                }
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleCheckoutSubmit} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="idx-name">Seu Nome</Label>
+                <Input id="idx-name" placeholder="João Silva" value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="idx-email">E-mail</Label>
+                <Input id="idx-email" type="email" placeholder="joao@empresa.com" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="idx-org">Nome da Empresa/Organização</Label>
+                <Input id="idx-org" placeholder="Minha Empresa LTDA" value={formData.organizationName} onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))} required />
+              </div>
+
+              {!isFree && (
+                <>
+                  {!showCouponField ? (
+                    <button type="button" onClick={() => setShowCouponField(true)} className="flex items-center gap-1 text-sm text-primary hover:underline">
+                      <Tag className="h-3 w-3" />
+                      Tenho um cupom de desconto
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="idx-coupon">Cupom de Desconto</Label>
+                      <Input id="idx-coupon" placeholder="Digite o código do cupom" value={formData.couponCode} onChange={(e) => setFormData(prev => ({ ...prev, couponCode: e.target.value.toUpperCase() }))} />
+                      <p className="text-xs text-muted-foreground">O desconto será aplicado na próxima etapa</p>
+                    </div>
+                  )}
+
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">{selectedPlan.name}</span>
+                      <span className="font-bold">R$ {checkoutPrice}/{billingCycle === 'monthly' ? 'mês' : 'ano'}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {billingCycle === 'yearly' ? 'Cobrança anual com 17% de desconto' : 'Cobrança mensal recorrente'}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                {isFree ? 'Seus dados estão protegidos' : 'Pagamento seguro processado pelo Stripe'}
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={() => setShowCheckout(false)}>Cancelar</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isFree ? 'Criar Conta' : 'Continuar para Pagamento'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </section>
   );
 }
