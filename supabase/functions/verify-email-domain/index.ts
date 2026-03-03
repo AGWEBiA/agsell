@@ -76,8 +76,10 @@ async function enableReceiving(apiKey: string, domainId: string): Promise<void> 
   }
 }
 
-async function registerDomainOnResend(apiKey: string, domain: string): Promise<{ id: string; records: any[] } | null> {
+// Register the sending domain + a separate inbound subdomain for receiving
+async function registerDomainOnResend(apiKey: string, domain: string): Promise<{ id: string; records: any[]; inbound_domain_id?: string; inbound_records?: any[] } | null> {
   try {
+    // 1. Register main sending domain
     const response = await fetch("https://api.resend.com/domains", {
       method: "POST",
       headers: {
@@ -88,22 +90,69 @@ async function registerDomainOnResend(apiKey: string, domain: string): Promise<{
     });
 
     const data = await response.json();
+    let mainId = data?.id;
+    let mainRecords = data?.records || [];
     
     if (!response.ok) {
       if (data?.message?.includes("already") || response.status === 409 || response.status === 422) {
         console.log("Domain may already exist on Resend, trying to find it...");
-        return await findDomainOnResend(apiKey, domain);
+        const found = await findDomainOnResend(apiKey, domain);
+        if (found) {
+          mainId = found.id;
+          mainRecords = found.records;
+        } else {
+          return null;
+        }
+      } else {
+        console.error("Failed to register domain on Resend:", data);
+        return null;
       }
-      console.error("Failed to register domain on Resend:", data);
-      return null;
     }
 
-    // Enable receiving right after creation
-    if (data.id) {
-      await enableReceiving(apiKey, data.id);
+    // 2. Register inbound subdomain (inbound.domain.com) for receiving
+    const inboundDomain = `inbound.${domain}`;
+    let inboundId: string | undefined;
+    let inboundRecords: any[] = [];
+    
+    try {
+      const inboundResp = await fetch("https://api.resend.com/domains", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: inboundDomain, region: "sa-east-1" }),
+      });
+      const inboundData = await inboundResp.json();
+
+      if (inboundResp.ok && inboundData.id) {
+        inboundId = inboundData.id;
+        inboundRecords = inboundData.records || [];
+        console.log(`Inbound subdomain ${inboundDomain} registered with ID: ${inboundId}`);
+      } else if (inboundData?.message?.includes("already") || inboundResp.status === 409 || inboundResp.status === 422) {
+        const foundInbound = await findDomainOnResend(apiKey, inboundDomain);
+        if (foundInbound) {
+          inboundId = foundInbound.id;
+          inboundRecords = foundInbound.records;
+        }
+      } else {
+        console.error("Failed to register inbound subdomain:", inboundData);
+      }
+    } catch (e) {
+      console.error("Error registering inbound subdomain:", e);
     }
 
-    return { id: data.id, records: data.records || [] };
+    // 3. Enable receiving on the inbound subdomain
+    if (inboundId) {
+      await enableReceiving(apiKey, inboundId);
+    }
+
+    // Also enable receiving on main domain as fallback
+    if (mainId) {
+      await enableReceiving(apiKey, mainId);
+    }
+
+    return { id: mainId, records: mainRecords, inbound_domain_id: inboundId, inbound_records: inboundRecords };
   } catch (error) {
     console.error("Error registering domain on Resend:", error);
     return null;
@@ -233,25 +282,61 @@ Deno.serve(async (req) => {
     let resendStatus: string | null = null;
     let resendRecords: any[] = [];
 
+    let inboundDomainId: string | null = null;
+    let inboundRecords: any[] = [];
+
     if (resendApiKey) {
       if (!providerDomainId) {
-        // Register domain on Resend
+        // Register domain + inbound subdomain on Resend
         const result = await registerDomainOnResend(resendApiKey, domain);
         if (result) {
           providerDomainId = result.id;
           resendRecords = result.records;
-          console.log(`Domain ${domain} registered on Resend with ID: ${providerDomainId}`);
+          inboundDomainId = result.inbound_domain_id || null;
+          inboundRecords = result.inbound_records || [];
+          console.log(`Domain ${domain} registered on Resend with ID: ${providerDomainId}, inbound: ${inboundDomainId}`);
+        }
+      } else {
+        // Domain already registered, check/register inbound subdomain
+        const inboundSubdomain = `inbound.${domain}`;
+        const foundInbound = await findDomainOnResend(resendApiKey, inboundSubdomain);
+        if (foundInbound) {
+          inboundDomainId = foundInbound.id;
+          inboundRecords = foundInbound.records;
+          await enableReceiving(resendApiKey, foundInbound.id);
+        } else {
+          // Register inbound subdomain
+          try {
+            const ibResp = await fetch("https://api.resend.com/domains", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ name: inboundSubdomain, region: "sa-east-1" }),
+            });
+            const ibData = await ibResp.json();
+            if (ibResp.ok && ibData.id) {
+              inboundDomainId = ibData.id;
+              inboundRecords = ibData.records || [];
+              await enableReceiving(resendApiKey, ibData.id);
+              console.log(`Inbound subdomain ${inboundSubdomain} registered: ${inboundDomainId}`);
+            }
+          } catch (e) {
+            console.error("Error registering inbound subdomain:", e);
+          }
         }
       }
 
       if (providerDomainId) {
-        // Ensure receiving is enabled
         await enableReceiving(resendApiKey, providerDomainId);
-        // Trigger verification on Resend
         await verifyDomainOnResend(resendApiKey, providerDomainId);
-        // Check status
         resendStatus = await getDomainStatusOnResend(resendApiKey, providerDomainId);
         console.log(`Resend domain status for ${domain}: ${resendStatus}`);
+      }
+
+      // Also verify inbound subdomain
+      if (inboundDomainId) {
+        await verifyDomainOnResend(resendApiKey, inboundDomainId);
+        const inboundStatus = await getDomainStatusOnResend(resendApiKey, inboundDomainId);
+        console.log(`Inbound subdomain status for inbound.${domain}: ${inboundStatus}`);
       }
     }
 
@@ -288,23 +373,36 @@ Deno.serve(async (req) => {
       updateData.provider_domain_id = providerDomainId;
     }
 
-    // Save actual DNS records from Resend so user sees correct values
-    if (resendRecords && resendRecords.length > 0) {
-      const formattedRecords = resendRecords.map((r: any) => ({
-        type: r.type || 'TXT',
-        name: r.name || r.record || '',
-        value: r.value || r.data || '',
-        purpose: r.type === 'MX' ? 'MX' : (r.name?.includes('_domainkey') ? 'DKIM' : (r.name?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
-        description: r.type === 'MX' ? 'Registro MX para recebimento de e-mails' :
-          r.name?.includes('_domainkey') ? 'Assinatura digital DKIM' :
-          r.name?.includes('_dmarc') ? 'Política DMARC' :
-          'Registro de autenticação SPF',
-        status: r.status || 'pending',
-      }));
+    // Save actual DNS records from Resend (main + inbound) so user sees correct values
+    const allProviderRecords = [...resendRecords];
+    
+    // Add inbound subdomain records with clear labeling
+    if (inboundRecords && inboundRecords.length > 0) {
+      for (const r of inboundRecords) {
+        allProviderRecords.push({ ...r, _source: 'inbound' });
+      }
+    }
+
+    if (allProviderRecords.length > 0) {
+      const formattedRecords = allProviderRecords.map((r: any) => {
+        const isInbound = r._source === 'inbound';
+        return {
+          type: r.type || 'TXT',
+          name: r.name || r.record || '',
+          value: r.value || r.data || '',
+          purpose: r.type === 'MX' ? 'MX (Inbound)' : (r.name?.includes('_domainkey') ? 'DKIM' : (r.name?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
+          description: r.type === 'MX' ? `Registro MX para recebimento de e-mails via inbound.${domain}` :
+            r.name?.includes('_domainkey') ? `Assinatura digital DKIM${isInbound ? ' (inbound)' : ''}` :
+            r.name?.includes('_dmarc') ? `Política DMARC${isInbound ? ' (inbound)' : ''}` :
+            `Registro de autenticação SPF${isInbound ? ' (inbound)' : ''}`,
+          status: r.status || 'pending',
+          is_inbound: isInbound,
+        };
+      });
       updateData.dns_records = formattedRecords;
-      console.log(`Saved ${formattedRecords.length} DNS records from Resend for domain ${domain}`);
+      console.log(`Saved ${formattedRecords.length} DNS records (main + inbound) for domain ${domain}`);
     } else if (!domainRecord.dns_records || (Array.isArray(domainRecord.dns_records) && domainRecord.dns_records.some((r: any) => r.value?.includes('{provider}')))) {
-      // If we have a provider_domain_id but no resend records yet, fetch them
+      // Fetch from Resend if missing
       if (providerDomainId && resendApiKey) {
         try {
           const domainDetailsResp = await fetch(`https://api.resend.com/domains/${providerDomainId}`, {
@@ -326,13 +424,18 @@ Deno.serve(async (req) => {
               }));
               updateData.dns_records = formattedRecords;
               resendRecords = domainDetails.records;
-              console.log(`Fetched and saved ${formattedRecords.length} DNS records from Resend for domain ${domain}`);
+              console.log(`Fetched ${formattedRecords.length} DNS records from Resend for domain ${domain}`);
             }
           }
         } catch (e) {
           console.error("Error fetching domain details from Resend:", e);
         }
       }
+    }
+
+    // Save inbound domain ID
+    if (inboundDomainId) {
+      updateData.inbound_subdomain = `inbound.${domain}`;
     }
 
     if (newStatus === "verified" && !domainRecord.verified_at) {
@@ -370,6 +473,9 @@ Deno.serve(async (req) => {
         resend_status: resendStatus,
         resend_domain_id: providerDomainId,
         resend_records: resendRecords,
+        inbound_domain_id: inboundDomainId,
+        inbound_subdomain: `inbound.${domain}`,
+        inbound_records: inboundRecords,
         spf_records: txtRecords.filter((r) => r.includes("spf")),
         dkim_records: dkimRecords,
         dmarc_records: dmarcRecords,
