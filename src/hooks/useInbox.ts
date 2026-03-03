@@ -27,7 +27,8 @@ export function useInbox() {
           )
         `)
         .eq('user_id', user.id)
-        .order('last_message_at', { ascending: false });
+        .order('last_message_at', { ascending: false })
+        .order('created_at', { referencedTable: 'messages', ascending: true });
       if (error) throw error;
       return data as any[];
     },
