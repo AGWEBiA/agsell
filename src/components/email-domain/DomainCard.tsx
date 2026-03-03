@@ -131,21 +131,58 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
           {dnsChecks.map((check) => (
             <div
               key={check.label}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium ${
+              className={`flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm font-medium ${
                 check.verified
                   ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400'
-                  : 'bg-muted text-muted-foreground'
+                  : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
               }`}
             >
-              {check.verified ? (
-                <CheckCircle className="h-3.5 w-3.5" />
-              ) : (
-                <XCircle className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-1.5">
+                {check.verified ? (
+                  <CheckCircle className="h-3.5 w-3.5" />
+                ) : (
+                  <XCircle className="h-3.5 w-3.5" />
+                )}
+                {check.label}
+              </div>
+              {!check.verified && (
+                <span className="text-[10px] font-normal opacity-80">Não configurado</span>
               )}
-              {check.label}
             </div>
           ))}
         </div>
+
+        {/* Missing DNS details */}
+        {!allVerified && dnsChecks.some(c => !c.verified) && (
+          <div className="space-y-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300 flex items-center gap-1.5">
+              <AlertTriangle className="h-4 w-4" />
+              Registros DNS pendentes:
+            </p>
+            <ul className="text-xs text-red-700 dark:text-red-400 space-y-1.5 ml-5">
+              {!domain.spf_verified && (
+                <li className="list-disc">
+                  <strong>SPF:</strong> Adicione um registro TXT no domínio raiz com valor contendo <code className="bg-red-100 dark:bg-red-900 px-1 rounded">v=spf1 include:resend.com ~all</code>
+                </li>
+              )}
+              {!domain.dkim_verified && (
+                <li className="list-disc">
+                  <strong>DKIM:</strong> Adicione o registro CNAME <code className="bg-red-100 dark:bg-red-900 px-1 rounded">default._domainkey.{domain.domain}</code> conforme indicado abaixo
+                </li>
+              )}
+              {!domain.dmarc_verified && (
+                <li className="list-disc">
+                  <strong>DMARC:</strong> Adicione registro TXT em <code className="bg-red-100 dark:bg-red-900 px-1 rounded">_dmarc.{domain.domain}</code> com <code className="bg-red-100 dark:bg-red-900 px-1 rounded">v=DMARC1; p=quarantine</code>
+                </li>
+              )}
+              {!domain.mx_verified && (
+                <li className="list-disc">
+                  <strong>MX:</strong> Configure registros MX no seu provedor de DNS para recebimento de e-mails
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
 
         {domain.verification_error && !allVerified && (
           <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/50 p-3 rounded-lg">

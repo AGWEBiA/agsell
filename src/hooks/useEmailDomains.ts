@@ -98,10 +98,24 @@ export function useEmailDomains() {
         if (!data.dkim_verified) missing.push('DKIM');
         if (!data.dmarc_verified) missing.push('DMARC');
         if (!data.mx_verified) missing.push('MX');
+        if (data.resend_status && data.resend_status !== 'verified' && data.resend_status !== 'not_started') {
+          missing.push(`Provedor (${data.resend_status})`);
+        }
+        
+        const details: string[] = [];
+        if (!data.spf_verified) details.push('⚠️ SPF: Adicione registro TXT com "v=spf1 include:resend.com ~all"');
+        if (!data.dkim_verified) details.push('⚠️ DKIM: Adicione o registro CNAME do DKIM fornecido pelo provedor');
+        if (!data.dmarc_verified) details.push('⚠️ DMARC: Adicione registro TXT "_dmarc" com "v=DMARC1; p=quarantine"');
+        if (!data.mx_verified) details.push('⚠️ MX: Configure registros MX para recebimento de e-mails');
+        
         const missingText = missing.length > 0 
           ? `Registros pendentes: ${missing.join(', ')}` 
           : 'Aguardando confirmação do provedor.';
-        toast.warning(`Verificação incompleta. ${missingText}`, { duration: 8000 });
+        
+        toast.warning(`Verificação incompleta. ${missingText}`, { 
+          duration: 10000,
+          description: details.join('\n'),
+        });
       }
     },
     onError: (error: any) => {
