@@ -118,6 +118,7 @@ const menuSections: MenuSection[] = [
       { label: 'Planos', icon: Target, path: '/plans' },
       { label: 'Permissões', icon: Shield, path: '/permissions', orgAdminOnly: true },
       { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings', orgAdminOnly: true },
+      { label: 'Relatórios SAC', icon: BarChart3, path: '/inbox-reports' },
       { label: 'Domínio E-mail', icon: Mail, path: '/email-domain', featureRequired: 'email_marketing' },
       { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true, featureRequired: 'api' },
       { label: 'Webhooks', icon: Webhook, path: '/webhooks', featureRequired: 'api' },
