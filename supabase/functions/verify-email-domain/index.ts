@@ -292,19 +292,63 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- DNS checks ---
-    const [txtRecords, dkimRecords, dmarcRecords, mxRecords] = await Promise.all([
+    // --- DNS checks (root + common provider subdomains) ---
+    const [
+      txtRootRecords,
+      txtSendRecords,
+      txtMailRecords,
+      dkimDefaultTxtRecords,
+      dkimDefaultCnameRecords,
+      dkimResendTxtRecords,
+      dkimResendCnameRecords,
+      dmarcRecords,
+      mxRootRecords,
+      mxMailRecords,
+      mxSendRecords,
+      mxReceivingRecords,
+    ] = await Promise.all([
       resolveDNS(domain, "TXT"),
+      resolveDNS(`send.${domain}`, "TXT"),
+      resolveDNS(`mail.${domain}`, "TXT"),
       resolveDNS(`default._domainkey.${domain}`, "TXT"),
+      resolveDNS(`default._domainkey.${domain}`, "CNAME"),
+      resolveDNS(`resend._domainkey.${domain}`, "TXT"),
+      resolveDNS(`resend._domainkey.${domain}`, "CNAME"),
       resolveDNS(`_dmarc.${domain}`, "TXT"),
       resolveDNS(domain, "MX"),
+      resolveDNS(`mail.${domain}`, "MX"),
+      resolveDNS(`send.${domain}`, "MX"),
+      resolveDNS(`receiving.${domain}`, "MX"),
     ]);
 
-    const spfVerified = checkSPF(txtRecords);
-    const dkimVerified = checkDKIM(dkimRecords);
+    const providerSpfVerified = [...resendRecords, ...inboundRecords].some((r: any) => {
+      const purpose = String(r?.purpose || "").toLowerCase();
+      return r?.type === "TXT" && purpose.includes("spf") && String(r?.status || "").toLowerCase() === "verified";
+    });
+
+    const providerDkimVerified = [...resendRecords, ...inboundRecords].some((r: any) => {
+      const purpose = String(r?.purpose || "").toLowerCase();
+      return purpose.includes("dkim") && String(r?.status || "").toLowerCase() === "verified";
+    });
+
+    const providerMxVerified = [...resendRecords, ...inboundRecords].some((r: any) => {
+      return r?.type === "MX" && String(r?.status || "").toLowerCase() === "verified";
+    });
+
+    const allSpfRecords = [...txtRootRecords, ...txtSendRecords, ...txtMailRecords];
+    const allDkimRecords = [
+      ...dkimDefaultTxtRecords,
+      ...dkimDefaultCnameRecords,
+      ...dkimResendTxtRecords,
+      ...dkimResendCnameRecords,
+    ];
+    const allMxRecords = [...mxRootRecords, ...mxMailRecords, ...mxSendRecords, ...mxReceivingRecords];
+
+    const spfVerified = providerSpfVerified || checkSPF(allSpfRecords);
+    const dkimVerified = providerDkimVerified || checkDKIM(allDkimRecords);
     const dmarcVerified = checkDMARC(dmarcRecords);
-    const mxVerified = checkMX(mxRecords);
-    const dnsAllVerified = spfVerified && dkimVerified && dmarcVerified;
+    const mxVerified = providerMxVerified || checkMX(allMxRecords);
+    const dnsAllVerified = spfVerified && dkimVerified && dmarcVerified && mxVerified;
     const newStatus = (resendStatus === "verified" || !resendApiKey) && dnsAllVerified ? "verified" : "pending";
 
     // --- Build update ---
@@ -380,8 +424,9 @@ Deno.serve(async (req) => {
       inbound_domain_id: inboundDomainId,
       inbound_subdomain: `mail.${domain}`,
       resend_records: resendRecords, inbound_records: inboundRecords,
-      spf_records: txtRecords.filter((r) => r.includes("spf")),
-      dkim_records: dkimRecords, dmarc_records: dmarcRecords, mx_records: mxRecords,
+      spf_records: allSpfRecords.filter((r) => String(r).toLowerCase().includes("spf")),
+      dkim_records: allDkimRecords,
+      dmarc_records: dmarcRecords, mx_records: allMxRecords,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Error verifying domain:", error);
