@@ -299,25 +299,66 @@ Deno.serve(async (req) => {
             data.body ||
             null;
 
-          const hasMedia = Boolean(
-            messageData?.imageMessage ||
-            messageData?.videoMessage ||
-            messageData?.audioMessage ||
-            messageData?.documentMessage
-          );
+          // Extract media info from Evolution API payload
+          let mediaUrl: string | null = null;
+          let mediaMimeType: string | null = null;
+          let messageType: string = "text";
+          let fileName: string | null = null;
+          let mediaCaption: string | null = null;
+
+          if (messageData?.imageMessage) {
+            mediaUrl = messageData.imageMessage.url || messageData.imageMessage.directPath || null;
+            mediaMimeType = messageData.imageMessage.mimetype || "image/jpeg";
+            messageType = "image";
+            mediaCaption = messageData.imageMessage.caption || null;
+          } else if (messageData?.audioMessage) {
+            mediaUrl = messageData.audioMessage.url || messageData.audioMessage.directPath || null;
+            mediaMimeType = messageData.audioMessage.mimetype || "audio/ogg";
+            messageType = "audio";
+          } else if (messageData?.videoMessage) {
+            mediaUrl = messageData.videoMessage.url || messageData.videoMessage.directPath || null;
+            mediaMimeType = messageData.videoMessage.mimetype || "video/mp4";
+            messageType = "video";
+            mediaCaption = messageData.videoMessage.caption || null;
+          } else if (messageData?.documentMessage) {
+            mediaUrl = messageData.documentMessage.url || messageData.documentMessage.directPath || null;
+            mediaMimeType = messageData.documentMessage.mimetype || "application/octet-stream";
+            messageType = "document";
+            fileName = messageData.documentMessage.fileName || messageData.documentMessage.title || null;
+            mediaCaption = messageData.documentMessage.caption || null;
+          } else if (messageData?.stickerMessage) {
+            mediaUrl = messageData.stickerMessage.url || messageData.stickerMessage.directPath || null;
+            mediaMimeType = messageData.stickerMessage.mimetype || "image/webp";
+            messageType = "image";
+          }
+
+          // Also check Evolution API v2 format with base64 media
+          if (!mediaUrl && data.message?.base64) {
+            mediaUrl = `data:${mediaMimeType || "application/octet-stream"};base64,${data.message.base64}`;
+          }
+          if (!mediaUrl && data.message?.mediaUrl) {
+            mediaUrl = data.message.mediaUrl;
+          }
+
+          const hasMedia = Boolean(mediaUrl || messageData?.imageMessage || messageData?.videoMessage || messageData?.audioMessage || messageData?.documentMessage);
 
           // Ignore delivery/read status updates that are not real inbound messages
           const isStatusOnly = !messageText && !hasMedia;
 
           if (!isFromMe && senderPhone && !isStatusOnly) {
+            const displayText = mediaCaption || messageText || (hasMedia ? "" : "");
             await routeToInbox(supabase, {
               organizationId: integration.organization_id,
               userId,
               channel: "whatsapp",
               senderIdentifier: senderPhone,
               identifierField: "whatsapp_phone",
-              messageText: messageText || "[Mídia recebida]",
+              messageText: displayText || (hasMedia ? `[${messageType === "audio" ? "🎵 Áudio" : messageType === "image" ? "📷 Imagem" : messageType === "video" ? "🎥 Vídeo" : "📎 Arquivo"}]` : "[Mensagem]"),
               externalMessageId: keyData.id,
+              mediaUrl,
+              mediaMimeType,
+              messageType: hasMedia ? messageType : "text",
+              fileName,
             });
           }
         }
@@ -345,6 +386,10 @@ interface RouteToInboxParams {
   identifierField: string;
   messageText: string;
   externalMessageId?: string;
+  mediaUrl?: string | null;
+  mediaMimeType?: string | null;
+  messageType?: string;
+  fileName?: string | null;
 }
 
 async function routeToInbox(
@@ -496,14 +541,20 @@ async function routeToInbox(
     }
 
     // Insert the message
+    const messageInsert: Record<string, unknown> = {
+      conversation_id: conversationId,
+      content: messageText,
+      sender_type: "contact",
+      is_read: false,
+    };
+    if (params.mediaUrl) messageInsert.media_url = params.mediaUrl;
+    if (params.mediaMimeType) messageInsert.media_mime_type = params.mediaMimeType;
+    if (params.messageType && params.messageType !== "text") messageInsert.message_type = params.messageType;
+    if (params.fileName) messageInsert.file_name = params.fileName;
+
     const { error: msgError } = await supabase
       .from("messages")
-      .insert({
-        conversation_id: conversationId,
-        content: messageText,
-        sender_type: "contact",
-        is_read: false,
-      });
+      .insert(messageInsert);
 
     if (msgError) {
       console.error(`Error inserting ${channel} message:`, msgError);
