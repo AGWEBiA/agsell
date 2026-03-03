@@ -1909,24 +1909,36 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          file_name: string | null
           id: string
           is_read: boolean | null
+          media_mime_type: string | null
+          media_url: string | null
+          message_type: string
           sender_type: string
         }
         Insert: {
           content: string
           conversation_id: string
           created_at?: string
+          file_name?: string | null
           id?: string
           is_read?: boolean | null
+          media_mime_type?: string | null
+          media_url?: string | null
+          message_type?: string
           sender_type?: string
         }
         Update: {
           content?: string
           conversation_id?: string
           created_at?: string
+          file_name?: string | null
           id?: string
           is_read?: boolean | null
+          media_mime_type?: string | null
+          media_url?: string | null
+          message_type?: string
           sender_type?: string
         }
         Relationships: [
