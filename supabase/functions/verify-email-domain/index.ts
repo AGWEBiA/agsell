@@ -49,6 +49,16 @@ function toFqdn(recordName: string, zone: string): string {
   if (cleanName === "@") return cleanZone;
   if (cleanName.endsWith(cleanZone)) return cleanName;
 
+  // Detect overlap: e.g. name="send.mail", zone="mail.agwebi.com" → "send.mail.agwebi.com"
+  const zoneParts = cleanZone.split(".");
+  for (let i = 1; i < zoneParts.length; i++) {
+    const zonePrefix = zoneParts.slice(0, i).join(".");
+    if (cleanName.endsWith(`.${zonePrefix}`) || cleanName === zonePrefix) {
+      const zoneSuffix = zoneParts.slice(i).join(".");
+      return `${cleanName}.${zoneSuffix}`;
+    }
+  }
+
   return `${cleanName}.${cleanZone}`;
 }
 
