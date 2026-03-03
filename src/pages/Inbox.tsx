@@ -11,11 +11,13 @@ import {
   Search, Send, Paperclip, Smile, Phone, Video,
   MessageSquare, Mail, CheckCheck, Plus, Bot, Image as ImageIcon,
   FileAudio, File as FileIcon, X, Loader2, Filter,
-  AlertTriangle, Clock, Hash, ChevronLeft,
+  AlertTriangle, Clock, Hash, ChevronLeft, UserPlus, Inbox as InboxIcon, User,
 } from 'lucide-react';
 import { useInbox } from '@/hooks/useInbox';
 import { useContacts } from '@/hooks/useContacts';
 import { useAssignmentRules } from '@/hooks/useAssignmentRules';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { SendIAButton } from '@/components/inbox/SendIAButton';
 import { AudioTranscription } from '@/components/inbox/AudioTranscription';
 import { ContactInfoPanel } from '@/components/inbox/ContactInfoPanel';
@@ -33,6 +35,8 @@ import { Label } from '@/components/ui/label';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 const channelColors: Record<string, string> = {
   whatsapp: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
@@ -55,15 +59,20 @@ const priorityIndicator: Record<string, string> = {
   urgent: 'border-l-2 border-l-destructive',
 };
 
+type QueueTab = 'fila' | 'meus' | 'todos';
+
 export default function Inbox() {
   const { conversations, isLoading, createConversation, sendMessage, markAsRead, updateConversation } = useInbox();
   const contactsQuery = useContacts();
   const contacts = contactsQuery.data ?? [];
   const { assignConversation } = useAssignmentRules();
+  const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isNewContactDialogOpen, setIsNewContactDialogOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ file: File; preview?: string; type: string } | null>(null);
@@ -71,7 +80,10 @@ export default function Inbox() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [channelFilter, setChannelFilter] = useState<string>('all');
-  const [newConversation, setNewConversation] = useState({ contact_id: '', channel: 'email' });
+  const [queueTab, setQueueTab] = useState<QueueTab>('todos');
+  const [newConversation, setNewConversation] = useState({ contact_id: '', channel: 'whatsapp' });
+  const [newContact, setNewContact] = useState({ first_name: '', email: '', phone: '', channel: 'whatsapp' });
+  const [isCreatingContact, setIsCreatingContact] = useState(false);
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
 
@@ -147,15 +159,62 @@ export default function Inbox() {
   const handleCreateConversation = () => {
     if (!newConversation.contact_id) return;
     createConversation.mutate(newConversation);
-    setNewConversation({ contact_id: '', channel: 'email' });
+    setNewConversation({ contact_id: '', channel: 'whatsapp' });
     setIsDialogOpen(false);
+  };
+
+  const handleCreateContactAndConversation = async () => {
+    if (!newContact.first_name.trim()) { toast.error('Nome é obrigatório'); return; }
+    if (!user?.id) return;
+    setIsCreatingContact(true);
+    try {
+      const contactData: any = {
+        first_name: newContact.first_name.trim(),
+        user_id: user.id,
+        organization_id: currentOrganization?.id || null,
+        source: 'sac',
+      };
+      if (newContact.email.trim()) contactData.email = newContact.email.trim();
+      if (newContact.phone.trim()) {
+        contactData.phone = newContact.phone.trim();
+        contactData.whatsapp = newContact.phone.trim();
+      }
+
+      const { data: contact, error: contactError } = await supabase
+        .from('contacts')
+        .insert(contactData)
+        .select()
+        .single();
+      if (contactError) throw contactError;
+
+      createConversation.mutate({ contact_id: contact.id, channel: newContact.channel });
+      setNewContact({ first_name: '', email: '', phone: '', channel: 'whatsapp' });
+      setIsNewContactDialogOpen(false);
+      toast.success('Contato criado e atendimento iniciado!');
+    } catch (e: any) {
+      toast.error('Erro ao criar contato: ' + e.message);
+    } finally {
+      setIsCreatingContact(false);
+    }
+  };
+
+  const handleAssumirAtendimento = () => {
+    if (!selectedConversation || !user?.id) return;
+    updateConversation.mutate({ id: selectedConversation.id, assigned_to: user.id });
   };
 
   const getInitials = (f?: string, l?: string | null) => `${f?.[0] || ''}${l?.[0] || ''}`.toUpperCase() || '??';
 
   const getUnreadCount = (c: any) => c.messages?.filter((m: any) => !m.is_read && m.sender_type === 'contact').length || 0;
 
-  const filteredConversations = conversations.filter(c => {
+  // Queue-based filtering
+  const queueFiltered = conversations.filter(c => {
+    if (queueTab === 'fila') return !c.assigned_to;
+    if (queueTab === 'meus') return c.assigned_to === user?.id;
+    return true;
+  });
+
+  const filteredConversations = queueFiltered.filter(c => {
     const name = `${c.contacts?.first_name || ''} ${c.contacts?.last_name || ''}`.toLowerCase();
     const protocol = (c as any).protocol_number?.toLowerCase() || '';
     const matchSearch = !searchQuery || name.includes(searchQuery.toLowerCase()) || protocol.includes(searchQuery.toLowerCase());
@@ -164,12 +223,19 @@ export default function Inbox() {
     return matchSearch && matchStatus && matchChannel;
   });
 
-  // Count by status
+  // Queue counts
+  const queueCounts = {
+    fila: conversations.filter(c => !c.assigned_to).length,
+    meus: conversations.filter(c => c.assigned_to === user?.id).length,
+    todos: conversations.length,
+  };
+
+  // Count by status (within queue)
   const statusCounts = {
-    all: conversations.length,
-    open: conversations.filter(c => c.status === 'open').length,
-    pending: conversations.filter(c => c.status === 'pending').length,
-    resolved: conversations.filter(c => c.status === 'resolved').length,
+    all: queueFiltered.length,
+    open: queueFiltered.filter(c => c.status === 'open').length,
+    pending: queueFiltered.filter(c => c.status === 'pending').length,
+    resolved: queueFiltered.filter(c => c.status === 'resolved').length,
   };
 
   if (isLoading) {
@@ -191,21 +257,109 @@ export default function Inbox() {
               <CardTitle className="text-lg">SAC</CardTitle>
               <div className="flex items-center gap-1">
                 <Badge variant="secondary" className="text-xs">{conversations.length}</Badge>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+
+                {/* New contact button */}
+                <Dialog open={isNewContactDialogOpen} onOpenChange={setIsNewContactDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-8 w-8"><Plus className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Novo contato">
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Novo Ticket</DialogTitle><DialogDescription>Inicie um atendimento com um contato.</DialogDescription></DialogHeader>
+                    <DialogHeader>
+                      <DialogTitle>Novo Contato + Atendimento</DialogTitle>
+                      <DialogDescription>Crie um contato e inicie um atendimento diretamente.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Nome *</Label>
+                        <Input
+                          placeholder="Nome do contato"
+                          value={newContact.first_name}
+                          onChange={(e) => setNewContact(p => ({ ...p, first_name: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          type="email"
+                          placeholder="email@exemplo.com"
+                          value={newContact.email}
+                          onChange={(e) => setNewContact(p => ({ ...p, email: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Telefone com DDD</Label>
+                        <Input
+                          placeholder="11999999999"
+                          value={newContact.phone}
+                          onChange={(e) => setNewContact(p => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Canal</Label>
+                        <Select value={newContact.channel} onValueChange={(v) => setNewContact(p => ({ ...p, channel: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="instagram">Instagram</SelectItem>
+                            <SelectItem value="telegram">Telegram</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsNewContactDialogOpen(false)}>Voltar</Button>
+                      <Button onClick={handleCreateContactAndConversation} disabled={isCreatingContact}>
+                        {isCreatingContact ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                        Salvar
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Existing contact ticket */}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Novo ticket"><Plus className="h-4 w-4" /></Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Novo Ticket</DialogTitle><DialogDescription>Inicie um atendimento com um contato existente.</DialogDescription></DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2"><Label>Contato</Label><Select value={newConversation.contact_id} onValueChange={(v) => setNewConversation(p => ({ ...p, contact_id: v }))}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>)}</SelectContent></Select></div>
-                      <div className="space-y-2"><Label>Canal</Label><Select value={newConversation.channel} onValueChange={(v) => setNewConversation(p => ({ ...p, channel: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="email">Email</SelectItem><SelectItem value="whatsapp">WhatsApp</SelectItem><SelectItem value="instagram">Instagram</SelectItem><SelectItem value="telegram">Telegram</SelectItem></SelectContent></Select></div>
+                      <div className="space-y-2"><Label>Canal</Label><Select value={newConversation.channel} onValueChange={(v) => setNewConversation(p => ({ ...p, channel: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="whatsapp">WhatsApp</SelectItem><SelectItem value="email">Email</SelectItem><SelectItem value="instagram">Instagram</SelectItem><SelectItem value="telegram">Telegram</SelectItem></SelectContent></Select></div>
                     </div>
                     <DialogFooter><Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button onClick={handleCreateConversation}>Criar Ticket</Button></DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
             </div>
+
+            {/* Queue Tabs - Fila / Meus Atendimentos / Todos */}
+            <Tabs value={queueTab} onValueChange={(v) => setQueueTab(v as QueueTab)} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 h-8">
+                <TabsTrigger value="fila" className="text-xs gap-1 px-1">
+                  <InboxIcon className="h-3 w-3" />
+                  Fila
+                  {queueCounts.fila > 0 && (
+                    <Badge variant="destructive" className="text-[10px] h-4 px-1 ml-0.5">{queueCounts.fila}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="meus" className="text-xs gap-1 px-1">
+                  <User className="h-3 w-3" />
+                  Meus
+                  {queueCounts.meus > 0 && (
+                    <Badge variant="secondary" className="text-[10px] h-4 px-1 ml-0.5">{queueCounts.meus}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="todos" className="text-xs gap-1 px-1">
+                  Todos
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1 ml-0.5">{queueCounts.todos}</Badge>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -250,7 +404,7 @@ export default function Inbox() {
               <div className="p-8 text-center">
                 <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  {conversations.length === 0 ? 'Nenhum ticket ainda' : 'Nenhum resultado'}
+                  {queueTab === 'fila' ? 'Nenhum ticket na fila' : queueTab === 'meus' ? 'Nenhum atendimento atribuído a você' : conversations.length === 0 ? 'Nenhum ticket ainda' : 'Nenhum resultado'}
                 </p>
                 {conversations.length === 0 && (
                   <Button className="mt-3" size="sm" onClick={() => setIsDialogOpen(true)}>
@@ -265,6 +419,7 @@ export default function Inbox() {
                   const lastMessage = conversation.messages?.[conversation.messages.length - 1];
                   const unreadCount = getUnreadCount(conversation);
                   const prio = (conversation as any).priority || 'medium';
+                  const isUnassigned = !conversation.assigned_to;
 
                   return (
                     <div
@@ -289,9 +444,16 @@ export default function Inbox() {
                           <span className="text-sm font-medium truncate">
                             {conversation.contacts?.first_name} {conversation.contacts?.last_name}
                           </span>
-                          <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
-                            {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                          </span>
+                          <div className="flex items-center gap-1 shrink-0 ml-1">
+                            {isUnassigned && (
+                              <Badge variant="outline" className="text-[9px] h-4 px-1 border-yellow-500 text-yellow-600 dark:text-yellow-400">
+                                Fila
+                              </Badge>
+                            )}
+                            <span className="text-[10px] text-muted-foreground">
+                              {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <Hash className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
@@ -345,6 +507,13 @@ export default function Inbox() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    {/* Assumir atendimento button */}
+                    {!selectedConversation.assigned_to && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAssumirAtendimento}>
+                        <User className="h-3 w-3" />
+                        Assumir
+                      </Button>
+                    )}
                     <SendIAButton
                       conversationId={selectedConversation.id}
                       contactName={`${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`}

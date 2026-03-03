@@ -11,10 +11,12 @@ export function useInbox() {
   const queryClient = useQueryClient();
 
   const conversationsQuery = useQuery({
-    queryKey: ['conversations', user?.id],
+    queryKey: ['conversations', currentOrganization?.id, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
+
+      // Query by organization if available, otherwise by user
+      let query = supabase
         .from('conversations')
         .select(`
           *,
@@ -26,9 +28,16 @@ export function useInbox() {
             message_type, media_url, media_mime_type, file_name
           )
         `)
-        .eq('user_id', user.id)
         .order('last_message_at', { ascending: false })
         .order('created_at', { referencedTable: 'messages', ascending: true });
+
+      if (currentOrganization?.id) {
+        query = query.eq('organization_id', currentOrganization.id);
+      } else {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
@@ -62,7 +71,6 @@ export function useInbox() {
         .maybeSingle();
 
       if (existing) {
-        // Reopen existing conversation instead of creating duplicate
         if (existing.status === 'resolved' || existing.status === 'closed') {
           await supabase.from('conversations').update({ status: 'open', last_message_at: new Date().toISOString() }).eq('id', existing.id);
         }
@@ -94,18 +102,20 @@ export function useInbox() {
         .single();
       if (error) throw error;
 
-      // Update conversation + track first response
       const conv = conversationsQuery.data?.find(c => c.id === message.conversation_id);
       const updates: Record<string, any> = {
         last_message_at: new Date().toISOString(),
       };
 
-      // Track first_response_at
       if (message.sender_type === 'user' && conv && !conv.first_response_at) {
         updates.first_response_at = new Date().toISOString();
       }
 
-      // WhatsApp metadata
+      // Auto-assign to current user when they reply
+      if (message.sender_type === 'user' && conv && !conv.assigned_to && user?.id) {
+        updates.assigned_to = user.id;
+      }
+
       const contactPhone = conv?.contacts?.whatsapp || conv?.contacts?.phone;
       const cleanPhone = contactPhone ? contactPhone.replace(/\D/g, '') : null;
       const existingMeta = (conv?.metadata as Record<string, string> | null) || {};
@@ -115,7 +125,6 @@ export function useInbox() {
 
       await supabase.from('conversations').update(updates).eq('id', message.conversation_id);
 
-      // Send via WhatsApp if applicable
       if (conv?.channel === 'whatsapp' && contactPhone) {
         try {
           const { data: r, error: we } = await supabase.functions.invoke('send-whatsapp', {
