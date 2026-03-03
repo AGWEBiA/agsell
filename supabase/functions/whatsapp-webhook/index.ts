@@ -413,8 +413,6 @@ async function routeToInbox(
       )
     );
 
-    const normalizePhone = (value: string | null | undefined) => (value || "").replace(/\D/g, "");
-
     const { data: orgConversations } = await supabase
       .from("conversations")
       .select("id, contact_id, metadata, last_message_at")
