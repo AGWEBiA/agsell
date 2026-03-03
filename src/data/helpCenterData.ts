@@ -1124,7 +1124,7 @@ Recursos que o membro não tem permissão são:
   },
   {
     id: 'sequences',
-    categoryId: 'settings',
+    categoryId: 'marketing',
     title: 'Sequências (Drip Campaigns)',
     icon: ListChecks,
     description: 'Envio automatizado de mensagens programadas para nutrição de leads.',
@@ -1168,7 +1168,7 @@ Contatos podem ser inscritos:
   },
   {
     id: 'ab-tests',
-    categoryId: 'settings',
+    categoryId: 'marketing',
     title: 'Testes A/B',
     icon: SplitSquareVertical,
     description: 'Compare variantes de mensagens para otimizar conversões.',
@@ -1202,7 +1202,7 @@ O sistema acompanha automaticamente:
   },
   {
     id: 'growth-tools',
-    categoryId: 'settings',
+    categoryId: 'marketing',
     title: 'Growth Tools',
     icon: Megaphone,
     description: 'Ferramentas de captura: links, QR codes e widgets.',
@@ -1384,5 +1384,141 @@ Em conformidade com a LGPD, você pode:
 [screenshot:Configurações Gerais|/settings]
 
 ⚠️ A exclusão de conta é irreversível. Todos os dados serão apagados permanentemente.`,
+  },
+  {
+    id: 'tasks',
+    categoryId: 'crm',
+    title: 'Tarefas',
+    icon: CheckSquare,
+    description: 'Organize atividades, prazos e acompanhe a produtividade da equipe.',
+    readTime: '3 min',
+    content: `O módulo de Tarefas permite organizar as atividades da sua equipe com prazos e prioridades.
+
+## Criando uma tarefa
+
+1. Acesse "Tarefas" no menu lateral
+2. Clique em "Nova Tarefa"
+3. Defina título, descrição e prazo
+4. Atribua a um membro da equipe
+5. Defina a prioridade (baixa, média, alta)
+
+[screenshot:Módulo de Tarefas|/tasks]
+
+## Visualização em calendário
+
+- Alterne entre a visualização em lista e calendário
+- Arraste tarefas entre datas para reagendar
+- Cores indicam a prioridade de cada tarefa
+
+## Vinculando a contatos e deals
+
+Tarefas podem ser vinculadas a:
+
+- **Contatos** — Acompanhe follow-ups pendentes
+- **Deals** — Gerencie ações necessárias para fechar negócios
+
+## Automação de tarefas
+
+Crie tarefas automaticamente via:
+
+- Automações (ação "Criar Tarefa")
+- Flow Builder
+- Movimentação de deals no pipeline
+
+💡 Dica: Use tarefas com prazos para garantir que nenhum follow-up seja esquecido.`,
+  },
+  {
+    id: 'channels',
+    categoryId: 'communication',
+    title: 'Canais de comunicação',
+    icon: Globe,
+    description: 'Gerencie todos os canais: Telegram, SMS e Shopify.',
+    readTime: '3 min',
+    content: `A página de Canais centraliza a configuração de todos os canais de comunicação disponíveis.
+
+## Canais disponíveis
+
+### Telegram
+- Conecte bots do Telegram para atendimento automatizado
+- Configure token do bot e mensagens de boas-vindas
+- Receba mensagens diretamente no Inbox
+
+### SMS
+- Integre provedores de SMS (Twilio, Vonage)
+- Envie mensagens de texto em automações e sequências
+- Acompanhe entregas e respostas
+
+### Shopify
+- Conecte sua loja Shopify para sincronizar pedidos
+- Crie contatos automaticamente a partir de compras
+- Dispare automações baseadas em eventos de compra
+
+[screenshot:Página de Canais|/channels]
+
+💡 Dica: Configure múltiplos canais para alcançar seus contatos onde eles preferem ser contatados.`,
+  },
+  {
+    id: 'inbox-reports',
+    categoryId: 'communication',
+    title: 'Relatórios do SAC',
+    icon: BarChart3,
+    description: 'Métricas detalhadas de atendimento: tempo de resposta, volume e satisfação.',
+    readTime: '3 min',
+    content: `Os Relatórios do SAC oferecem métricas detalhadas sobre o desempenho do atendimento.
+
+## Métricas disponíveis
+
+- **Tempo médio de primeira resposta** — Rapidez no atendimento
+- **Tempo médio de resolução** — Eficiência na solução
+- **Volume de conversas** — Por período, canal e agente
+- **Satisfação (CSAT)** — Nota média das pesquisas de satisfação
+- **Taxa de resolução** — Percentual de atendimentos resolvidos
+
+[screenshot:Relatórios do SAC|/inbox-reports]
+
+## Filtros
+
+Filtre os relatórios por:
+
+- Período (hoje, semana, mês)
+- Canal (WhatsApp, E-mail, Instagram)
+- Agente/Atendente
+- Prioridade
+
+💡 Dica: Acompanhe o tempo de primeira resposta para garantir que seus clientes não fiquem esperando.`,
+  },
+  {
+    id: 'email-inbox',
+    categoryId: 'communication',
+    title: 'Inbox de E-mail',
+    icon: Mail,
+    description: 'Receba e responda e-mails diretamente pela plataforma.',
+    readTime: '3 min',
+    content: `O Inbox de E-mail permite receber e responder e-mails diretamente dentro do AG Sell.
+
+## Configuração
+
+1. Configure seu domínio de e-mail personalizado
+2. Crie caixas postais com prefixos (ex: contato@, suporte@)
+3. E-mails recebidos aparecem automaticamente no inbox
+
+## Funcionalidades
+
+- **Receber e-mails** — Visualize e-mails recebidos em tempo real
+- **Responder** — Responda diretamente pela plataforma
+- **Vincular a contatos** — E-mails são automaticamente vinculados ao contato correspondente
+- **Histórico unificado** — Veja e-mails junto com WhatsApp e Instagram na timeline do contato
+
+[screenshot:Inbox de E-mail|/email-inbox]
+
+## Caixas postais
+
+Cada caixa postal possui:
+
+- **Limite diário de envios** — Configurável com presets inteligentes (aquecimento, conservador, moderado, alto volume)
+- **Assinatura** — Personalize a assinatura com logo e links de redes sociais
+- **Status de warmup** — Acompanhe o aquecimento do domínio
+
+💡 Dica: Comece com o limite de aquecimento (50 e-mails/dia) para novos domínios e aumente gradualmente.`,
   },
 ];
