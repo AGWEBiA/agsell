@@ -72,15 +72,17 @@ async function registerDomainOnResend(
   attempt = 1
 ): Promise<{ id: string; records: any[]; status?: string } | null> {
   try {
+    console.log(`Registering domain ${domain} on Resend (attempt ${attempt})...`);
     const response = await fetch("https://api.resend.com/domains", {
       method: "POST",
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ name: domain, region: "sa-east-1" }),
     });
     const data = await response.json();
+    console.log(`Resend register response for ${domain}: status=${response.status}, body=${JSON.stringify(data)}`);
 
     if (!response.ok) {
-      if (data?.message?.includes("already") || response.status === 409 || response.status === 422) {
+      if (data?.message?.includes("already") || data?.name === "validation_error" || response.status === 409 || response.status === 422) {
         await delay(700);
         return await findDomainOnResend(apiKey, domain);
       }
@@ -92,7 +94,7 @@ async function registerDomainOnResend(
         return await registerDomainOnResend(apiKey, domain, attempt + 1);
       }
 
-      console.error("Failed to register domain on Resend:", data);
+      console.error("Failed to register domain on Resend:", JSON.stringify(data));
       return null;
     }
 
@@ -233,7 +235,7 @@ Deno.serve(async (req) => {
       }
 
       if (!providerDomainId) {
-        throw new Error(`Não foi possível criar/localizar o domínio raiz ${domain} no provedor de e-mail. Tente novamente em alguns segundos.`);
+        console.warn(`Could not register/find root domain ${domain} on Resend. DNS checks will still proceed.`);
       }
 
       await delay(700);
