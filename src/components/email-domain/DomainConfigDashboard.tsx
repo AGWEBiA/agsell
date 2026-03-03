@@ -96,13 +96,10 @@ export default function DomainConfigDashboard({ domain, onVerify, onDelete, isVe
                     <p className="text-xs text-muted-foreground mt-1">
                       Configure o domínio para utilizar ele nas páginas criadas no seu Funil no sistema.
                     </p>
-                    <div className="mt-4 p-3 rounded-lg border text-left">
-                      <p className="text-xs text-muted-foreground mb-2">Aponte o registro abaixo no DNS do seu domínio:</p>
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div><span className="font-medium">Tipo</span><p className="text-muted-foreground">A</p></div>
-                        <div><span className="font-medium">Nome</span><p className="text-muted-foreground">@</p></div>
-                        <div><span className="font-medium">Valor</span><p className="text-muted-foreground">185.158.133.1</p></div>
-                      </div>
+                    <div className="mt-4 p-3 rounded-lg bg-muted/30 border text-left">
+                      <p className="text-xs text-muted-foreground">
+                        Em breve. A configuração de DNS para páginas e funis estará disponível quando o módulo de Landing Pages for ativado.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
