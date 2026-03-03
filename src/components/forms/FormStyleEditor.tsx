@@ -193,6 +193,12 @@ export function FormStyleEditor({ settings, onChange }: Props) {
           <Label className="text-xs font-semibold">Mensagem de sucesso</Label>
           <Input className="h-8 text-sm" value={settings.successMessage} onChange={(e) => update('successMessage', e.target.value)} />
         </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold">URL de redirecionamento (opcional)</Label>
+          <Input className="h-8 text-sm" placeholder="https://seusite.com/obrigado" value={settings.redirectUrl || ''} onChange={(e) => update('redirectUrl', e.target.value)} />
+          <p className="text-xs text-muted-foreground">Se preenchido, o lead será redirecionado após enviar o formulário.</p>
+        </div>
       </TabsContent>
 
       <TabsContent value="spacing" className="space-y-4 mt-3">

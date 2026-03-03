@@ -33,6 +33,7 @@ export interface FormSettings {
   shadow: 'none' | 'sm' | 'md' | 'lg';
   showTitle: boolean;
   showDescription: boolean;
+  redirectUrl: string;
 }
 
 export const DEFAULT_SETTINGS: FormSettings = {
@@ -53,6 +54,7 @@ export const DEFAULT_SETTINGS: FormSettings = {
   shadow: 'md',
   showTitle: true,
   showDescription: true,
+  redirectUrl: '',
 };
 
 const TEMPLATES: FormTemplate[] = [

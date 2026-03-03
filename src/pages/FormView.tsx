@@ -190,6 +190,11 @@ export default function FormView() {
         }
       } catch {}
 
+      // Redirect if configured
+      if (s.redirectUrl?.trim()) {
+        window.location.href = s.redirectUrl.trim();
+        return;
+      }
       setSubmitted(true);
     } catch (err: any) {
       toast.error('Erro ao enviar: ' + err.message);
