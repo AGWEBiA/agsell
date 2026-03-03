@@ -255,6 +255,53 @@ Deno.serve(async (req) => {
       updateData.provider_domain_id = providerDomainId;
     }
 
+    // Save actual DNS records from Resend so user sees correct values
+    if (resendRecords && resendRecords.length > 0) {
+      const formattedRecords = resendRecords.map((r: any) => ({
+        type: r.type || 'TXT',
+        name: r.name || r.record || '',
+        value: r.value || r.data || '',
+        purpose: r.type === 'MX' ? 'MX' : (r.name?.includes('_domainkey') ? 'DKIM' : (r.name?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
+        description: r.type === 'MX' ? 'Registro MX para recebimento de e-mails' :
+          r.name?.includes('_domainkey') ? 'Assinatura digital DKIM' :
+          r.name?.includes('_dmarc') ? 'Política DMARC' :
+          'Registro de autenticação SPF',
+        status: r.status || 'pending',
+      }));
+      updateData.dns_records = formattedRecords;
+      console.log(`Saved ${formattedRecords.length} DNS records from Resend for domain ${domain}`);
+    } else if (!domainRecord.dns_records || (Array.isArray(domainRecord.dns_records) && domainRecord.dns_records.some((r: any) => r.value?.includes('{provider}')))) {
+      // If we have a provider_domain_id but no resend records yet, fetch them
+      if (providerDomainId && resendApiKey) {
+        try {
+          const domainDetailsResp = await fetch(`https://api.resend.com/domains/${providerDomainId}`, {
+            headers: { "Authorization": `Bearer ${resendApiKey}` },
+          });
+          if (domainDetailsResp.ok) {
+            const domainDetails = await domainDetailsResp.json();
+            if (domainDetails.records && domainDetails.records.length > 0) {
+              const formattedRecords = domainDetails.records.map((r: any) => ({
+                type: r.type || 'TXT',
+                name: r.name || r.record || '',
+                value: r.value || r.data || '',
+                purpose: r.type === 'MX' ? 'MX' : (r.name?.includes('_domainkey') ? 'DKIM' : (r.name?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
+                description: r.type === 'MX' ? 'Registro MX para recebimento de e-mails' :
+                  r.name?.includes('_domainkey') ? 'Assinatura digital DKIM' :
+                  r.name?.includes('_dmarc') ? 'Política DMARC' :
+                  'Registro de autenticação SPF',
+                status: r.status || 'pending',
+              }));
+              updateData.dns_records = formattedRecords;
+              resendRecords = domainDetails.records;
+              console.log(`Fetched and saved ${formattedRecords.length} DNS records from Resend for domain ${domain}`);
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching domain details from Resend:", e);
+        }
+      }
+    }
+
     if (newStatus === "verified" && !domainRecord.verified_at) {
       updateData.verified_at = new Date().toISOString();
       updateData.is_active = true;
