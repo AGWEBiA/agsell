@@ -19,6 +19,7 @@ export interface Plan {
   max_forms: number;
   max_instagram_accounts: number;
   max_ai_requests_per_month: number;
+  max_email_domains: number;
   features: string[];
   is_active: boolean;
   is_default: boolean;
@@ -123,7 +124,7 @@ export function usePlans() {
   });
 
   // Check plan limit
-  const checkPlanLimit = async (resource: 'users' | 'contacts' | 'emails' | 'whatsapp' | 'automations' | 'forms' | 'ai_requests', currentCount?: number): Promise<PlanLimitCheck> => {
+  const checkPlanLimit = async (resource: 'users' | 'contacts' | 'emails' | 'whatsapp' | 'automations' | 'forms' | 'ai_requests' | 'email_domains', currentCount?: number): Promise<PlanLimitCheck> => {
     if (!currentOrganization?.id) {
       return { allowed: true, limit: -1, current: 0, message: 'No organization' };
     }

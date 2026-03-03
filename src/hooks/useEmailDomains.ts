@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { usePlans } from '@/hooks/usePlans';
 import { toast } from 'sonner';
 
 export function useEmailDomains() {
   const { currentOrganization } = useOrganization();
+  const { checkPlanLimit } = usePlans();
   const queryClient = useQueryClient();
   const orgId = currentOrganization?.id;
 
@@ -27,6 +29,13 @@ export function useEmailDomains() {
     mutationFn: async ({ domain, from_email, from_name }: { domain: string; from_email?: string; from_name?: string }) => {
       const currentOrgId = currentOrganization?.id;
       if (!currentOrgId) throw new Error('Organização não selecionada. Selecione uma organização antes de continuar.');
+
+      // Check domain limit before adding
+      const currentDomainCount = domains.length;
+      const limitCheck = await checkPlanLimit('email_domains', currentDomainCount);
+      if (!limitCheck.allowed) {
+        throw new Error(`Limite de domínios atingido (${limitCheck.current}/${limitCheck.limit}). Faça upgrade do seu plano para adicionar mais domínios.`);
+      }
 
       const { data, error } = await supabase
         .from('email_domains' as any)
