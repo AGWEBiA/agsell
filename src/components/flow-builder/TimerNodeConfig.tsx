@@ -71,9 +71,13 @@ export function TimerNodeConfig({ config, onChange }: TimerNodeConfigProps) {
             <p className="text-xs text-muted-foreground mb-3">O timer vai liberar os leads apenas na data e hora determinada.</p>
             <Input
               type="datetime-local"
+              className={String(config.specific_date || '') && new Date(String(config.specific_date)) < new Date() ? 'border-destructive' : ''}
               value={String(config.specific_date || '')}
               onChange={e => onChange({ ...config, specific_date: e.target.value })}
             />
+            {String(config.specific_date || '') && new Date(String(config.specific_date)) < new Date() && (
+              <p className="text-xs text-destructive mt-1 font-medium">⚠ A data não pode ser anterior à data atual!</p>
+            )}
             <div className="mt-3 rounded-md bg-muted p-3">
               <p className="text-xs text-muted-foreground">
                 Fuso horário: <span className="font-semibold text-foreground">SAO PAULO</span>
@@ -100,12 +104,17 @@ export function TimerNodeConfig({ config, onChange }: TimerNodeConfigProps) {
         </div>
         <p className="text-xs text-muted-foreground mt-1">A etapa vai enviar as mensagens aos leads até uma data e hora determinada.</p>
         {config.has_deadline && (
-          <Input
-            type="datetime-local"
-            className="mt-3"
-            value={String(config.deadline_date || '')}
-            onChange={e => onChange({ ...config, deadline_date: e.target.value })}
-          />
+          <>
+            <Input
+              type="datetime-local"
+              className={`mt-3 ${String(config.deadline_date || '') && new Date(String(config.deadline_date)) < new Date() ? 'border-destructive' : ''}`}
+              value={String(config.deadline_date || '')}
+              onChange={e => onChange({ ...config, deadline_date: e.target.value })}
+            />
+            {String(config.deadline_date || '') && new Date(String(config.deadline_date)) < new Date() && (
+              <p className="text-xs text-destructive mt-1 font-medium">⚠ A data não pode ser anterior à data atual!</p>
+            )}
+          </>
         )}
       </div>
 

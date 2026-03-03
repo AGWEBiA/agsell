@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Plus, X, Tag } from 'lucide-react';
+import { AlertCircle, Plus, X } from 'lucide-react';
 import { useTags } from '@/hooks/useTags';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -14,17 +14,18 @@ interface TagFilterNodeConfigProps {
 }
 
 export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigProps) {
-  const { data: tags = [] } = useTags();
+  const { data: tags = [], refetch } = useTags();
   const entryTags = (config.entry_tags as string[]) || [];
   const blockTags = (config.block_tags as string[]) || [];
-  const [entrySelect, setEntrySelect] = useState('');
-  const [blockSelect, setBlockSelect] = useState('');
+  const [newEntryTag, setNewEntryTag] = useState('');
+  const [newBlockTag, setNewBlockTag] = useState('');
+  const [showNewEntry, setShowNewEntry] = useState(false);
+  const [showNewBlock, setShowNewBlock] = useState(false);
 
   const addEntryTag = (tagName: string) => {
     if (tagName && !entryTags.includes(tagName)) {
       onChange({ ...config, entry_tags: [...entryTags, tagName] });
     }
-    setEntrySelect('');
   };
 
   const removeEntryTag = (tagName: string) => {
@@ -35,12 +36,14 @@ export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigPro
     if (tagName && !blockTags.includes(tagName)) {
       onChange({ ...config, block_tags: [...blockTags, tagName] });
     }
-    setBlockSelect('');
   };
 
   const removeBlockTag = (tagName: string) => {
     onChange({ ...config, block_tags: blockTags.filter(t => t !== tagName) });
   };
+
+  const deadlineDate = String(config.deadline_date || '');
+  const isDeadlinePast = deadlineDate && new Date(deadlineDate) < new Date();
 
   return (
     <div className="space-y-5">
@@ -58,12 +61,17 @@ export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigPro
         </div>
         <p className="text-xs text-muted-foreground mt-1">A etapa vai liberar os leads até uma data e hora determinada.</p>
         {config.has_deadline && (
-          <Input
-            type="datetime-local"
-            className="mt-3"
-            value={String(config.deadline_date || '')}
-            onChange={e => onChange({ ...config, deadline_date: e.target.value })}
-          />
+          <>
+            <Input
+              type="datetime-local"
+              className={`mt-3 ${isDeadlinePast ? 'border-destructive' : ''}`}
+              value={deadlineDate}
+              onChange={e => onChange({ ...config, deadline_date: e.target.value })}
+            />
+            {isDeadlinePast && (
+              <p className="text-xs text-destructive mt-1 font-medium">⚠ A data não pode ser anterior à data atual!</p>
+            )}
+          </>
         )}
       </div>
 
@@ -84,7 +92,7 @@ export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigPro
           ))}
         </div>
         <div className="flex gap-2">
-          <Select value={entrySelect} onValueChange={v => { addEntryTag(v); }}>
+          <Select value="" onValueChange={v => addEntryTag(v)}>
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Selecione uma tag" />
             </SelectTrigger>
@@ -92,12 +100,38 @@ export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigPro
               {tags.filter(t => !entryTags.includes(t.name)).map(t => (
                 <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
               ))}
+              {tags.filter(t => !entryTags.includes(t.name)).length === 0 && (
+                <p className="text-xs text-muted-foreground p-2 text-center">Nenhuma tag disponível</p>
+              )}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={() => { if (entrySelect) addEntryTag(entrySelect); }}>
+          <Button variant="outline" size="icon" onClick={() => setShowNewEntry(!showNewEntry)} title="Criar nova tag">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {showNewEntry && (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nome da nova tag"
+              value={newEntryTag}
+              onChange={e => setNewEntryTag(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && newEntryTag.trim()) {
+                  addEntryTag(newEntryTag.trim());
+                  setNewEntryTag('');
+                  setShowNewEntry(false);
+                }
+              }}
+            />
+            <Button size="sm" onClick={() => {
+              if (newEntryTag.trim()) {
+                addEntryTag(newEntryTag.trim());
+                setNewEntryTag('');
+                setShowNewEntry(false);
+              }
+            }}>Adicionar</Button>
+          </div>
+        )}
       </div>
 
       {/* Block tags */}
@@ -117,7 +151,7 @@ export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigPro
           ))}
         </div>
         <div className="flex gap-2">
-          <Select value={blockSelect} onValueChange={v => { addBlockTag(v); }}>
+          <Select value="" onValueChange={v => addBlockTag(v)}>
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Selecione uma tag" />
             </SelectTrigger>
@@ -125,12 +159,38 @@ export function TagFilterNodeConfig({ config, onChange }: TagFilterNodeConfigPro
               {tags.filter(t => !blockTags.includes(t.name)).map(t => (
                 <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
               ))}
+              {tags.filter(t => !blockTags.includes(t.name)).length === 0 && (
+                <p className="text-xs text-muted-foreground p-2 text-center">Nenhuma tag disponível</p>
+              )}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={() => { if (blockSelect) addBlockTag(blockSelect); }}>
+          <Button variant="outline" size="icon" onClick={() => setShowNewBlock(!showNewBlock)} title="Criar nova tag">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {showNewBlock && (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nome da nova tag"
+              value={newBlockTag}
+              onChange={e => setNewBlockTag(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && newBlockTag.trim()) {
+                  addBlockTag(newBlockTag.trim());
+                  setNewBlockTag('');
+                  setShowNewBlock(false);
+                }
+              }}
+            />
+            <Button size="sm" onClick={() => {
+              if (newBlockTag.trim()) {
+                addBlockTag(newBlockTag.trim());
+                setNewBlockTag('');
+                setShowNewBlock(false);
+              }
+            }}>Adicionar</Button>
+          </div>
+        )}
       </div>
     </div>
   );
