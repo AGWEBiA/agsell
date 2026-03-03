@@ -263,29 +263,42 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                  <div className="rounded bg-muted/50 px-3 py-2">
-                    <p className="text-muted-foreground mb-1">Host (campo principal)</p>
-                    <code className="font-semibold break-all">{record.host || record.name}</code>
+                  <div className="rounded bg-primary/5 border border-primary/20 px-3 py-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground mb-1">Host</p>
+                      <code className="font-semibold break-all">{record.host || record.name}</code>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.host || record.name)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
                   </div>
                   <div className="rounded bg-muted/50 px-3 py-2">
                     <p className="text-muted-foreground mb-1">Tipo</p>
                     <code>{record.type}</code>
                   </div>
-                  <div className="rounded bg-muted/50 px-3 py-2 md:col-span-2">
-                    <p className="text-muted-foreground mb-1">Valor</p>
-                    <code className="break-all">{record.value}</code>
+                  <div className="rounded bg-primary/5 border border-primary/20 px-3 py-2 md:col-span-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground mb-1">Valor</p>
+                      <code className="break-all">{record.value}</code>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(record.value)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
                   </div>
-                  <div className="rounded bg-muted/50 px-3 py-2">
-                    <p className="text-muted-foreground mb-1">Prioridade</p>
-                    <code>{record.priority ?? '-'}</code>
-                  </div>
+                  {record.priority && (
+                    <div className="rounded bg-primary/5 border border-primary/20 px-3 py-2 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Prioridade</p>
+                        <code>{record.priority}</code>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(String(record.priority))}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                   <div className="rounded bg-muted/50 px-3 py-2">
                     <p className="text-muted-foreground mb-1">TTL</p>
                     <code>{record.ttl || 'auto'}</code>
-                  </div>
-                  <div className="rounded bg-muted/30 px-3 py-2 md:col-span-2">
-                    <p className="text-muted-foreground mb-1">FQDN (referência)</p>
-                    <code className="break-all opacity-75">{record.name}</code>
                   </div>
                 </div>
               </div>
