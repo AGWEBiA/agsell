@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { FormSettings } from '@/components/forms/FormTemplates';
 import { DEFAULT_SETTINGS } from '@/components/forms/FormTemplates';
 
@@ -212,6 +213,18 @@ export default function FormView() {
     return () => observer.disconnect();
   }, [formId]);
 
+  // Transparent body when opacity < 100
+  React.useEffect(() => {
+    if (opacity < 100) {
+      document.documentElement.style.backgroundColor = 'transparent';
+      document.body.style.backgroundColor = 'transparent';
+    }
+    return () => {
+      document.documentElement.style.backgroundColor = '';
+      document.body.style.backgroundColor = '';
+    };
+  }, [opacity]);
+
   // Inject custom CSS
   React.useEffect(() => {
     if (!s.customCss) return;
@@ -293,7 +306,7 @@ export default function FormView() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={containerStyle}>
-        <Card className="w-full max-w-lg" style={cardStyle}>
+        <Card className={cn("w-full max-w-lg", opacity < 100 && "bg-transparent")} style={cardStyle}>
           <CardContent className="pt-6 space-y-4">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
@@ -308,7 +321,7 @@ export default function FormView() {
   if (error || !form) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={containerStyle}>
-        <Card className="w-full max-w-lg" style={cardStyle}>
+        <Card className={cn("w-full max-w-lg", opacity < 100 && "bg-transparent")} style={cardStyle}>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">Formulário não encontrado ou desativado.</p>
           </CardContent>
@@ -320,7 +333,7 @@ export default function FormView() {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={containerStyle}>
-        <Card className="w-full max-w-lg" style={cardStyle}>
+        <Card className={cn("w-full max-w-lg", opacity < 100 && "bg-transparent")} style={cardStyle}>
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-16 w-16 mx-auto" style={{ color: s.primaryColor || '#22c55e' }} />
             <h2 className="text-2xl font-bold" style={s.textColor ? { color: s.textColor } : undefined}>
@@ -369,7 +382,7 @@ export default function FormView() {
 
   return (
     <div className="agsell-form min-h-screen flex items-center justify-center p-4" style={containerStyle}>
-      <Card className="w-full max-w-lg" style={cardStyle}>
+      <Card className={cn("w-full max-w-lg", opacity < 100 && "bg-transparent")} style={cardStyle}>
         <CardHeader>
           <CardTitle style={s.textColor ? { color: s.textColor } : undefined}>{form.name}</CardTitle>
           {form.description && <CardDescription>{form.description}</CardDescription>}
