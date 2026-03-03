@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
       await delay(700);
 
       // --- Register inbound subdomain for receiving emails ---
-      const inboundSubdomain = `inbound.${domain}`;
+      const inboundSubdomain = `mail.${domain}`;
       const foundInbound = await findDomainOnResend(resendApiKey, inboundSubdomain);
       if (foundInbound) {
         inboundDomainId = foundInbound.id;
@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
     };
 
     if (providerDomainId) updateData.provider_domain_id = providerDomainId;
-    if (inboundDomainId) updateData.inbound_subdomain = `inbound.${domain}`;
+    if (inboundDomainId) updateData.inbound_subdomain = `mail.${domain}`;
 
     // Merge main + inbound records for display
     const allRecords = [...resendRecords];
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
     if (allRecords.length > 0) {
       updateData.dns_records = allRecords.map((r: any) => {
         const isInbound = r._source === 'inbound';
-        const zone = isInbound ? `inbound.${domain}` : domain;
+        const zone = isInbound ? `mail.${domain}` : domain;
         const rawName = r.name || r.record || '@';
         const normalizedName = toFqdn(rawName, zone);
 
@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
           priority: r.priority || null,
           purpose: r.type === 'MX' ? 'MX (Inbound)' : (rawName?.includes('_domainkey') ? 'DKIM' : (rawName?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
           description: r.type === 'MX'
-            ? `Registro MX para recebimento via inbound.${domain}`
+            ? `Registro MX para recebimento via mail.${domain}`
             : rawName?.includes('_domainkey') ? `DKIM${isInbound ? ' (inbound)' : ''}`
             : rawName?.includes('_dmarc') ? `DMARC${isInbound ? ' (inbound)' : ''}`
             : `SPF${isInbound ? ' (inbound)' : ''}`,
@@ -351,7 +351,7 @@ Deno.serve(async (req) => {
       status: newStatus, resend_status: resendStatus,
       resend_domain_id: providerDomainId,
       inbound_domain_id: inboundDomainId,
-      inbound_subdomain: `inbound.${domain}`,
+      inbound_subdomain: `mail.${domain}`,
       resend_records: resendRecords, inbound_records: inboundRecords,
       spf_records: txtRecords.filter((r) => r.includes("spf")),
       dkim_records: dkimRecords, dmarc_records: dmarcRecords, mx_records: mxRecords,
