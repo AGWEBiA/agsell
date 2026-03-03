@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -24,9 +24,37 @@ interface FormField {
 
 export default function FormView() {
   const { formId } = useParams<{ formId: string }>();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Style params from URL
+  const primaryColor = searchParams.get('primary') ? `#${searchParams.get('primary')}` : undefined;
+  const bgColor = searchParams.get('bg') ? `#${searchParams.get('bg')}` : undefined;
+  const textColor = searchParams.get('text') ? `#${searchParams.get('text')}` : undefined;
+  const borderRadius = searchParams.get('radius') || undefined;
+  const fontFamily = searchParams.get('font') || undefined;
+
+  const customStyles: React.CSSProperties = {
+    ...(bgColor && { backgroundColor: bgColor }),
+    ...(textColor && { color: textColor }),
+    ...(fontFamily && { fontFamily }),
+  };
+
+  const buttonStyles: React.CSSProperties = {
+    ...(primaryColor && { backgroundColor: primaryColor, borderColor: primaryColor }),
+  };
+
+  const inputStyles: React.CSSProperties = {
+    ...(borderRadius && { borderRadius: `${borderRadius}px` }),
+    ...(textColor && { color: textColor }),
+  };
+
+  const cardStyles: React.CSSProperties = {
+    ...(bgColor && { backgroundColor: bgColor }),
+    ...(borderRadius && { borderRadius: `${borderRadius}px` }),
+  };
 
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['public-form', formId],
@@ -50,7 +78,6 @@ export default function FormView() {
     e.preventDefault();
     if (!formId) return;
 
-    // Validate required fields
     for (const field of fields) {
       if (field.required && !formData[field.name]?.trim()) {
         toast.error(`O campo "${field.label}" é obrigatório.`);
@@ -66,6 +93,11 @@ export default function FormView() {
         .select()
         .single();
       if (error) throw error;
+
+      // Post message for auto-resize in parent
+      try {
+        window.parent.postMessage({ type: 'agsell-form-height', formId, height: document.body.scrollHeight }, '*');
+      } catch {}
 
       // Fire form_submitted automations
       try {
@@ -97,10 +129,23 @@ export default function FormView() {
     }
   };
 
+  // Send height to parent for auto-resize
+  React.useEffect(() => {
+    const sendHeight = () => {
+      try {
+        window.parent.postMessage({ type: 'agsell-form-height', formId, height: document.body.scrollHeight }, '*');
+      } catch {}
+    };
+    sendHeight();
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+    return () => observer.disconnect();
+  }, [formId]);
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-lg">
+      <div className="min-h-screen flex items-center justify-center p-4" style={customStyles}>
+        <Card className="w-full max-w-lg" style={cardStyles}>
           <CardContent className="pt-6 space-y-4">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
@@ -114,8 +159,8 @@ export default function FormView() {
 
   if (error || !form) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-lg">
+      <div className="min-h-screen flex items-center justify-center p-4" style={customStyles}>
+        <Card className="w-full max-w-lg" style={cardStyles}>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">Formulário não encontrado ou desativado.</p>
           </CardContent>
@@ -126,11 +171,11 @@ export default function FormView() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-lg">
+      <div className="min-h-screen flex items-center justify-center p-4" style={customStyles}>
+        <Card className="w-full max-w-lg" style={cardStyles}>
           <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-foreground">Enviado com sucesso!</h2>
+            <CheckCircle className="h-16 w-16 mx-auto" style={{ color: primaryColor || '#22c55e' }} />
+            <h2 className="text-2xl font-bold" style={textColor ? { color: textColor } : undefined}>Enviado com sucesso!</h2>
             <p className="text-muted-foreground">Obrigado por preencher o formulário.</p>
           </CardContent>
         </Card>
@@ -144,11 +189,11 @@ export default function FormView() {
 
     switch (field.type) {
       case 'textarea':
-        return <Textarea placeholder={field.placeholder || ''} value={value} onChange={(e) => onChange(e.target.value)} />;
+        return <Textarea placeholder={field.placeholder || ''} value={value} onChange={(e) => onChange(e.target.value)} style={inputStyles} />;
       case 'select':
         return (
           <Select value={value} onValueChange={onChange}>
-            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+            <SelectTrigger style={inputStyles}><SelectValue placeholder="Selecione..." /></SelectTrigger>
             <SelectContent>
               {(field.options || []).map(opt => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
@@ -164,22 +209,22 @@ export default function FormView() {
           </div>
         );
       default:
-        return <Input type={field.type || 'text'} placeholder={field.placeholder || ''} value={value} onChange={(e) => onChange(e.target.value)} />;
+        return <Input type={field.type || 'text'} placeholder={field.placeholder || ''} value={value} onChange={(e) => onChange(e.target.value)} style={inputStyles} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-lg">
+    <div className="min-h-screen flex items-center justify-center p-4" style={customStyles}>
+      <Card className="w-full max-w-lg" style={cardStyles}>
         <CardHeader>
-          <CardTitle>{form.name}</CardTitle>
+          <CardTitle style={textColor ? { color: textColor } : undefined}>{form.name}</CardTitle>
           {form.description && <CardDescription>{form.description}</CardDescription>}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {fields.map((field) => (
               <div key={field.name} className="space-y-2">
-                <Label>
+                <Label style={textColor ? { color: textColor } : undefined}>
                   {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
                 </Label>
@@ -189,7 +234,15 @@ export default function FormView() {
             {fields.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Este formulário não possui campos configurados.</p>
             )}
-            <Button type="submit" className="w-full" disabled={submitting || fields.length === 0}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={submitting || fields.length === 0}
+              style={{
+                ...buttonStyles,
+                ...(borderRadius && { borderRadius: `${borderRadius}px` }),
+              }}
+            >
               {submitting ? 'Enviando...' : 'Enviar'}
             </Button>
           </form>

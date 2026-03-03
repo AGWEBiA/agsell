@@ -121,6 +121,13 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
+    // Check if this is a public form submission (no API key needed)
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    if (pathParts[1] === "forms" && pathParts[2] && pathParts[3] === "submit" && req.method === "POST") {
+      return await handlePublicFormSubmit(supabase, pathParts[2], req);
+    }
+
     // Extract API key from header
     const apiKey = req.headers.get("x-api-key");
     if (!apiKey) {
@@ -486,4 +493,90 @@ async function handleTags(supabase: any, method: string, orgId: string, id: stri
   }
 
   return { error: "Method not allowed" };
+}
+
+// --- Public Form Submission (no API key required) ---
+// deno-lint-ignore no-explicit-any
+async function handlePublicFormSubmit(supabase: any, formId: string, req: Request) {
+  try {
+    // Validate form exists and is active
+    const { data: form, error: formError } = await supabase
+      .from("forms")
+      .select("id, is_active, organization_id")
+      .eq("id", formId)
+      .single();
+
+    if (formError || !form) {
+      return new Response(
+        JSON.stringify({ error: "Form not found", code: "FORM_NOT_FOUND" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!form.is_active) {
+      return new Response(
+        JSON.stringify({ error: "Form is not active", code: "FORM_INACTIVE" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    if (!body || typeof body !== "object") {
+      return new Response(
+        JSON.stringify({ error: "Invalid request body", code: "INVALID_BODY" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Insert submission
+    const { data: submission, error: subError } = await supabase
+      .from("form_submissions")
+      .insert({ form_id: formId, data: body })
+      .select()
+      .single();
+
+    if (subError) {
+      return new Response(
+        JSON.stringify({ error: "Failed to submit form", code: "SUBMIT_ERROR" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Update submissions count
+    await supabase.rpc("increment_form_submissions", { form_id_param: formId }).catch(() => {
+      // Fallback: direct update
+      supabase.from("forms").update({ submissions_count: form.submissions_count + 1 }).eq("id", formId);
+    });
+
+    // Trigger automations
+    try {
+      const { data: automations } = await supabase
+        .from("automations")
+        .select("id")
+        .eq("organization_id", form.organization_id)
+        .eq("trigger_type", "form_submitted")
+        .eq("is_active", true);
+
+      if (automations?.length) {
+        await Promise.allSettled(
+          automations.map((a: { id: string }) =>
+            supabase.functions.invoke("process-automation", {
+              body: { automation_id: a.id, contact_id: submission?.contact_id ?? null, trigger_event: "form_submitted" },
+            })
+          )
+        );
+      }
+    } catch {}
+
+    return new Response(
+      JSON.stringify({ success: true, submission_id: submission.id }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Form submit error:", error);
+    return new Response(
+      JSON.stringify({ error: "Internal server error", code: "INTERNAL_ERROR" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 }

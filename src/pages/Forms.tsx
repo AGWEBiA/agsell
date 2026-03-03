@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Plus, FileText, Eye, Users, Percent, MoreHorizontal, ExternalLink, Copy, Trash2, Pencil, List,
+  Plus, FileText, Eye, Users, Percent, MoreHorizontal, ExternalLink, Copy, Trash2, Pencil, List, Code,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import type { Json } from '@/integrations/supabase/types';
 import { FormFieldEditor, type FormField } from '@/components/forms/FormFieldEditor';
+import { FormIntegrationDialog } from '@/components/forms/FormIntegrationDialog';
 
 export default function Forms() {
   const { forms, isLoading, createForm, updateForm, toggleForm, deleteForm, getFormSubmissions } = useForms();
@@ -41,6 +42,7 @@ export default function Forms() {
   // Submissions state
   const [submissionsData, setSubmissionsData] = useState<{ formName: string; items: any[] } | null>(null);
   const [loadingSubs, setLoadingSubs] = useState(false);
+  const [integrationForm, setIntegrationForm] = useState<{ id: string; name: string } | null>(null);
 
   const handleCreate = () => {
     if (!newForm.name) return;
@@ -276,6 +278,9 @@ export default function Forms() {
                             <DropdownMenuItem onSelect={() => copyEmbedCode(form.id)}>
                               <Copy className="mr-2 h-4 w-4" />Copiar embed
                             </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIntegrationForm({ id: form.id, name: form.name }); }}>
+                              <Code className="mr-2 h-4 w-4" />Integração avançada
+                            </DropdownMenuItem>
                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); const formFields = Array.isArray(form.fields) ? (form.fields as unknown as FormField[]) : []; setEditingForm({ id: form.id, name: form.name, description: form.description || '', fields: formFields }); }}>
                               <Pencil className="mr-2 h-4 w-4" />Editar
                             </DropdownMenuItem>
@@ -356,6 +361,15 @@ export default function Forms() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Integration Dialog */}
+      {integrationForm && (
+        <FormIntegrationDialog
+          open={!!integrationForm}
+          onOpenChange={(open) => !open && setIntegrationForm(null)}
+          formId={integrationForm.id}
+          formName={integrationForm.name}
+        />
+      )}
     </div>
   );
 }
