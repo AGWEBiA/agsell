@@ -377,8 +377,8 @@ export default function DomainCard({ domain, onVerify, onDelete, isVerifying }: 
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Nome</p>
                             <div className="flex items-center gap-2 bg-muted/50 rounded px-3 py-1.5">
-                              <code className="text-xs flex-1 break-all">inbound.{domain.domain}</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`inbound.${domain.domain}`)}>
+                              <code className="text-xs flex-1 break-all">mail.{domain.domain}</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(`mail.${domain.domain}`)}>
                                 <Copy className="h-3 w-3" />
                               </Button>
                             </div>

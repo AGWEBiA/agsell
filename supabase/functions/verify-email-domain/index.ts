@@ -315,12 +315,12 @@ Deno.serve(async (req) => {
           zone,
           ttl: r.ttl || 'auto',
           priority: r.priority || null,
-          purpose: r.type === 'MX' ? 'MX (Inbound)' : (rawName?.includes('_domainkey') ? 'DKIM' : (rawName?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
+          purpose: r.type === 'MX' ? 'MX (Mail)' : (rawName?.includes('_domainkey') ? 'DKIM' : (rawName?.includes('_dmarc') ? 'DMARC' : (r.type === 'TXT' ? 'SPF' : r.type))),
           description: r.type === 'MX'
             ? `Registro MX para recebimento via mail.${domain}`
-            : rawName?.includes('_domainkey') ? `DKIM${isInbound ? ' (inbound)' : ''}`
-            : rawName?.includes('_dmarc') ? `DMARC${isInbound ? ' (inbound)' : ''}`
-            : `SPF${isInbound ? ' (inbound)' : ''}`,
+            : rawName?.includes('_domainkey') ? `DKIM${isInbound ? ' (mail)' : ''}`
+            : rawName?.includes('_dmarc') ? `DMARC${isInbound ? ' (mail)' : ''}`
+            : `SPF${isInbound ? ' (mail)' : ''}`,
           status: r.status || 'pending',
           is_inbound: isInbound,
         };
