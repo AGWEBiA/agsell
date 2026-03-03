@@ -53,6 +53,29 @@ async function getResendApiKey(supabase: any): Promise<string | null> {
   return config?.api_key || null;
 }
 
+async function enableReceiving(apiKey: string, domainId: string): Promise<void> {
+  try {
+    const response = await fetch(`https://api.resend.com/domains/${domainId}`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        capabilities: { sending: "enabled", receiving: "enabled" },
+      }),
+    });
+    if (response.ok) {
+      console.log(`Receiving enabled for domain ${domainId}`);
+    } else {
+      const err = await response.text();
+      console.error(`Failed to enable receiving for domain ${domainId}:`, err);
+    }
+  } catch (e) {
+    console.error("Error enabling receiving:", e);
+  }
+}
+
 async function registerDomainOnResend(apiKey: string, domain: string): Promise<{ id: string; records: any[] } | null> {
   try {
     const response = await fetch("https://api.resend.com/domains", {
@@ -61,19 +84,23 @@ async function registerDomainOnResend(apiKey: string, domain: string): Promise<{
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: domain }),
+      body: JSON.stringify({ name: domain, region: "sa-east-1" }),
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      // Domain might already exist - try to find it
       if (data?.message?.includes("already") || response.status === 409 || response.status === 422) {
         console.log("Domain may already exist on Resend, trying to find it...");
         return await findDomainOnResend(apiKey, domain);
       }
       console.error("Failed to register domain on Resend:", data);
       return null;
+    }
+
+    // Enable receiving right after creation
+    if (data.id) {
+      await enableReceiving(apiKey, data.id);
     }
 
     return { id: data.id, records: data.records || [] };
@@ -94,6 +121,10 @@ async function findDomainOnResend(apiKey: string, domain: string): Promise<{ id:
     
     const found = data.data?.find((d: any) => d.name === domain);
     if (found) {
+      // Enable receiving if not already enabled
+      if (found.receiving !== "enabled") {
+        await enableReceiving(apiKey, found.id);
+      }
       return { id: found.id, records: found.records || [] };
     }
     return null;
@@ -214,6 +245,8 @@ Deno.serve(async (req) => {
       }
 
       if (providerDomainId) {
+        // Ensure receiving is enabled
+        await enableReceiving(resendApiKey, providerDomainId);
         // Trigger verification on Resend
         await verifyDomainOnResend(resendApiKey, providerDomainId);
         // Check status
