@@ -1185,6 +1185,7 @@ export type Database = {
           last_verified_at: string | null
           mx_verified: boolean | null
           organization_id: string
+          provider_domain_id: string | null
           spf_verified: boolean | null
           status: string
           updated_at: string
@@ -1204,6 +1205,7 @@ export type Database = {
           last_verified_at?: string | null
           mx_verified?: boolean | null
           organization_id: string
+          provider_domain_id?: string | null
           spf_verified?: boolean | null
           status?: string
           updated_at?: string
@@ -1223,6 +1225,7 @@ export type Database = {
           last_verified_at?: string | null
           mx_verified?: boolean | null
           organization_id?: string
+          provider_domain_id?: string | null
           spf_verified?: boolean | null
           status?: string
           updated_at?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.email_domains ADD COLUMN IF NOT EXISTS provider_domain_id text;
