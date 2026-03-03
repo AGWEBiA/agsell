@@ -51,6 +51,24 @@ export function useInbox() {
   const createConversation = useMutation({
     mutationFn: async (conversation: { contact_id: string; channel: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
+
+      // Check for existing conversation with same contact + channel to avoid duplicates
+      const { data: existing } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('contact_id', conversation.contact_id)
+        .eq('channel', conversation.channel)
+        .eq('organization_id', currentOrganization?.id || '')
+        .maybeSingle();
+
+      if (existing) {
+        // Reopen existing conversation instead of creating duplicate
+        if (existing.status === 'resolved' || existing.status === 'closed') {
+          await supabase.from('conversations').update({ status: 'open', last_message_at: new Date().toISOString() }).eq('id', existing.id);
+        }
+        return existing;
+      }
+
       const { data, error } = await supabase
         .from('conversations')
         .insert({
