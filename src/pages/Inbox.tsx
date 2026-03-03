@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Search,
   Send,
@@ -21,6 +22,11 @@ import {
   Plus,
   Bot,
   UserCheck,
+  Image as ImageIcon,
+  FileAudio,
+  File as FileIcon,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { useInbox } from '@/hooks/useInbox';
 import { useContacts, type Contact } from '@/hooks/useContacts';
@@ -28,6 +34,10 @@ import { useAssignmentRules } from '@/hooks/useAssignmentRules';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { SendIAButton } from '@/components/inbox/SendIAButton';
 import { AudioTranscription } from '@/components/inbox/AudioTranscription';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 import {
   Dialog,
   DialogContent,
@@ -68,6 +78,10 @@ export default function Inbox() {
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{ file: File; preview?: string; type: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newConversation, setNewConversation] = useState({
     contact_id: '',
     channel: 'email',
@@ -87,14 +101,86 @@ export default function Inbox() {
     }
   }, [selectedId]);
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim() || !selectedConversation) return;
+  const handleEmojiSelect = (emoji: any) => {
+    setMessageInput(prev => prev + emoji.native);
+    setEmojiOpen(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('Arquivo muito grande. Máximo: 10MB');
+      return;
+    }
+
+    let type = 'file';
+    if (file.type.startsWith('image/')) type = 'image';
+    else if (file.type.startsWith('audio/')) type = 'audio';
+
+    const preview = type === 'image' ? URL.createObjectURL(file) : undefined;
+    setPendingFile({ file, preview, type });
+    
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const uploadFile = async (file: File): Promise<string | null> => {
+    const ext = file.name.split('.').pop();
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    
+    const { error } = await supabase.storage
+      .from('inbox-attachments')
+      .upload(path, file);
+    
+    if (error) {
+      toast.error('Erro ao fazer upload: ' + error.message);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('inbox-attachments')
+      .getPublicUrl(path);
+
+    return urlData.publicUrl;
+  };
+
+  const handleSendMessage = async () => {
+    if ((!messageInput.trim() && !pendingFile) || !selectedConversation) return;
+    
+    setIsUploading(!!pendingFile);
+
+    let mediaUrl: string | null = null;
+    let messageType = 'text';
+    let mediaMimeType: string | null = null;
+    let fileName: string | null = null;
+
+    if (pendingFile) {
+      mediaUrl = await uploadFile(pendingFile.file);
+      if (!mediaUrl) {
+        setIsUploading(false);
+        return;
+      }
+      messageType = pendingFile.type;
+      mediaMimeType = pendingFile.file.type;
+      fileName = pendingFile.file.name;
+    }
+
     sendMessage.mutate({
       conversation_id: selectedConversation.id,
-      content: messageInput,
+      content: messageInput || (pendingFile ? `📎 ${pendingFile.file.name}` : ''),
       sender_type: 'user',
-    });
+      message_type: messageType,
+      media_url: mediaUrl,
+      media_mime_type: mediaMimeType,
+      file_name: fileName,
+    } as any);
+    
     setMessageInput('');
+    setPendingFile(null);
+    setIsUploading(false);
   };
 
   const handleCreateConversation = () => {
@@ -358,40 +444,108 @@ export default function Inbox() {
               <CardContent className="flex-1 overflow-hidden p-0">
                 <ScrollArea className="h-[calc(100vh-22rem)] p-4">
                   <div className="space-y-4">
-                    {selectedConversation.messages?.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
+                    {selectedConversation.messages?.map((message: any) => {
+                      const msgType = message.message_type || 'text';
+                      
+                      return (
                         <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender_type === 'user'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
+                          key={message.id}
+                          className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                          <p className="text-sm">{message.content}</p>
                           <div
-                            className={`flex items-center justify-end gap-1 mt-1 text-xs ${
-                              message.sender_type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                            className={`max-w-[70%] rounded-lg p-3 ${
+                              message.sender_type === 'user'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted'
                             }`}
                           >
-                            <span>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                            {message.sender_type === 'user' && (
-                              <CheckCheck className="h-3 w-3" />
+                            {/* Image */}
+                            {msgType === 'image' && message.media_url && (
+                              <a href={message.media_url} target="_blank" rel="noopener noreferrer">
+                                <img
+                                  src={message.media_url}
+                                  alt={message.file_name || 'Imagem'}
+                                  className="rounded-md max-w-full max-h-60 object-cover mb-1"
+                                  loading="lazy"
+                                />
+                              </a>
                             )}
+                            {/* Audio */}
+                            {msgType === 'audio' && message.media_url && (
+                              <audio controls className="max-w-full mb-1" preload="metadata">
+                                <source src={message.media_url} type={message.media_mime_type || 'audio/mpeg'} />
+                                Seu navegador não suporta áudio.
+                              </audio>
+                            )}
+                            {/* File */}
+                            {msgType === 'file' && message.media_url && (
+                              <a
+                                href={message.media_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 rounded border border-current/20 hover:opacity-80 transition-opacity mb-1"
+                              >
+                                <FileIcon className="h-5 w-5 shrink-0" />
+                                <span className="text-sm truncate">{message.file_name || 'Arquivo'}</span>
+                              </a>
+                            )}
+                            {/* Text content (always show if present, except pure file placeholder) */}
+                            {message.content && !(msgType !== 'text' && message.content.startsWith('📎')) && (
+                              <p className="text-sm">{message.content}</p>
+                            )}
+                            <div
+                              className={`flex items-center justify-end gap-1 mt-1 text-xs ${
+                                message.sender_type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                              }`}
+                            >
+                              <span>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                              {message.sender_type === 'user' && (
+                                <CheckCheck className="h-3 w-3" />
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </CardContent>
 
+              {/* Pending file preview */}
+              {pendingFile && (
+                <div className="px-4 pt-3 border-t">
+                  <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
+                    {pendingFile.type === 'image' && pendingFile.preview ? (
+                      <img src={pendingFile.preview} alt="Preview" className="h-12 w-12 rounded object-cover" />
+                    ) : pendingFile.type === 'audio' ? (
+                      <FileAudio className="h-8 w-8 text-muted-foreground" />
+                    ) : (
+                      <FileIcon className="h-8 w-8 text-muted-foreground" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{pendingFile.file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(pendingFile.file.size / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setPendingFile(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Message Input */}
               <div className="p-4 border-t">
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                    onChange={handleFileSelect}
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
                     <Paperclip className="h-4 w-4" />
                   </Button>
                   <AudioTranscription onTranscription={(text) => setMessageInput(prev => prev + text)} />
@@ -400,11 +554,25 @@ export default function Inbox() {
                     className="flex-1"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   />
-                  <Button variant="ghost" size="icon">
-                    <Smile className="h-4 w-4" />
-                  </Button>
+                  <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Smile className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" align="end" className="w-auto p-0 border-none shadow-xl">
+                      <Picker
+                        data={data}
+                        onEmojiSelect={handleEmojiSelect}
+                        theme="auto"
+                        locale="pt"
+                        previewPosition="none"
+                        skinTonePosition="none"
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <SendIAButton
                     conversationId={selectedConversation.id}
                     contactName={`${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`}
@@ -417,8 +585,8 @@ export default function Inbox() {
                       });
                     }}
                   />
-                  <Button size="icon" onClick={handleSendMessage}>
-                    <Send className="h-4 w-4" />
+                  <Button size="icon" onClick={handleSendMessage} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>

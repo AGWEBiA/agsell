@@ -51,7 +51,11 @@ export function useInbox() {
             content,
             sender_type,
             is_read,
-            created_at
+            created_at,
+            message_type,
+            media_url,
+            media_mime_type,
+            file_name
           )
         `)
         .eq('user_id', user.id)
