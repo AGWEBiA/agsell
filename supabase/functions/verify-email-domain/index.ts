@@ -38,6 +38,10 @@ function checkMX(records: string[]): boolean {
   return records.length > 0;
 }
 
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // --- Resend API helpers ---
 async function getResendApiKey(supabase: any): Promise<string | null> {
   const { data } = await supabase
@@ -62,7 +66,13 @@ async function registerDomainOnResend(apiKey: string, domain: string): Promise<{
     const data = await response.json();
     if (!response.ok) {
       if (data?.message?.includes("already") || response.status === 409 || response.status === 422) {
+        await delay(600);
         return await findDomainOnResend(apiKey, domain);
+      }
+      if (response.status === 429) {
+        console.warn(`Rate limited registering ${domain}, retrying after delay...`);
+        await delay(1500);
+        return await registerDomainOnResend(apiKey, domain);
       }
       console.error("Failed to register domain on Resend:", data);
       return null;
@@ -185,13 +195,24 @@ Deno.serve(async (req) => {
     if (resendApiKey) {
       // --- Register main sending domain ---
       if (!providerDomainId) {
-        const result = await registerDomainOnResend(resendApiKey, domain);
-        if (result) {
-          providerDomainId = result.id;
-          resendRecords = result.records;
-          console.log(`Domain ${domain} registered on Resend: ${providerDomainId}`);
+        // First try to find if it already exists
+        const existing = await findDomainOnResend(resendApiKey, domain);
+        if (existing) {
+          providerDomainId = existing.id;
+          resendRecords = existing.records;
+          console.log(`Domain ${domain} already exists on Resend: ${providerDomainId}`);
+        } else {
+          await delay(600);
+          const result = await registerDomainOnResend(resendApiKey, domain);
+          if (result) {
+            providerDomainId = result.id;
+            resendRecords = result.records;
+            console.log(`Domain ${domain} registered on Resend: ${providerDomainId}`);
+          }
         }
       }
+
+      await delay(600);
 
       // --- Register inbound subdomain for receiving emails ---
       const inboundSubdomain = `inbound.${domain}`;
@@ -200,6 +221,7 @@ Deno.serve(async (req) => {
         inboundDomainId = foundInbound.id;
         inboundRecords = foundInbound.records;
       } else {
+        await delay(600);
         const inboundResult = await registerDomainOnResend(resendApiKey, inboundSubdomain);
         if (inboundResult) {
           inboundDomainId = inboundResult.id;
@@ -210,13 +232,17 @@ Deno.serve(async (req) => {
 
       // Enable receiving on inbound subdomain
       if (inboundDomainId) {
+        await delay(600);
         await enableReceiving(resendApiKey, inboundDomainId);
+        await delay(600);
         await verifyDomainOnResend(resendApiKey, inboundDomainId);
       }
 
       // Verify main domain and get latest records
       if (providerDomainId) {
+        await delay(600);
         await verifyDomainOnResend(resendApiKey, providerDomainId);
+        await delay(600);
         const details = await getDomainDetails(resendApiKey, providerDomainId);
         resendStatus = details.status;
         if (details.records.length > 0) resendRecords = details.records;

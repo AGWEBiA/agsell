@@ -53,10 +53,12 @@ export function useEmailDomains() {
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['email_domains', orgId] });
-      toast.success('Domínio adicionado! Registrando no provedor e buscando registros DNS...');
-      // Auto-trigger verification to register on Resend and get real DNS records
+      toast.success('Domínio adicionado! Registrando no provedor...');
+      // Delay the auto-verification to avoid Resend rate limits
       if (data?.id) {
-        verifyDomain.mutate(data.id);
+        setTimeout(() => {
+          verifyDomain.mutate(data.id);
+        }, 2000);
       }
     },
     onError: (error: any) => {
