@@ -20,7 +20,7 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs';
 import {
-  Plus, Send, Eye, MousePointerClick, MoreHorizontal, Trash2, Edit, Users, Filter, Tag, GitBranch,
+  Plus, Send, Eye, MousePointerClick, MoreHorizontal, Trash2, Edit, Users, Filter, Tag, GitBranch, Copy,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -506,7 +506,16 @@ export default function Email() {
                                   <Send className="mr-2 h-4 w-4" />Enviar Agora
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem>Duplicar</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                createCampaign.mutate({
+                                  name: `${campaign.name} (cópia)`,
+                                  subject: campaign.subject,
+                                  content: campaign.content,
+                                  status: 'draft',
+                                });
+                              }}>
+                                <Copy className="mr-2 h-4 w-4" />Duplicar
+                              </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive"
                                 onClick={() => deleteCampaign.mutate(campaign.id)}>
                                 <Trash2 className="mr-2 h-4 w-4" />Excluir
