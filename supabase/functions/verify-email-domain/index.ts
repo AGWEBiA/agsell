@@ -80,7 +80,7 @@ async function registerDomainOnResend(
   apiKey: string,
   domain: string,
   attempt = 1
-): Promise<{ id: string; records: any[]; status?: string } | null> {
+): Promise<{ id: string; records: any[]; status?: string; conflict?: boolean } | null> {
   try {
     console.log(`Registering domain ${domain} on Resend (attempt ${attempt})...`);
     const response = await fetch("https://api.resend.com/domains", {
@@ -92,9 +92,13 @@ async function registerDomainOnResend(
     console.log(`Resend register response for ${domain}: status=${response.status}, body=${JSON.stringify(data)}`);
 
     if (!response.ok) {
-      if (data?.message?.includes("already") || data?.name === "validation_error" || response.status === 409 || response.status === 422) {
+      if (data?.message?.includes("already") || data?.name === "validation_error" || response.status === 409 || response.status === 422 || response.status === 403) {
         await delay(700);
-        return await findDomainOnResend(apiKey, domain);
+        const found = await findDomainOnResend(apiKey, domain);
+        if (found) return found;
+        // Domain registered on another Resend account - return conflict marker
+        console.warn(`Domain ${domain} is registered on another Resend account (status ${response.status}).`);
+        return { id: '', records: [], status: 'conflict', conflict: true };
       }
 
       if (response.status === 429 && attempt < 6) {
@@ -222,6 +226,7 @@ Deno.serve(async (req) => {
     let resendRecords: any[] = [];
     let inboundDomainId: string | null = null;
     let inboundRecords: any[] = [];
+    let domainConflict = false;
 
     if (resendApiKey) {
       // --- Register or recover main sending domain (mandatory) ---
@@ -236,15 +241,20 @@ Deno.serve(async (req) => {
           await delay(700);
           const result = await registerDomainOnResend(resendApiKey, domain);
           if (result) {
-            providerDomainId = result.id;
-            resendRecords = result.records;
-            resendStatus = result.status || null;
-            console.log(`Domain ${domain} registered on Resend: ${providerDomainId}`);
+            if (result.conflict) {
+              domainConflict = true;
+              console.warn(`Domain ${domain} is registered on another Resend account. User must remove it there first.`);
+            } else {
+              providerDomainId = result.id;
+              resendRecords = result.records;
+              resendStatus = result.status || null;
+              console.log(`Domain ${domain} registered on Resend: ${providerDomainId}`);
+            }
           }
         }
       }
 
-      if (!providerDomainId) {
+      if (!providerDomainId && !domainConflict) {
         console.warn(`Could not register/find root domain ${domain} on Resend. DNS checks will still proceed.`);
       }
 
@@ -349,7 +359,11 @@ Deno.serve(async (req) => {
       if (!spfVerified) missing.push("SPF");
       if (!dkimVerified) missing.push("DKIM");
       if (!dmarcVerified) missing.push("DMARC");
-      if (resendApiKey && resendStatus && resendStatus !== "verified") missing.push(`Resend (${resendStatus})`);
+      if (domainConflict) {
+        missing.push("Resend (domínio registrado em outra conta)");
+      } else if (resendApiKey && resendStatus && resendStatus !== "verified") {
+        missing.push(`Resend (${resendStatus})`);
+      }
       updateData.verification_error = missing.length > 0 ? `Pendente: ${missing.join(", ")}` : null;
     } else {
       updateData.verification_error = null;
@@ -360,8 +374,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       spf_verified: spfVerified, dkim_verified: dkimVerified,
       dmarc_verified: dmarcVerified, mx_verified: mxVerified,
-      status: newStatus, resend_status: resendStatus,
+      status: newStatus, resend_status: domainConflict ? 'conflict' : resendStatus,
       resend_domain_id: providerDomainId,
+      domain_conflict: domainConflict,
       inbound_domain_id: inboundDomainId,
       inbound_subdomain: `mail.${domain}`,
       resend_records: resendRecords, inbound_records: inboundRecords,
