@@ -63,15 +63,15 @@ function HeroSection() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground mb-8">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Sem cartão de crédito</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Teste grátis</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Setup em minutos</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Suporte dedicado</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Cancele quando quiser</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
             <Link to="/pricing">
               <Button size="lg" className="h-12 sm:h-14 px-8 sm:px-10 text-sm sm:text-base font-semibold rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all w-full sm:w-auto">
-                Começar grátis agora
+                Começar agora
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
@@ -142,7 +142,7 @@ function ToolReplacementSection() {
             </div>
             <p className="text-sm text-muted-foreground mb-2">Tudo isso junto + funcionalidades exclusivas</p>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-4xl sm:text-5xl font-bold text-primary">A partir de R$ 0</span>
+              <span className="text-4xl sm:text-5xl font-bold text-primary">A partir de R$ 197</span>
               <span className="text-muted-foreground">/mês</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
@@ -560,7 +560,7 @@ function PlansSection() {
           Escolha o plano ideal
         </h2>
         <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-8">
-          Comece grátis e escale conforme sua operação cresce.
+          Comece a transformar seus resultados hoje mesmo.
         </p>
 
         <div className="inline-flex items-center rounded-full border border-border/60 bg-card p-1 mb-10">
@@ -680,7 +680,7 @@ function PlansSection() {
                     variant={isPro ? 'default' : 'outline'}
                     onClick={() => handleSelectPlan(plan)}
                   >
-                    {plan.price_monthly === 0 ? 'Começar grátis' : 'Assinar'}
+                    {plan.price_monthly === 0 ? 'Começar' : 'Assinar'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardFooter>
@@ -860,7 +860,7 @@ function CTASection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/pricing">
               <Button size="lg" className="h-12 sm:h-14 px-8 sm:px-10 text-sm sm:text-base font-semibold rounded-full w-full sm:w-auto">
-                Começar grátis agora
+                Começar agora
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
@@ -895,7 +895,7 @@ export default function LandingPage() {
               <Button variant="ghost" size="sm" className="text-muted-foreground text-xs sm:text-sm">Entrar</Button>
             </Link>
             <Link to="/pricing">
-              <Button size="sm" className="rounded-full px-4 sm:px-5 text-xs sm:text-sm">Começar grátis</Button>
+              <Button size="sm" className="rounded-full px-4 sm:px-5 text-xs sm:text-sm">Começar agora</Button>
             </Link>
           </div>
         </div>
