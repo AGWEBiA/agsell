@@ -89,7 +89,7 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter }: {
     return (
       <div className="flex flex-col items-center">
         <div
-          className={cn('relative w-[340px] rounded-2xl p-[2px] cursor-pointer group', `bg-gradient-to-r ${info.color}`)}
+          className={cn('relative w-full max-w-[340px] rounded-2xl p-[2px] cursor-pointer group', `bg-gradient-to-r ${info.color}`)}
           onClick={onEdit}
         >
           <div className="bg-card rounded-[14px] p-4">

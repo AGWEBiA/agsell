@@ -354,7 +354,7 @@ export default function Email() {
       </PageHeader>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -433,7 +433,8 @@ export default function Email() {
               ]}
             />
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Campanha</TableHead>
@@ -529,6 +530,7 @@ export default function Email() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

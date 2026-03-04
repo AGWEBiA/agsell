@@ -181,11 +181,11 @@ export default function Automations() {
         description="Construa fluxos automatizados para seus leads"
         helpText="Automações executam ações automaticamente quando um evento acontece, como enviar um email quando um contato é criado."
       >
-        <Button variant="default" onClick={() => navigate('/flow-builder')} className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white border-0">
+        <Button variant="default" size="sm" onClick={() => navigate('/flow-builder')} className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white border-0">
           <Workflow className="h-4 w-4 mr-2" />
           Flow Builder
         </Button>
-        <Button variant="outline" onClick={() => setIsTemplatesOpen(true)}>
+        <Button variant="outline" size="sm" onClick={() => setIsTemplatesOpen(true)}>
           <Sparkles className="h-4 w-4 mr-2" />
           Templates
         </Button>
@@ -286,7 +286,7 @@ export default function Automations() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">

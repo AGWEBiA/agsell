@@ -142,7 +142,7 @@ function ToolReplacementSection() {
             </div>
             <p className="text-sm text-muted-foreground mb-2">Tudo isso junto + funcionalidades exclusivas</p>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-4xl sm:text-5xl font-bold text-primary">A partir de R$ 197</span>
+              <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">A partir de R$ 197</span>
               <span className="text-muted-foreground">/mês</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">

@@ -25,17 +25,17 @@ export default function WhatsApp() {
   const { groups } = useWhatsAppGroups();
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">WhatsApp</h1>
-          <p className="text-muted-foreground">Gerencie suas conexões, grupos e campanhas WhatsApp</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">WhatsApp</h1>
+          <p className="text-muted-foreground text-sm">Gerencie suas conexões, grupos e campanhas WhatsApp</p>
         </div>
       </div>
 
       {/* Info Card */}
       <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
         <CardContent className="pt-6">
-          <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
               <MessageSquare className="h-5 w-5 text-blue-600" />
             </div>
@@ -52,7 +52,7 @@ export default function WhatsApp() {
       {/* Meta Billing Notice */}
       <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
         <CardContent className="pt-6">
-          <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900">
               <Settings className="h-5 w-5 text-amber-600" />
             </div>
@@ -70,7 +70,7 @@ export default function WhatsApp() {
       </Card>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">

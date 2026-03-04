@@ -107,15 +107,15 @@ export default function Settings() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold">Configurações</h1>
-        <p className="text-muted-foreground">Gerencie suas preferências, segurança e dados pessoais</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">Configurações</h1>
+        <p className="text-muted-foreground text-sm">Gerencie suas preferências, segurança e dados pessoais</p>
       </div>
       <Tabs defaultValue="profile">
-        <TabsList>
-          <TabsTrigger value="profile"><User className="h-4 w-4 mr-2" />Perfil</TabsTrigger>
-          <TabsTrigger value="notifications"><Bell className="h-4 w-4 mr-2" />Notificações</TabsTrigger>
-          <TabsTrigger value="security"><Shield className="h-4 w-4 mr-2" />Segurança</TabsTrigger>
-          <TabsTrigger value="privacy"><Shield className="h-4 w-4 mr-2" />Privacidade</TabsTrigger>
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="profile" className="text-xs sm:text-sm"><User className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Perfil</span></TabsTrigger>
+          <TabsTrigger value="notifications" className="text-xs sm:text-sm"><Bell className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Notificações</span></TabsTrigger>
+          <TabsTrigger value="security" className="text-xs sm:text-sm"><Shield className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Segurança</span></TabsTrigger>
+          <TabsTrigger value="privacy" className="text-xs sm:text-sm"><Shield className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Privacidade</span></TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
