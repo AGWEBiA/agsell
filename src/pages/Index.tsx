@@ -9,7 +9,10 @@ import {
   ArrowRight, Check, Users, Target, Bot, MessageSquare, Mail, BarChart3,
   Sparkles, FileText, Calendar, Inbox, Globe, Clock, Zap, Shield,
   Phone, Star, Layers, Award, ChevronRight, Brain, Loader2,
-  Workflow, Vote, SplitSquareVertical, CreditCard, Tag
+  Workflow, Vote, SplitSquareVertical, CreditCard, Tag, X,
+  Instagram, Headphones, Trophy, Flame, DollarSign, Replace,
+  CheckCircle2, ArrowDown, MousePointerClick, Gauge, Lock,
+  Megaphone, PieChart, Hash
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,21 +25,14 @@ import { supabase } from '@/integrations/supabase/client';
 // ─── Hero ───────────────────────────────────────────────────
 function HeroSection() {
   return (
-    <section className="relative py-16 md:py-24 lg:py-32 overflow-hidden">
-      {/* Creative background elements */}
+    <section className="relative py-20 md:py-28 lg:py-36 overflow-hidden">
+      {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Large gradient orbs */}
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-primary/3 blur-3xl" />
-        
-        {/* Floating geometric shapes */}
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] rounded-full bg-primary/3 blur-3xl" />
         <div className="absolute top-20 right-[10%] w-20 h-20 rounded-2xl border border-primary/10 rotate-12 animate-pulse" />
         <div className="absolute top-40 right-[25%] w-12 h-12 rounded-full border border-primary/15 animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute bottom-32 right-[15%] w-16 h-16 rounded-xl bg-primary/5 rotate-45 animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 right-[8%] w-8 h-8 rounded-full bg-primary/8 animate-pulse" style={{ animationDelay: '0.5s' }} />
-        <div className="absolute bottom-20 right-[30%] w-24 h-24 rounded-2xl border border-primary/8 -rotate-12" />
-        
-        {/* Subtle grid pattern on the right */}
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.03]"
           style={{
             backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)',
@@ -46,37 +42,115 @@ function HeroSection() {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-6">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            CRM + WhatsApp + IA em uma única plataforma
+            CRM + WhatsApp + E-mail + Instagram + IA — Tudo em uma única plataforma
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.95] mb-6">
-            Venda mais.
+            Pare de pagar por
             <br />
-            <span className="text-primary">Pense menos.</span>
+            <span className="text-primary">5 ferramentas separadas.</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-8 leading-relaxed mx-auto">
-            O CRM que une WhatsApp nativo, automações e agentes de IA para sua equipe
-            fechar mais negócios — com menos esforço.
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-4 leading-relaxed mx-auto">
+            A AG Sell substitui seu CRM, plataforma de e-mail, ferramenta de WhatsApp, 
+            automação de marketing e chatbot de IA — tudo integrado, por uma fração do custo.
           </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground mb-8">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Sem cartão de crédito</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Teste grátis</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Cancele quando quiser</span>
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
             <Link to="/pricing">
               <Button size="lg" className="h-12 sm:h-14 px-8 sm:px-10 text-sm sm:text-base font-semibold rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all w-full sm:w-auto">
-                Começar agora
+                Começar grátis agora
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
-            <Link to="/pricing">
+            <a href="#comparativo">
               <Button size="lg" variant="ghost" className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-full text-muted-foreground hover:text-foreground w-full sm:w-auto">
-                Ver planos
-                <ChevronRight className="ml-1 h-4 w-4" />
+                Comparar com concorrentes
+                <ArrowDown className="ml-1 h-4 w-4" />
+              </Button>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Tool Replacement Section ───────────────────────────────
+const REPLACED_TOOLS = [
+  { name: 'HubSpot', function: 'CRM', price: 'R$ 400/mês', icon: Users },
+  { name: 'ActiveCampaign', function: 'E-mail Marketing', price: 'R$ 300/mês', icon: Mail },
+  { name: 'SellFlux', function: 'WhatsApp', price: 'R$ 250/mês', icon: MessageSquare },
+  { name: 'ManyChat', function: 'Chatbot / Flows', price: 'R$ 150/mês', icon: Workflow },
+  { name: 'Intercom', function: 'Inbox Omnichannel', price: 'R$ 350/mês', icon: Inbox },
+  { name: 'ChatGPT API', function: 'Agentes IA', price: 'R$ 200/mês', icon: Brain },
+];
+
+function ToolReplacementSection() {
+  return (
+    <section className="relative border-y border-border/40 bg-muted/20 overflow-hidden">
+      <div className="absolute -top-20 right-0 w-[400px] h-[400px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+      
+      <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24 relative z-10">
+        <div className="max-w-xl mx-auto text-center mb-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
+            <Replace className="h-3 w-3" />
+            Substitua tudo
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            Uma plataforma que <span className="text-primary">substitui 6 ferramentas</span>
+          </h2>
+          <p className="text-muted-foreground text-base sm:text-lg">
+            Chega de pagar separado por cada funcionalidade. Na AG Sell, está tudo integrado.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto mb-10">
+          {REPLACED_TOOLS.map((tool, i) => (
+            <div key={i} className="relative rounded-xl border border-border/50 bg-card p-5 hover:border-destructive/30 transition-all group">
+              <div className="flex items-start justify-between mb-3">
+                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                  <tool.icon className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <span className="text-xs font-mono text-destructive/70 line-through">{tool.price}</span>
+              </div>
+              <p className="font-semibold text-sm mb-0.5">{tool.name}</p>
+              <p className="text-xs text-muted-foreground">{tool.function}</p>
+              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <X className="h-4 w-4 text-destructive/50" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 sm:p-8 text-center">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <Logo variant="red" size="sm" showText />
+            </div>
+            <p className="text-sm text-muted-foreground mb-2">Tudo isso junto + funcionalidades exclusivas</p>
+            <div className="flex items-baseline justify-center gap-1">
+              <span className="text-4xl sm:text-5xl font-bold text-primary">A partir de R$ 0</span>
+              <span className="text-muted-foreground">/mês</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Economize mais de <strong className="text-foreground">R$ 1.650/mês</strong> comparado a contratar cada ferramenta separadamente
+            </p>
+            <Link to="/pricing" className="inline-block mt-4">
+              <Button className="rounded-full">
+                Ver planos <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -88,9 +162,9 @@ function HeroSection() {
 
 // ─── Stats ──────────────────────────────────────────────────
 const STATS = [
-  { value: '10k+', label: 'Leads gerenciados' },
+  { value: '20+', label: 'Funcionalidades integradas' },
+  { value: '6', label: 'Ferramentas substituídas' },
   { value: '50%', label: 'Mais conversões' },
-  { value: '3x', label: 'Mais produtividade' },
   { value: '24/7', label: 'IA trabalhando por você' },
 ];
 
@@ -111,83 +185,98 @@ function StatsBar() {
   );
 }
 
-// ─── Differentials – Bento Grid ─────────────────────────────
-const DIFFERENTIALS = [
+// ─── Complete Feature Showcase ──────────────────────────────
+const FEATURE_CATEGORIES = [
   {
-    icon: MessageSquare,
-    title: 'WhatsApp Nativo',
-    description: 'Múltiplos números via QR Code. Campanhas em massa, grupos e flows interativos — direto no CRM.',
-    span: 'md:col-span-2',
+    category: 'CRM & Vendas',
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500/10',
+    items: [
+      { icon: Users, title: 'CRM Completo', desc: 'Contatos, empresas, negociações — visão 360° do cliente com histórico de todas as interações.' },
+      { icon: Target, title: 'Pipeline Kanban', desc: 'Arraste e solte negócios entre etapas. Múltiplos funis personalizados por produto ou equipe.' },
+      { icon: Trophy, title: 'Gamificação de Vendas', desc: 'Rankings, conquistas e pontuação para motivar vendedores. Exclusivo da AG Sell.' },
+      { icon: PieChart, title: 'Lead Scoring', desc: 'Pontue leads automaticamente com base em comportamento e perfil para priorizar oportunidades.' },
+    ]
   },
   {
-    icon: Bot,
-    title: 'Agentes IA com RAG',
-    description: 'IA que acessa sua base de conhecimento, qualifica leads e transfere para humanos automaticamente.',
-    span: '',
+    category: 'Comunicação Omnichannel',
+    color: 'text-green-500',
+    bgColor: 'bg-green-500/10',
+    items: [
+      { icon: MessageSquare, title: 'WhatsApp Multi-instância', desc: 'Conecte múltiplos números via QR Code. Campanhas em massa, grupos e flows interativos.' },
+      { icon: Mail, title: 'E-mail Marketing', desc: 'Campanhas, templates, domínio próprio com SPF/DKIM/DMARC e warmup automático.' },
+      { icon: Instagram, title: 'Instagram DM', desc: 'Responda DMs, comentários e stories diretamente do inbox integrado.' },
+      { icon: Inbox, title: 'Inbox Unificado', desc: 'WhatsApp + E-mail + Instagram em uma única tela. CSAT, transcrição de áudio e notas internas.' },
+    ]
   },
   {
-    icon: Layers,
-    title: 'Modo Agência',
-    description: 'Multi-tenant com dados isolados e troca rápida de conta.',
-    span: '',
+    category: 'Automação & IA',
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500/10',
+    items: [
+      { icon: Workflow, title: 'Flow Builder Visual', desc: 'Construtor drag-and-drop com 20+ ações: timers, condições, aquecimento, tags, e-mail e WhatsApp.' },
+      { icon: Bot, title: 'Agentes IA com RAG', desc: 'IA que acessa sua base de conhecimento, responde clientes, qualifica leads e transfere para humanos.' },
+      { icon: Zap, title: 'Automações Avançadas', desc: 'Triggers por webhook, formulário, tag ou evento. Ações em cadeia com condições if/else.' },
+      { icon: Sparkles, title: 'Assistente IA', desc: 'Pergunte sobre seus dados, gere relatórios e receba insights de vendas em linguagem natural.' },
+    ]
   },
   {
-    icon: Workflow,
-    title: 'Flow Builder Visual',
-    description: 'Construtor de funis drag-and-drop estilo ManyChat. Crie múltiplos fluxos com enquetes, condições e ramificações.',
-    span: 'md:col-span-2',
-  },
-  {
-    icon: Award,
-    title: 'Gamificação de Vendas',
-    description: 'Rankings, conquistas e pontuação para motivar sua equipe.',
-    span: '',
-  },
-  {
-    icon: Inbox,
-    title: 'Inbox Omnichannel',
-    description: 'WhatsApp, e-mail e Instagram DM em uma única tela com CSAT e transcrição de áudio.',
-    span: 'md:col-span-2',
+    category: 'Gestão & Integrações',
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500/10',
+    items: [
+      { icon: Layers, title: 'Modo Agência Multi-tenant', desc: 'Gerencie múltiplos clientes com dados isolados, permissões granulares e troca rápida de conta.' },
+      { icon: Globe, title: 'API Pública + Webhooks', desc: 'API REST com rate limiting, webhooks inbound e outbound para integrar com qualquer sistema.' },
+      { icon: FileText, title: 'Formulários Web', desc: 'Capture leads com formulários customizados embarcáveis no seu site com integração ao CRM.' },
+      { icon: Shield, title: 'Permissões Granulares (RBAC)', desc: 'Controle quem vê e faz o quê. Papéis customizáveis por módulo e ação.' },
+    ]
   },
 ];
 
-function DifferentialsSection() {
+function FeatureShowcase() {
   return (
-    <section className="relative container mx-auto px-4 sm:px-6 py-16 md:py-24 overflow-hidden">
-      {/* Background accent */}
-      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+    <section className="relative overflow-hidden">
+      <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
 
-      <div className="relative z-10">
-        <div className="max-w-xl mx-auto text-center mb-12">
+      <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24 relative z-10">
+        <div className="max-w-xl mx-auto text-center mb-14">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
-            <Sparkles className="h-3 w-3" />
-            Exclusivo AG Sell
+            <Layers className="h-3 w-3" />
+            +20 funcionalidades
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Por que escolher a AG Sell?
+            Tudo que você precisa,
+            <br />
+            <span className="text-primary">em um só lugar</span>
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg">
-            Recursos exclusivos que nenhum outro CRM oferece.
+            De CRM a agentes de IA, cada funcionalidade foi pensada para times que querem vender mais com menos ferramentas.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {DIFFERENTIALS.map((d, i) => (
-            <div
-              key={i}
-              className={cn(
-                'group relative rounded-2xl border border-border/50 bg-card p-6 sm:p-8 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300',
-                d.span
-              )}
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                <d.icon className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
+        <div className="space-y-12 max-w-6xl mx-auto">
+          {FEATURE_CATEGORIES.map((cat, ci) => (
+            <div key={ci}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center', cat.bgColor)}>
+                  <Hash className={cn('h-4 w-4', cat.color)} />
+                </div>
+                <h3 className="text-lg font-bold">{cat.category}</h3>
               </div>
-              <h3 className="font-semibold text-base sm:text-lg mb-2">{d.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{d.description}</p>
-              <Badge variant="outline" className="mt-4 text-[10px] text-primary border-primary/20">
-                Exclusivo
-              </Badge>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {cat.items.map((item, i) => (
+                  <div
+                    key={i}
+                    className="group relative rounded-xl border border-border/50 bg-card p-5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+                  >
+                    <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center mb-3', cat.bgColor)}>
+                      <item.icon className={cn('h-4 w-4', cat.color)} />
+                    </div>
+                    <h4 className="font-semibold text-sm mb-1.5">{item.title}</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -196,63 +285,151 @@ function DifferentialsSection() {
   );
 }
 
-// ─── Features ───────────────────────────────────────────────
-const FEATURES_LEFT = [
-  { icon: Users, title: 'CRM Completo' },
-  { icon: Target, title: 'Pipeline Kanban' },
-  { icon: Mail, title: 'E-mail Marketing' },
-  { icon: BarChart3, title: 'Analytics em Tempo Real' },
-  { icon: FileText, title: 'Formulários Web' },
-  { icon: Calendar, title: 'Gestão de Tarefas' },
+// ─── Exclusive Differentials ────────────────────────────────
+const EXCLUSIVE_DIFFERENTIALS = [
+  {
+    icon: MessageSquare,
+    title: 'WhatsApp Nativo Multi-instância',
+    description: 'Conecte quantos números quiser via QR Code. Campanhas em massa, gestão de grupos, flows interativos (formulários dentro do WhatsApp) e respostas automáticas. Nenhum concorrente tem tudo isso nativo.',
+    badge: 'Exclusivo',
+    span: 'md:col-span-2',
+  },
+  {
+    icon: Bot,
+    title: 'Agentes IA com Base de Conhecimento (RAG)',
+    description: 'Seus agentes de IA acessam documentos, FAQs e bases próprias para responder clientes com precisão. Qualificam leads e transferem para humanos automaticamente.',
+    badge: 'Exclusivo',
+    span: '',
+  },
+  {
+    icon: Workflow,
+    title: 'Flow Builder com 20+ Ações',
+    description: 'Construtor visual drag-and-drop com timers, aquecimento, condicionais, tags, WhatsApp, e-mail, SMS, pixel e muito mais. Mais completo que ManyChat e SellFlux.',
+    badge: 'Mais completo',
+    span: '',
+  },
+  {
+    icon: Layers,
+    title: 'Modo Agência Multi-tenant',
+    description: 'Gerencie múltiplos clientes com dados 100% isolados, permissões por conta e troca instantânea. Sem pagar plano Enterprise como nos concorrentes.',
+    badge: 'Exclusivo',
+    span: 'md:col-span-2',
+  },
+  {
+    icon: Trophy,
+    title: 'Gamificação de Vendas',
+    description: 'Rankings, conquistas e pontuação integrados ao CRM. Motive sua equipe de vendas de forma única. Nenhum CRM do mercado oferece isso.',
+    badge: 'Exclusivo',
+    span: '',
+  },
+  {
+    icon: Inbox,
+    title: 'Inbox Omnichannel Completo',
+    description: 'WhatsApp, e-mail e Instagram DM em uma única tela. Com CSAT, transcrição de áudio por IA, notas internas e distribuição automática de atendimentos.',
+    badge: 'Mais completo',
+    span: 'md:col-span-2',
+  },
+  {
+    icon: Headphones,
+    title: 'SAC com Distribuição Inteligente',
+    description: 'Round-robin, por capacidade ou manual. Respostas rápidas, pesquisa de satisfação automática e relatórios detalhados de atendimento.',
+    badge: 'Integrado',
+    span: '',
+  },
 ];
 
-const FEATURES_RIGHT = [
-  { icon: Globe, title: 'API & Webhooks' },
-  { icon: Vote, title: 'Enquetes & Pesquisas' },
-  { icon: SplitSquareVertical, title: 'Lógica Condicional (If/Else)' },
-  { icon: Phone, title: 'Instagram DM' },
-  { icon: Shield, title: 'Permissões Granulares' },
-  { icon: Sparkles, title: 'Assistente IA' },
-];
-
-function FeaturesSection() {
+function DifferentialsSection() {
   return (
-    <section className="relative bg-muted/20 border-y border-border/40 overflow-hidden">
-      {/* Decorative side accents */}
-      <div className="absolute top-10 -left-10 w-40 h-40 rounded-full bg-primary/[0.04] blur-2xl pointer-events-none" />
-      <div className="absolute bottom-10 -right-10 w-40 h-40 rounded-full bg-primary/[0.04] blur-2xl pointer-events-none" />
+    <section className="relative container mx-auto px-4 sm:px-6 py-16 md:py-24 overflow-hidden">
+      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
 
-      <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24 relative z-10">
-        <div className="text-center mb-12">
+      <div className="relative z-10">
+        <div className="max-w-xl mx-auto text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
-            <Layers className="h-3 w-3" />
-            Tudo integrado
+            <Award className="h-3 w-3" />
+            Diferenciais exclusivos
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Tudo em um só lugar
+            O que <span className="text-primary">só a AG Sell</span> oferece
           </h2>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto">
-            Substitua 5 ferramentas diferentes por uma única plataforma.
+          <p className="text-muted-foreground text-base sm:text-lg">
+            Funcionalidades que você não encontra em HubSpot, ActiveCampaign, RD Station ou SellFlux.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-0 max-w-3xl mx-auto divide-y sm:divide-y-0 sm:divide-x divide-border/40 rounded-2xl border border-border/50 bg-card overflow-hidden">
-          <div className="space-y-0">
-            {FEATURES_LEFT.map((f, i) => (
-              <div key={i} className="flex items-center gap-4 py-3 sm:py-4 px-4 sm:px-6 group hover:bg-primary/5 transition-colors">
-                <f.icon className="h-5 w-5 text-primary shrink-0" />
-                <span className="font-medium text-sm">{f.title}</span>
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 max-w-6xl mx-auto">
+          {EXCLUSIVE_DIFFERENTIALS.map((d, i) => (
+            <div
+              key={i}
+              className={cn(
+                'group relative rounded-2xl border border-primary/20 bg-primary/[0.02] p-6 sm:p-7 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300',
+                d.span
+              )}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                  <d.icon className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
+                </div>
+                <Badge variant="outline" className="text-[10px] text-primary border-primary/20">
+                  {d.badge}
+                </Badge>
               </div>
-            ))}
-          </div>
-          <div className="space-y-0">
-            {FEATURES_RIGHT.map((f, i) => (
-              <div key={i} className="flex items-center gap-4 py-3 sm:py-4 px-4 sm:px-6 group hover:bg-primary/5 transition-colors">
-                <f.icon className="h-5 w-5 text-primary shrink-0" />
-                <span className="font-medium text-sm">{f.title}</span>
+              <h3 className="font-semibold text-base sm:text-lg mb-2">{d.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{d.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Why AG Sell Section ────────────────────────────────────
+const WHY_REASONS = [
+  {
+    icon: DollarSign,
+    title: 'Economize +R$ 1.650/mês',
+    desc: 'Substitua 6 ferramentas pagas por uma única plataforma com tudo integrado.',
+  },
+  {
+    icon: Gauge,
+    title: 'Setup em minutos',
+    desc: 'Conecte seu WhatsApp via QR Code, configure automações e comece a vender em menos de 10 minutos.',
+  },
+  {
+    icon: Lock,
+    title: 'Dados integrados e seguros',
+    desc: 'Sem APIs frágeis entre ferramentas. Tudo conectado nativamente com RLS e permissões.',
+  },
+  {
+    icon: Flame,
+    title: 'Feito para o mercado brasileiro',
+    desc: 'WhatsApp nativo, suporte a PIX, boleto, integrações com Hotmart, Kiwify, Eduzz e Shopify.',
+  },
+];
+
+function WhySection() {
+  return (
+    <section className="bg-muted/20 border-y border-border/40">
+      <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24">
+        <div className="max-w-xl mx-auto text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            Por que a AG Sell é a <span className="text-primary">melhor escolha</span>?
+          </h2>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 max-w-4xl mx-auto">
+          {WHY_REASONS.map((r, i) => (
+            <div key={i} className="flex gap-4 p-5 rounded-xl border border-border/50 bg-card hover:shadow-md transition-all">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <r.icon className="h-6 w-6 text-primary" />
               </div>
-            ))}
-          </div>
+              <div>
+                <h3 className="font-semibold mb-1">{r.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{r.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -383,10 +560,9 @@ function PlansSection() {
           Escolha o plano ideal
         </h2>
         <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-8">
-          Comece a transformar seus resultados hoje mesmo.
+          Comece grátis e escale conforme sua operação cresce.
         </p>
 
-        {/* Billing toggle */}
         <div className="inline-flex items-center rounded-full border border-border/60 bg-card p-1 mb-10">
           <button
             onClick={() => setBillingCycle('monthly')}
@@ -504,7 +680,7 @@ function PlansSection() {
                     variant={isPro ? 'default' : 'outline'}
                     onClick={() => handleSelectPlan(plan)}
                   >
-                    {plan.price_monthly === 0 ? 'Começar' : 'Assinar'}
+                    {plan.price_monthly === 0 ? 'Começar grátis' : 'Assinar'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardFooter>
@@ -514,7 +690,6 @@ function PlansSection() {
         </div>
       )}
 
-      {/* WhatsApp Meta notice */}
       <div className="max-w-2xl mx-auto mt-8 text-center">
         <p className="text-xs text-muted-foreground leading-relaxed">
           <MessageSquare className="inline h-3 w-3 mr-1 align-middle" />
@@ -522,7 +697,6 @@ function PlansSection() {
         </p>
       </div>
 
-      {/* Inline Checkout Dialog */}
       {selectedPlan && (
         <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
           <DialogContent className="sm:max-w-md">
@@ -605,17 +779,22 @@ const TESTIMONIALS = [
   {
     name: 'Marcos Silva',
     role: 'CEO, Digital Solutions',
-    text: 'A AG Sell transformou nosso processo de vendas. O WhatsApp integrado e os agentes de IA nos fizeram converter 50% mais leads.',
+    text: 'A AG Sell substituiu 4 ferramentas que usávamos. WhatsApp integrado + IA nos fizeram converter 50% mais leads com metade do custo.',
   },
   {
     name: 'Ana Beatriz Costa',
     role: 'Gerente Comercial, TechStart',
-    text: 'Testei ActiveCampaign, RD Station e HubSpot. Nenhuma tem o WhatsApp nativo e a gamificação que a AG Sell oferece.',
+    text: 'Testei ActiveCampaign, RD Station e HubSpot. Nenhuma tem WhatsApp nativo, gamificação e flow builder tão completo quanto a AG Sell.',
   },
   {
     name: 'Ricardo Mendes',
     role: 'Fundador, Agência Scale',
-    text: 'O modo agência é fantástico. Gerencio 12 clientes com dados isolados e tudo centralizado.',
+    text: 'O modo agência é fantástico. Gerencio 12 clientes com dados isolados, cada um com seu WhatsApp e automações próprias.',
+  },
+  {
+    name: 'Juliana Ferreira',
+    role: 'Head de Marketing, E-commerce Pro',
+    text: 'A integração com Hotmart e Kiwify é perfeita. Cada compra já cria o contato, aplica tag e dispara a sequência de onboarding pelo WhatsApp.',
   },
 ];
 
@@ -635,10 +814,14 @@ function TestimonialsSection() {
           </h2>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="relative rounded-2xl border border-border/50 bg-card p-6 sm:p-8 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-              <div className="text-3xl font-serif text-primary/20 leading-none mb-3">"</div>
+            <div key={i} className="relative rounded-2xl border border-border/50 bg-card p-6 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+              <div className="flex gap-1 mb-3">
+                {[...Array(5)].map((_, s) => (
+                  <Star key={s} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">{t.text}</p>
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
@@ -663,18 +846,21 @@ function CTASection() {
     <section className="container mx-auto px-4 sm:px-6 py-16 md:py-24">
       <div className="relative rounded-3xl bg-foreground overflow-hidden px-6 sm:px-8 py-12 sm:py-16 md:py-20 text-center">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-background/5 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-background/3 pointer-events-none" />
 
         <div className="relative z-10">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-background mb-4 tracking-tight">
-            Pronto para vender mais?
+            Pare de pagar por 5 ferramentas.
+            <br />
+            <span className="text-primary">Comece com a AG Sell.</span>
           </h2>
-          <p className="text-background/60 text-base sm:text-lg max-w-md mx-auto mb-8">
-            Escolha o plano ideal e comece a transformar seus resultados hoje.
+          <p className="text-background/60 text-base sm:text-lg max-w-lg mx-auto mb-8">
+            CRM, WhatsApp, E-mail, Instagram, Automações e IA — tudo integrado em uma única plataforma.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/pricing">
               <Button size="lg" className="h-12 sm:h-14 px-8 sm:px-10 text-sm sm:text-base font-semibold rounded-full w-full sm:w-auto">
-                Ver Planos e Assinar
+                Começar grátis agora
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
@@ -709,7 +895,7 @@ export default function LandingPage() {
               <Button variant="ghost" size="sm" className="text-muted-foreground text-xs sm:text-sm">Entrar</Button>
             </Link>
             <Link to="/pricing">
-              <Button size="sm" className="rounded-full px-4 sm:px-5 text-xs sm:text-sm">Criar Conta</Button>
+              <Button size="sm" className="rounded-full px-4 sm:px-5 text-xs sm:text-sm">Começar grátis</Button>
             </Link>
           </div>
         </div>
@@ -719,14 +905,17 @@ export default function LandingPage() {
 
       <HeroSection />
       <StatsBar />
+      <ToolReplacementSection />
 
       <div id="diferenciais">
         <DifferentialsSection />
       </div>
 
       <div id="recursos">
-        <FeaturesSection />
+        <FeatureShowcase />
       </div>
+
+      <WhySection />
 
       <div id="planos">
         <PlansSection />
