@@ -28,7 +28,7 @@ export function KiwifyConfig() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('plans')
-        .select('id, name, slug, price_monthly, price_yearly, kiwify_product_id, kiwify_checkout_url, is_active')
+        .select('id, name, slug, price_monthly, price_yearly, kiwify_product_id, kiwify_checkout_url, kiwify_product_id_yearly, kiwify_checkout_url_yearly, is_active')
         .order('price_monthly', { ascending: true });
       if (error) throw error;
       return data || [];
@@ -47,9 +47,16 @@ export function KiwifyConfig() {
   });
 
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<{ kiwify_product_id: string; kiwify_checkout_url: string }>({
+  const [editValues, setEditValues] = useState<{
+    kiwify_product_id: string;
+    kiwify_checkout_url: string;
+    kiwify_product_id_yearly: string;
+    kiwify_checkout_url_yearly: string;
+  }>({
     kiwify_product_id: '',
     kiwify_checkout_url: '',
+    kiwify_product_id_yearly: '',
+    kiwify_checkout_url_yearly: '',
   });
 
   const saveMutation = useMutation({
@@ -59,6 +66,8 @@ export function KiwifyConfig() {
         .update({
           kiwify_product_id: values.kiwify_product_id || null,
           kiwify_checkout_url: values.kiwify_checkout_url || null,
+          kiwify_product_id_yearly: values.kiwify_product_id_yearly || null,
+          kiwify_checkout_url_yearly: values.kiwify_checkout_url_yearly || null,
         })
         .eq('id', planId);
       if (error) throw error;
@@ -110,6 +119,8 @@ export function KiwifyConfig() {
     setEditValues({
       kiwify_product_id: plan.kiwify_product_id || '',
       kiwify_checkout_url: plan.kiwify_checkout_url || '',
+      kiwify_product_id_yearly: plan.kiwify_product_id_yearly || '',
+      kiwify_checkout_url_yearly: plan.kiwify_checkout_url_yearly || '',
     });
   };
 
@@ -294,6 +305,7 @@ export function KiwifyConfig() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Plano</TableHead>
+                  <TableHead>Ciclo</TableHead>
                   <TableHead>Preço</TableHead>
                   <TableHead>Kiwify Product ID</TableHead>
                   <TableHead>Kiwify Checkout URL</TableHead>
@@ -304,75 +316,132 @@ export function KiwifyConfig() {
               <TableBody>
                 {plans.map((plan: any) => {
                   const isEditing = editingPlan === plan.id;
-                  const isConfigured = !!plan.kiwify_product_id && !!plan.kiwify_checkout_url;
+                  const isMonthlyConfigured = !!plan.kiwify_product_id && !!plan.kiwify_checkout_url;
+                  const isYearlyConfigured = !!plan.kiwify_product_id_yearly && !!plan.kiwify_checkout_url_yearly;
 
                   return (
-                    <TableRow key={plan.id}>
-                      <TableCell className="font-medium">{plan.name}</TableCell>
-                      <TableCell>R$ {plan.price_monthly}/mês</TableCell>
-                      <TableCell>
-                        {isEditing ? (
-                          <Input
-                            value={editValues.kiwify_product_id}
-                            onChange={(e) => setEditValues(prev => ({ ...prev, kiwify_product_id: e.target.value }))}
-                            placeholder="Ex: prod_xxxxx"
-                            className="max-w-[200px]"
-                          />
-                        ) : (
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {plan.kiwify_product_id || '—'}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {isEditing ? (
-                          <Input
-                            value={editValues.kiwify_checkout_url}
-                            onChange={(e) => setEditValues(prev => ({ ...prev, kiwify_checkout_url: e.target.value }))}
-                            placeholder="https://pay.kiwify.com.br/..."
-                            className="max-w-[250px]"
-                          />
-                        ) : (
-                          <span className="font-mono text-xs text-muted-foreground truncate max-w-[200px] block">
-                            {plan.kiwify_checkout_url || '—'}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {isConfigured ? (
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Configurado
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Pendente
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {isEditing ? (
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              onClick={() => saveMutation.mutate({ planId: plan.id, values: editValues })}
-                              disabled={saveMutation.isPending}
-                            >
-                              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-                              Salvar
+                    <React.Fragment key={plan.id}>
+                      {/* Monthly Row */}
+                      <TableRow>
+                        <TableCell className="font-medium" rowSpan={2}>
+                          {plan.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">Mensal</Badge>
+                        </TableCell>
+                        <TableCell>R$ {plan.price_monthly}/mês</TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editValues.kiwify_product_id}
+                              onChange={(e) => setEditValues(prev => ({ ...prev, kiwify_product_id: e.target.value }))}
+                              placeholder="Ex: prod_xxxxx"
+                              className="max-w-[200px]"
+                            />
+                          ) : (
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {plan.kiwify_product_id || '—'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editValues.kiwify_checkout_url}
+                              onChange={(e) => setEditValues(prev => ({ ...prev, kiwify_checkout_url: e.target.value }))}
+                              placeholder="https://pay.kiwify.com.br/..."
+                              className="max-w-[250px]"
+                            />
+                          ) : (
+                            <span className="font-mono text-xs text-muted-foreground truncate max-w-[200px] block">
+                              {plan.kiwify_checkout_url || '—'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isMonthlyConfigured ? (
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              OK
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Pendente
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right" rowSpan={2}>
+                          {isEditing ? (
+                            <div className="flex flex-col gap-2 items-end">
+                              <Button
+                                size="sm"
+                                onClick={() => saveMutation.mutate({ planId: plan.id, values: editValues })}
+                                disabled={saveMutation.isPending}
+                              >
+                                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                                Salvar
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingPlan(null)}>
+                                Cancelar
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => startEditing(plan)}>
+                              Editar
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingPlan(null)}>
-                              Cancelar
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button size="sm" variant="outline" onClick={() => startEditing(plan)}>
-                            Editar
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {/* Yearly Row */}
+                      <TableRow>
+                        <TableCell>
+                          <Badge variant="outline" className="border-primary/50">Anual</Badge>
+                        </TableCell>
+                        <TableCell>R$ {plan.price_yearly}/ano</TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editValues.kiwify_product_id_yearly}
+                              onChange={(e) => setEditValues(prev => ({ ...prev, kiwify_product_id_yearly: e.target.value }))}
+                              placeholder="Ex: prod_xxxxx_anual"
+                              className="max-w-[200px]"
+                            />
+                          ) : (
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {plan.kiwify_product_id_yearly || '—'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editValues.kiwify_checkout_url_yearly}
+                              onChange={(e) => setEditValues(prev => ({ ...prev, kiwify_checkout_url_yearly: e.target.value }))}
+                              placeholder="https://pay.kiwify.com.br/..."
+                              className="max-w-[250px]"
+                            />
+                          ) : (
+                            <span className="font-mono text-xs text-muted-foreground truncate max-w-[200px] block">
+                              {plan.kiwify_checkout_url_yearly || '—'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isYearlyConfigured ? (
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              OK
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Pendente
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
                   );
                 })}
               </TableBody>

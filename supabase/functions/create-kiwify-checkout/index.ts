@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // Get plan with Kiwify checkout URL
     const { data: plan, error: planError } = await supabase
       .from("plans")
-      .select("id, name, kiwify_checkout_url, kiwify_product_id")
+      .select("id, name, kiwify_checkout_url, kiwify_product_id, kiwify_checkout_url_yearly, kiwify_product_id_yearly")
       .eq("id", planId)
       .single();
 
@@ -39,15 +39,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!plan.kiwify_checkout_url) {
+    // Select checkout URL based on billing cycle
+    const checkoutUrlStr = billingCycle === "yearly" && plan.kiwify_checkout_url_yearly
+      ? plan.kiwify_checkout_url_yearly
+      : plan.kiwify_checkout_url;
+
+    if (!checkoutUrlStr) {
       return new Response(
-        JSON.stringify({ error: "Kiwify checkout not configured for this plan" }),
+        JSON.stringify({ error: "Kiwify checkout not configured for this plan/cycle" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Build checkout URL with pre-filled params
-    const checkoutUrl = new URL(plan.kiwify_checkout_url);
+    const checkoutUrl = new URL(checkoutUrlStr);
     
     // Kiwify supports pre-filling customer data via URL params
     if (name) checkoutUrl.searchParams.set("name", name);

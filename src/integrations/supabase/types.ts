@@ -2438,7 +2438,9 @@ export type Database = {
           is_active: boolean | null
           is_default: boolean | null
           kiwify_checkout_url: string | null
+          kiwify_checkout_url_yearly: string | null
           kiwify_product_id: string | null
+          kiwify_product_id_yearly: string | null
           max_ai_requests_per_month: number
           max_automations: number | null
           max_contacts: number | null
@@ -2465,7 +2467,9 @@ export type Database = {
           is_active?: boolean | null
           is_default?: boolean | null
           kiwify_checkout_url?: string | null
+          kiwify_checkout_url_yearly?: string | null
           kiwify_product_id?: string | null
+          kiwify_product_id_yearly?: string | null
           max_ai_requests_per_month?: number
           max_automations?: number | null
           max_contacts?: number | null
@@ -2492,7 +2496,9 @@ export type Database = {
           is_active?: boolean | null
           is_default?: boolean | null
           kiwify_checkout_url?: string | null
+          kiwify_checkout_url_yearly?: string | null
           kiwify_product_id?: string | null
+          kiwify_product_id_yearly?: string | null
           max_ai_requests_per_month?: number
           max_automations?: number | null
           max_contacts?: number | null

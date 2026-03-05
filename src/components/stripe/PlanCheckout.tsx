@@ -23,6 +23,7 @@ interface Plan {
   price_yearly: number;
   features: string[];
   kiwify_checkout_url?: string | null;
+  kiwify_checkout_url_yearly?: string | null;
 }
 
 interface PlanCheckoutProps {
@@ -42,7 +43,7 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
   const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
   const monthlyEquivalent = billingCycle === 'yearly' ? plan.price_yearly / 12 : plan.price_monthly;
   const savings = billingCycle === 'yearly' ? (plan.price_monthly * 12) - plan.price_yearly : 0;
-  const hasKiwify = !!plan.kiwify_checkout_url;
+  const hasKiwify = !!(plan.kiwify_checkout_url || plan.kiwify_checkout_url_yearly);
 
   const handleCheckout = async () => {
     if (!currentOrganization) {
