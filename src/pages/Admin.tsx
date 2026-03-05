@@ -27,6 +27,7 @@ import {
   Mail,
   Crown,
   Bug,
+  ShoppingCart,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +43,7 @@ import { FinancialDashboard } from '@/components/admin/FinancialDashboard';
 import { EvolutionAPIGlobalConfig } from '@/components/admin/EvolutionAPIGlobalConfig';
 import { SystemOverviewDashboard } from '@/components/admin/SystemOverviewDashboard';
 import { ErrorMonitoringDashboard } from '@/components/admin/ErrorMonitoringDashboard';
+import { KiwifyConfig } from '@/components/admin/KiwifyConfig';
 
 export default function Admin() {
   const { user, isAdmin, loading: isCheckingAdmin } = useAuth();
@@ -212,6 +214,10 @@ export default function Admin() {
           <TabsTrigger value="whatsapp" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             WhatsApp
+          </TabsTrigger>
+          <TabsTrigger value="kiwify" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Kiwify
           </TabsTrigger>
           <TabsTrigger value="errors" className="flex items-center gap-2">
             <Bug className="h-4 w-4" />
@@ -443,6 +449,9 @@ export default function Admin() {
         </TabsContent>
         <TabsContent value="errors">
           <ErrorMonitoringDashboard />
+        </TabsContent>
+        <TabsContent value="kiwify">
+          <KiwifyConfig />
         </TabsContent>
       </Tabs>
 
