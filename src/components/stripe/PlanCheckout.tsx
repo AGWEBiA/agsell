@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Loader2, Check, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 interface Plan {
@@ -37,13 +38,47 @@ type PaymentProvider = 'stripe' | 'kiwify';
 export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
   const { currentOrganization } = useOrganization();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>('stripe');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Read platform gateway settings
+  const { data: gatewaySettings } = useQuery({
+    queryKey: ['platform_settings', 'payment_gateway'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'payment_gateway')
+        .maybeSingle();
+      return data?.value as { stripe_enabled: boolean; kiwify_enabled: boolean; default_gateway: 'stripe' | 'kiwify' } | null;
+    },
+    enabled: open,
+  });
+
+  const stripeEnabled = gatewaySettings?.stripe_enabled ?? true;
+  const kiwifyEnabled = gatewaySettings?.kiwify_enabled ?? false;
+  const defaultGateway = gatewaySettings?.default_gateway ?? 'stripe';
+
+  const hasKiwifyUrls = !!(plan.kiwify_checkout_url || plan.kiwify_checkout_url_yearly);
+  const showStripe = stripeEnabled;
+  const showKiwify = kiwifyEnabled && hasKiwifyUrls;
+  const showProviderSelection = showStripe && showKiwify;
+
+  // Determine initial provider based on platform config
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>(defaultGateway);
+  // Update when settings load
+  React.useEffect(() => {
+    if (gatewaySettings) {
+      if (gatewaySettings.default_gateway === 'kiwify' && showKiwify) {
+        setPaymentProvider('kiwify');
+      } else if (gatewaySettings.default_gateway === 'stripe' && showStripe) {
+        setPaymentProvider('stripe');
+      }
+    }
+  }, [gatewaySettings, showKiwify, showStripe]);
 
   const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
   const monthlyEquivalent = billingCycle === 'yearly' ? plan.price_yearly / 12 : plan.price_monthly;
   const savings = billingCycle === 'yearly' ? (plan.price_monthly * 12) - plan.price_yearly : 0;
-  const hasKiwify = !!(plan.kiwify_checkout_url || plan.kiwify_checkout_url_yearly);
 
   const handleCheckout = async () => {
     if (!currentOrganization) {
@@ -147,7 +182,7 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
           </RadioGroup>
 
           {/* Payment Provider Selection */}
-          {hasKiwify && (
+          {showProviderSelection && (
             <div className="space-y-3">
               <Label className="text-sm font-medium">Forma de Pagamento</Label>
               <RadioGroup

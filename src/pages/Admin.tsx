@@ -44,6 +44,7 @@ import { EvolutionAPIGlobalConfig } from '@/components/admin/EvolutionAPIGlobalC
 import { SystemOverviewDashboard } from '@/components/admin/SystemOverviewDashboard';
 import { ErrorMonitoringDashboard } from '@/components/admin/ErrorMonitoringDashboard';
 import { KiwifyConfig } from '@/components/admin/KiwifyConfig';
+import { PaymentGatewayConfig } from '@/components/admin/PaymentGatewayConfig';
 
 export default function Admin() {
   const { user, isAdmin, loading: isCheckingAdmin } = useAuth();
@@ -218,6 +219,10 @@ export default function Admin() {
           <TabsTrigger value="kiwify" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             Kiwify
+          </TabsTrigger>
+          <TabsTrigger value="gateway" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Gateway
           </TabsTrigger>
           <TabsTrigger value="errors" className="flex items-center gap-2">
             <Bug className="h-4 w-4" />
@@ -452,6 +457,9 @@ export default function Admin() {
         </TabsContent>
         <TabsContent value="kiwify">
           <KiwifyConfig />
+        </TabsContent>
+        <TabsContent value="gateway">
+          <PaymentGatewayConfig />
         </TabsContent>
       </Tabs>
 
