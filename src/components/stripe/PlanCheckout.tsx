@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Loader2, Check, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -37,8 +38,24 @@ type PaymentProvider = 'stripe' | 'kiwify';
 
 export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
   const { currentOrganization } = useOrganization();
+  const { user } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch user profile for pre-filling checkout
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: open && !!user?.id,
+  });
 
   // Read platform gateway settings
   const { data: gatewaySettings } = useQuery({
@@ -93,6 +110,9 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
           body: {
             planId: plan.id,
             billingCycle,
+            name: profile?.full_name || user?.user_metadata?.full_name || '',
+            email: user?.email || '',
+            organizationName: currentOrganization?.name || '',
           },
         });
         if (error) throw error;
