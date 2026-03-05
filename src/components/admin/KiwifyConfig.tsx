@@ -19,6 +19,9 @@ import { toast } from 'sonner';
 
 export function KiwifyConfig() {
   const queryClient = useQueryClient();
+  const [webhookToken, setWebhookToken] = useState('');
+  const [isTokenLoading, setIsTokenLoading] = useState(false);
+  const [tokenSaved, setTokenSaved] = useState(false);
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['admin_kiwify_plans'],
@@ -29,6 +32,17 @@ export function KiwifyConfig() {
         .order('price_monthly', { ascending: true });
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  // Check if webhook secret is already configured
+  useQuery({
+    queryKey: ['kiwify_webhook_secret_check'],
+    queryFn: async () => {
+      // We can't read the secret value, but we can check edge function behavior
+      // For now, just show the field as editable
+      setTokenSaved(false);
+      return null;
     },
   });
 
@@ -56,6 +70,33 @@ export function KiwifyConfig() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const handleSaveToken = async () => {
+    if (!webhookToken.trim()) {
+      toast.error('Insira o token do webhook');
+      return;
+    }
+    setIsTokenLoading(true);
+    try {
+      // Save as a Supabase secret via edge function
+      const { error } = await supabase.functions.invoke('admin-manage-users', {
+        body: {
+          action: 'save_secret',
+          secret_name: 'KIWIFY_WEBHOOK_SECRET',
+          secret_value: webhookToken.trim(),
+        },
+      });
+      if (error) throw error;
+      toast.success('Token do webhook salvo com sucesso!');
+      setTokenSaved(true);
+      setWebhookToken('');
+    } catch (error) {
+      console.error('Error saving token:', error);
+      toast.error('Erro ao salvar token. Configure manualmente nos segredos do backend.');
+    } finally {
+      setIsTokenLoading(false);
+    }
+  };
 
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-kiwify`;
 
@@ -183,16 +224,50 @@ export function KiwifyConfig() {
 
           <Separator />
 
-          {/* Step 5 (optional) */}
+          {/* Step 5 - Webhook Token */}
           <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold text-sm">5</div>
-            <div className="space-y-2">
-              <h4 className="font-semibold text-muted-foreground">(Opcional) Configurar Segredo do Webhook</h4>
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">5</div>
+            <div className="space-y-3 flex-1">
+              <h4 className="font-semibold">Configurar Token de Segurança do Webhook</h4>
               <p className="text-sm text-muted-foreground">
-                Para maior segurança, configure um segredo de webhook na Kiwify e adicione-o como 
-                <strong> KIWIFY_WEBHOOK_SECRET</strong> nos segredos do backend. 
-                Isso garante que apenas requisições legítimas da Kiwify sejam aceitas.
+                Na Kiwify, vá em <strong>Configurações → Webhooks → Seu Webhook</strong> e copie o <strong>Token de Verificação</strong>. 
+                Cole abaixo para que o sistema valide a autenticidade de cada requisição recebida.
               </p>
+              <div className="flex items-end gap-3">
+                <div className="flex-1 max-w-md">
+                  <Label htmlFor="webhook-token" className="text-sm">Token do Webhook (KIWIFY_WEBHOOK_SECRET)</Label>
+                  <Input
+                    id="webhook-token"
+                    type="password"
+                    value={webhookToken}
+                    onChange={(e) => setWebhookToken(e.target.value)}
+                    placeholder="Cole o token de verificação da Kiwify"
+                    className="mt-1"
+                  />
+                </div>
+                <Button onClick={handleSaveToken} disabled={isTokenLoading || !webhookToken.trim()}>
+                  {isTokenLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Key className="h-4 w-4 mr-2" />
+                  )}
+                  Salvar Token
+                </Button>
+              </div>
+              {tokenSaved && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  Token salvo com sucesso! As requisições do webhook agora serão validadas.
+                </div>
+              )}
+              <Alert>
+                <Key className="h-4 w-4" />
+                <AlertTitle>Segurança</AlertTitle>
+                <AlertDescription>
+                  Com o token configurado, o sistema verifica a assinatura HMAC-SHA256 de cada requisição, 
+                  rejeitando automaticamente qualquer chamada não autorizada. <strong>Altamente recomendado</strong> para produção.
+                </AlertDescription>
+              </Alert>
             </div>
           </div>
         </CardContent>
