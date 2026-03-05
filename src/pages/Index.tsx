@@ -12,7 +12,7 @@ import {
   Workflow, Vote, SplitSquareVertical, CreditCard, Tag, X,
   Instagram, Headphones, Trophy, Flame, DollarSign, Replace,
   CheckCircle2, ArrowDown, MousePointerClick, Gauge, Lock,
-  Megaphone, PieChart, Hash
+  Megaphone, PieChart, Hash, ArrowLeftRight, Upload, FileJson
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -336,6 +336,13 @@ const EXCLUSIVE_DIFFERENTIALS = [
     badge: 'Integrado',
     span: '',
   },
+  {
+    icon: ArrowLeftRight,
+    title: 'Migração Completa em Minutos',
+    description: 'Traga seus contatos, automações, templates de e-mail, sequências e funis de qualquer plataforma. Suporte a CSV, JSON, API e Webhooks — sem perder dados.',
+    badge: 'Exclusivo',
+    span: 'md:col-span-3',
+  },
 ];
 
 function DifferentialsSection() {
@@ -384,6 +391,90 @@ function DifferentialsSection() {
   );
 }
 
+// ─── Migration Highlight Section ────────────────────────────
+const MIGRATION_PLATFORMS = [
+  { name: 'ActiveCampaign', method: 'API Direta', color: 'bg-blue-500' },
+  { name: 'RD Station', method: 'API Direta', color: 'bg-purple-500' },
+  { name: 'SellFlux', method: 'Webhook + JSON', color: 'bg-orange-500' },
+  { name: 'Mailchimp', method: 'CSV + Webhook', color: 'bg-yellow-500' },
+  { name: 'HubSpot', method: 'CSV + Webhook', color: 'bg-orange-600' },
+];
+
+const MIGRATION_ITEMS = [
+  { icon: Users, label: 'Contatos & Tags', desc: 'CSV, API ou Webhook' },
+  { icon: Mail, label: 'Templates de E-mail', desc: 'HTML bruto ou JSON' },
+  { icon: Zap, label: 'Automações', desc: 'Triggers e ações completas' },
+  { icon: Workflow, label: 'Funis & Sequências', desc: 'Conteúdo dos e-mails + delays' },
+];
+
+function MigrationHighlightSection() {
+  return (
+    <section className="relative border-y border-border/40 bg-muted/20 overflow-hidden">
+      <div className="absolute -top-20 right-0 w-[400px] h-[400px] rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+
+      <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24 relative z-10">
+        <div className="max-w-xl mx-auto text-center mb-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
+            <ArrowLeftRight className="h-3 w-3" />
+            Migração sem fricção
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            Traga tudo da sua ferramenta atual
+            <br />
+            <span className="text-primary">em poucos cliques</span>
+          </h2>
+          <p className="text-muted-foreground text-base sm:text-lg">
+            Central de Migração completa com 4 métodos de importação. Sem perder contatos, automações ou templates.
+          </p>
+        </div>
+
+        {/* What can be migrated */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-10">
+          {MIGRATION_ITEMS.map((item, i) => (
+            <div key={i} className="rounded-xl border border-border/50 bg-card p-4 text-center hover:border-primary/30 transition-all">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <item.icon className="h-5 w-5 text-primary" />
+              </div>
+              <p className="font-semibold text-sm mb-0.5">{item.label}</p>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Supported platforms */}
+        <div className="max-w-3xl mx-auto">
+          <p className="text-center text-sm font-medium text-muted-foreground mb-4">Plataformas suportadas</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {MIGRATION_PLATFORMS.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-full border border-border/50 bg-card px-4 py-2 hover:border-primary/30 transition-all">
+                <div className={cn('h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white', p.color)}>
+                  {p.name[0]}
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium leading-none">{p.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{p.method}</p>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center gap-2 rounded-full border border-dashed border-border/50 bg-card px-4 py-2">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Qualquer plataforma via CSV/JSON</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center mt-8">
+          <Link to="/pricing">
+            <Button className="rounded-full" size="lg">
+              Migrar agora <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Why AG Sell Section ────────────────────────────────────
 const WHY_REASONS = [
   {
@@ -395,6 +486,11 @@ const WHY_REASONS = [
     icon: Gauge,
     title: 'Setup em minutos',
     desc: 'Conecte seu WhatsApp via QR Code, configure automações e comece a vender em menos de 10 minutos.',
+  },
+  {
+    icon: ArrowLeftRight,
+    title: 'Migre sem dor de cabeça',
+    desc: 'Central de Migração com suporte a ActiveCampaign, RD Station, SellFlux, Mailchimp e HubSpot. Contatos, automações, templates e funis em poucos cliques.',
   },
   {
     icon: Lock,
@@ -914,7 +1010,7 @@ export default function LandingPage() {
       <div id="recursos">
         <FeatureShowcase />
       </div>
-
+      <MigrationHighlightSection />
       <WhySection />
 
       <div id="planos">
