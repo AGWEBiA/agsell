@@ -8,7 +8,7 @@ import {
   ChevronDown, Trophy, Shield, Key, Webhook, SlidersHorizontal,
   Instagram, ListChecks, Home, Megaphone, Lightbulb, Wrench,
   HelpCircle, Briefcase, X, FlaskConical, Rocket, GitBranch, Send,
-  Lock, BookOpen, Workflow,
+  Lock, BookOpen, Workflow, ArrowRightLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -105,6 +105,7 @@ const menuSections: MenuSection[] = [
     items: [
       { label: 'Central de Ajuda', icon: HelpCircle, path: '/help-center' },
       { label: 'Guia do Sistema', icon: BookOpen, path: '/system-guide' },
+      { label: 'Migração de Dados', icon: ArrowRightLeft, path: '/migration' },
     ],
   },
   {

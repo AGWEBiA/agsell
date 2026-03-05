@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.webhook-shopify]
 verify_jwt = false
+
+[functions.migrate-platform]
+verify_jwt = false

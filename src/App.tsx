@@ -65,6 +65,7 @@ import Sequences from "./pages/Sequences";
 import Channels from "./pages/Channels";
 import FlowBuilder from "./pages/FlowBuilder";
 import TechnicalManual from "./pages/TechnicalManual";
+import Migration from "./pages/Migration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -135,6 +136,7 @@ const App = () => (
                     <Route path="flow-builder" element={<FlowBuilder />} />
                     <Route path="sequences" element={<Sequences />} />
                     <Route path="channels" element={<Channels />} />
+                    <Route path="migration" element={<Migration />} />
                   </Route>
                   
                   {/* Plans accessible even with expired subscription */}
