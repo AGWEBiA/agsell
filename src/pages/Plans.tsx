@@ -9,9 +9,11 @@ import { useContacts } from '@/hooks/useContacts';
 import { useAutomations } from '@/hooks/useAutomations';
 import { useForms } from '@/hooks/useForms';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
-import { Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2, Brain } from 'lucide-react';
+import { Check, Crown, Zap, Users, Mail, MessageSquare, Bot, FileText, Loader2, Brain, Settings, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PlanCheckout } from '@/components/stripe/PlanCheckout';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const FEATURE_LABELS: Record<string, string> = {
   crm_basico: 'CRM Básico',
@@ -28,9 +30,10 @@ const FEATURE_LABELS: Record<string, string> = {
   suporte_prioritario: 'Suporte Prioritário',
 };
 
-function PlanCard({ plan, isCurrentPlan, onSelect }: { plan: Plan; isCurrentPlan: boolean; onSelect: () => void }) {
+function PlanCard({ plan, isCurrentPlan, hasSubscription, onSelect }: { plan: Plan; isCurrentPlan: boolean; hasSubscription: boolean; onSelect: () => void }) {
   const isPro = plan.slug === 'professional';
   const isEnterprise = plan.slug === 'enterprise';
+  const isUpgrade = hasSubscription && !isCurrentPlan;
 
   return (
     <Card className={cn(
@@ -126,7 +129,18 @@ function PlanCard({ plan, isCurrentPlan, onSelect }: { plan: Plan; isCurrentPlan
           disabled={isCurrentPlan}
           onClick={onSelect}
         >
-          {isCurrentPlan ? 'Plano Atual' : plan.price_monthly === 0 ? 'Começar' : 'Fazer Upgrade'}
+          {isCurrentPlan ? (
+            'Plano Atual'
+          ) : isUpgrade ? (
+            <>
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              Alterar Plano
+            </>
+          ) : plan.price_monthly === 0 ? (
+            'Começar'
+          ) : (
+            'Fazer Upgrade'
+          )}
         </Button>
       </CardFooter>
     </Card>
@@ -173,8 +187,95 @@ function UsageCard({ label, current, limit, icon: Icon }: { label: string; curre
   );
 }
 
+function SubscriptionManagement({ subscription }: { subscription: any }) {
+  const { currentOrganization } = useOrganization();
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+
+  const handleManageSubscription = async () => {
+    if (!currentOrganization?.id) return;
+
+    if (subscription?.payment_provider === 'kiwify') {
+      toast.info('Para gerenciar sua assinatura Kiwify, acesse sua conta em kiwify.com.br');
+      window.open('https://dashboard.kiwify.com.br', '_blank');
+      return;
+    }
+
+    setIsLoadingPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        body: { organizationId: currentOrganization.id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Portal error:', error);
+      toast.error('Erro ao abrir portal de gerenciamento');
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
+
+  if (!subscription) return null;
+
+  const providerLabel = subscription.payment_provider === 'kiwify' ? 'Kiwify' : 'Stripe';
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString('pt-BR')
+    : null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          Gerenciar Assinatura
+        </CardTitle>
+        <CardDescription>
+          Detalhes da sua assinatura atual
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Status</p>
+            <Badge variant={subscription.status === 'active' ? 'default' : 'destructive'}>
+              {subscription.status === 'active' ? 'Ativa' : subscription.status === 'past_due' ? 'Pagamento Pendente' : 'Inativa'}
+            </Badge>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Provedor</p>
+            <p className="font-medium">{providerLabel}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Ciclo</p>
+            <p className="font-medium">{subscription.billing_cycle === 'yearly' ? 'Anual' : 'Mensal'}</p>
+          </div>
+        </div>
+        {periodEnd && (
+          <p className="text-sm text-muted-foreground mt-3">
+            Próxima renovação: <strong>{periodEnd}</strong>
+          </p>
+        )}
+        {subscription.cancel_at_period_end && (
+          <p className="text-sm text-destructive mt-2">
+            ⚠️ A assinatura será cancelada ao final do período atual.
+          </p>
+        )}
+      </CardContent>
+      <CardFooter>
+        <Button variant="outline" onClick={handleManageSubscription} disabled={isLoadingPortal}>
+          {isLoadingPortal && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <Settings className="h-4 w-4 mr-2" />
+          {subscription.payment_provider === 'kiwify' ? 'Gerenciar na Kiwify' : 'Gerenciar Assinatura'}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
 export default function Plans() {
-  const { plans, currentPlan, updatePlan, isLoading } = usePlans();
+  const { plans, currentPlan, subscription, updatePlan, isLoading } = usePlans();
   const contactsQuery = useContacts();
   const { automations } = useAutomations();
   const { forms } = useForms();
@@ -183,6 +284,7 @@ export default function Plans() {
   const [showCheckout, setShowCheckout] = useState(false);
 
   const contacts = contactsQuery.data ?? [];
+  const hasSubscription = !!subscription && subscription.status === 'active';
 
   if (isLoading) {
     return (
@@ -208,35 +310,18 @@ export default function Plans() {
         <p className="text-muted-foreground">Gerencie seu plano e acompanhe seu uso</p>
       </div>
 
+      {/* Subscription Management */}
+      {subscription && <SubscriptionManagement subscription={subscription} />}
+
       {/* Current Usage */}
       {currentPlan && (
         <div>
           <h2 className="text-xl font-semibold mb-4">Seu Uso Atual</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <UsageCard 
-              label="Usuários" 
-              current={members.length} 
-              limit={currentPlan.max_users} 
-              icon={Users} 
-            />
-            <UsageCard 
-              label="Contatos" 
-              current={contacts.length} 
-              limit={currentPlan.max_contacts} 
-              icon={Users} 
-            />
-            <UsageCard 
-              label="Automações" 
-              current={automations.length} 
-              limit={currentPlan.max_automations} 
-              icon={Bot} 
-            />
-            <UsageCard 
-              label="Formulários" 
-              current={forms.length} 
-              limit={currentPlan.max_forms} 
-              icon={FileText} 
-            />
+            <UsageCard label="Usuários" current={members.length} limit={currentPlan.max_users} icon={Users} />
+            <UsageCard label="Contatos" current={contacts.length} limit={currentPlan.max_contacts} icon={Users} />
+            <UsageCard label="Automações" current={automations.length} limit={currentPlan.max_automations} icon={Bot} />
+            <UsageCard label="Formulários" current={forms.length} limit={currentPlan.max_forms} icon={FileText} />
           </div>
         </div>
       )}
@@ -250,6 +335,7 @@ export default function Plans() {
               key={plan.id}
               plan={plan}
               isCurrentPlan={currentPlan?.id === plan.id}
+              hasSubscription={hasSubscription}
               onSelect={() => handleSelectPlan(plan)}
             />
           ))}

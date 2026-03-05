@@ -91,26 +91,105 @@ Deno.serve(async (req) => {
     // Real Stripe checkout
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
-    // Check for existing customer
-    const { data: existingSub } = await supabaseClient
+    // Check for existing customer & subscription
+    const { data: existingSub } = await serviceClient
       .from("subscriptions")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, provider_subscription_id, payment_provider, plan_id")
       .eq("organization_id", organizationId)
-      .single();
+      .maybeSingle();
 
     let customerId = existingSub?.stripe_customer_id;
 
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          organization_id: organizationId,
-          user_id: user.id,
-        },
-      });
-      customerId = customer.id;
+      // Try find by email
+      const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            organization_id: organizationId,
+            user_id: user.id,
+          },
+        });
+        customerId = customer.id;
+      }
     }
 
+    // --- UPGRADE/DOWNGRADE: If user already has an active Stripe subscription, update it with proration ---
+    if (
+      existingSub?.payment_provider === "stripe" &&
+      existingSub?.provider_subscription_id &&
+      existingSub?.plan_id !== planId
+    ) {
+      console.log("Existing Stripe subscription found, attempting upgrade/downgrade with proration");
+      try {
+        const currentStripeSubscription = await stripe.subscriptions.retrieve(
+          existingSub.provider_subscription_id
+        );
+
+        if (currentStripeSubscription.status === "active" || currentStripeSubscription.status === "trialing") {
+          const stripePriceId = billingCycle === "yearly"
+            ? plan.stripe_price_id_yearly
+            : plan.stripe_price_id_monthly;
+
+          let newPriceId: string;
+          if (stripePriceId) {
+            newPriceId = stripePriceId;
+          } else {
+            const amount = billingCycle === "yearly"
+              ? Math.round(plan.price_yearly * 100)
+              : Math.round(plan.price_monthly * 100);
+            const price = await stripe.prices.create({
+              currency: "brl",
+              unit_amount: amount,
+              recurring: { interval: billingCycle === "yearly" ? "year" : "month" },
+              product_data: { name: `AG Sell - ${plan.name}`, metadata: { plan_id: plan.id } },
+            });
+            newPriceId = price.id;
+          }
+
+          // Update the subscription with proration
+          const updatedSubscription = await stripe.subscriptions.update(
+            existingSub.provider_subscription_id,
+            {
+              items: [{
+                id: currentStripeSubscription.items.data[0].id,
+                price: newPriceId,
+              }],
+              proration_behavior: "create_prorations",
+              metadata: {
+                organization_id: organizationId,
+                plan_id: planId,
+                billing_cycle: billingCycle,
+              },
+            }
+          );
+
+          // Update local database
+          await serviceClient.from("subscriptions").update({
+            plan_id: planId,
+            billing_cycle: billingCycle,
+            status: "active",
+            current_period_end: new Date(updatedSubscription.current_period_end * 1000).toISOString(),
+          }).eq("organization_id", organizationId);
+
+          await serviceClient.from("organizations").update({ plan_id: planId }).eq("id", organizationId);
+
+          console.log("Subscription updated via proration successfully");
+          return new Response(
+            JSON.stringify({ success: true, message: "Plan updated with proration" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch (stripeError) {
+        console.error("Error updating existing subscription, falling back to new checkout:", stripeError);
+        // Fall through to create new checkout session
+      }
+    }
+
+    // --- NEW SUBSCRIPTION or fallback ---
     // Use the pre-configured Stripe price ID from the plan record
     const stripePriceId = billingCycle === "yearly"
       ? plan.stripe_price_id_yearly
@@ -122,7 +201,6 @@ Deno.serve(async (req) => {
       priceId = stripePriceId;
       console.log(`Using pre-configured Stripe price: ${priceId}`);
     } else {
-      // Fallback: create a price dynamically (legacy)
       console.log("No Stripe price ID configured, creating dynamically");
       const amount = billingCycle === "yearly"
         ? Math.round(plan.price_yearly * 100)

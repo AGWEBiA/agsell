@@ -289,6 +289,30 @@ async function activateSubscription(supabase: any, params: {
 }) {
   const { organizationId, planId, kiwifyOrderId, kiwifySubscriptionId, billingCycle } = params;
 
+  // Check if there's an existing subscription with a different provider
+  const { data: existingSub } = await supabase
+    .from("subscriptions")
+    .select("id, payment_provider, provider_subscription_id, stripe_customer_id")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  // If switching FROM Stripe, attempt to cancel the Stripe subscription
+  if (existingSub?.payment_provider === "stripe" && existingSub?.provider_subscription_id) {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (stripeKey) {
+      try {
+        const { default: Stripe } = await import("https://esm.sh/stripe@14.21.0");
+        const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+        await stripe.subscriptions.update(existingSub.provider_subscription_id, {
+          cancel_at_period_end: true,
+        });
+        logStep("Cancelled previous Stripe subscription", { subId: existingSub.provider_subscription_id });
+      } catch (err) {
+        logStep("Warning: could not cancel Stripe subscription", err);
+      }
+    }
+  }
+
   // Update org plan
   await supabase.from("organizations").update({ plan_id: planId }).eq("id", organizationId);
 
@@ -303,12 +327,6 @@ async function activateSubscription(supabase: any, params: {
     payment_provider: "kiwify",
     provider_subscription_id: kiwifySubscriptionId || kiwifyOrderId,
   };
-
-  const { data: existingSub } = await supabase
-    .from("subscriptions")
-    .select("id")
-    .eq("organization_id", organizationId)
-    .maybeSingle();
 
   if (existingSub) {
     await supabase.from("subscriptions").update(subData).eq("id", existingSub.id);
