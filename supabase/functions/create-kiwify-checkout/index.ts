@@ -72,6 +72,47 @@ Deno.serve(async (req) => {
       { onConflict: "email", ignoreDuplicates: false }
     );
 
+    // Create/update contact in CRM if we have an authenticated user with org
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (user) {
+        // Get user's organization
+        const { data: membership } = await supabase
+          .from("organization_members")
+          .select("organization_id")
+          .eq("user_id", user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (membership?.organization_id) {
+          const contactEmail = (email || user.email || "").toLowerCase();
+          // Check if contact already exists by email in this org
+          const { data: existingContact } = await supabase
+            .from("contacts")
+            .select("id")
+            .eq("organization_id", membership.organization_id)
+            .ilike("email", contactEmail)
+            .maybeSingle();
+
+          if (!existingContact && contactEmail) {
+            await supabase.from("contacts").insert({
+              first_name: name || "Lead Checkout",
+              email: contactEmail,
+              user_id: user.id,
+              organization_id: membership.organization_id,
+              source: "checkout_kiwify",
+              status: "active",
+            });
+            console.log(`[KIWIFY-CHECKOUT] Contact created for ${contactEmail}`);
+          }
+        }
+      }
+    }
+
     console.log(`[KIWIFY-CHECKOUT] Redirecting ${email} to Kiwify for plan ${plan.name}`);
 
     return new Response(

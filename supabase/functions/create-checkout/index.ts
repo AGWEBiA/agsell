@@ -57,6 +57,30 @@ Deno.serve(async (req) => {
       throw new Error("Organization not found");
     }
 
+    // Create/update contact in CRM from checkout data
+    const contactEmail = (user.email || "").toLowerCase();
+    if (contactEmail) {
+      const { data: existingContact } = await serviceClient
+        .from("contacts")
+        .select("id")
+        .eq("organization_id", organizationId)
+        .ilike("email", contactEmail)
+        .maybeSingle();
+
+      if (!existingContact) {
+        const fullName = user.user_metadata?.full_name || "";
+        await serviceClient.from("contacts").insert({
+          first_name: fullName || "Lead Checkout",
+          email: contactEmail,
+          user_id: user.id,
+          organization_id: organizationId,
+          source: "checkout_stripe",
+          status: "active",
+        });
+        console.log(`[CHECKOUT] Contact created for ${contactEmail}`);
+      }
+    }
+
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
       // No Stripe key = test mode: update subscription directly
