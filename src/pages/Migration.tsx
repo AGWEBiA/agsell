@@ -7,14 +7,15 @@ import { ArrowRight, Upload, Globe, FileJson, FileSpreadsheet, Zap, CheckCircle2
 import { MigrationCSVImport } from '@/components/migration/MigrationCSVImport';
 import { MigrationJSONImport } from '@/components/migration/MigrationJSONImport';
 import { MigrationAPIConnect } from '@/components/migration/MigrationAPIConnect';
+import { MigrationWebhookGuide } from '@/components/migration/MigrationWebhookGuide';
 
 const platforms = [
-  { id: 'activecampaign', name: 'ActiveCampaign', apiSupport: true, color: 'bg-blue-500' },
-  { id: 'rdstation', name: 'RD Station', apiSupport: true, color: 'bg-purple-500' },
-  { id: 'sellflux', name: 'SellFlux', apiSupport: false, color: 'bg-orange-500' },
-  { id: 'mailchimp', name: 'Mailchimp', apiSupport: false, color: 'bg-yellow-500' },
-  { id: 'hubspot', name: 'HubSpot', apiSupport: false, color: 'bg-orange-600' },
-  { id: 'other', name: 'Outra Plataforma', apiSupport: false, color: 'bg-muted' },
+  { id: 'activecampaign', name: 'ActiveCampaign', apiSupport: true, webhookSupport: false, color: 'bg-blue-500' },
+  { id: 'rdstation', name: 'RD Station', apiSupport: true, webhookSupport: false, color: 'bg-purple-500' },
+  { id: 'sellflux', name: 'SellFlux', apiSupport: false, webhookSupport: true, color: 'bg-orange-500' },
+  { id: 'mailchimp', name: 'Mailchimp', apiSupport: false, webhookSupport: true, color: 'bg-yellow-500' },
+  { id: 'hubspot', name: 'HubSpot', apiSupport: false, webhookSupport: true, color: 'bg-orange-600' },
+  { id: 'other', name: 'Outra Plataforma', apiSupport: false, webhookSupport: false, color: 'bg-muted' },
 ];
 
 export default function Migration() {
@@ -60,6 +61,10 @@ export default function Migration() {
                         {p.apiSupport ? (
                           <Badge variant="secondary" className="text-xs">
                             <Zap className="h-3 w-3 mr-1" /> Migração via API
+                          </Badge>
+                        ) : p.webhookSupport ? (
+                          <Badge variant="secondary" className="text-xs">
+                            <Globe className="h-3 w-3 mr-1" /> Webhook + CSV/JSON
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs">
@@ -120,11 +125,16 @@ export default function Migration() {
             </div>
           </div>
 
-          <Tabs defaultValue={platform?.apiSupport ? 'api' : 'csv'}>
+          <Tabs defaultValue={platform?.apiSupport ? 'api' : platform?.webhookSupport ? 'webhook' : 'csv'}>
             <TabsList>
               {platform?.apiSupport && (
                 <TabsTrigger value="api">
                   <Zap className="h-4 w-4 mr-1" /> Migração via API
+                </TabsTrigger>
+              )}
+              {platform?.webhookSupport && (
+                <TabsTrigger value="webhook">
+                  <Globe className="h-4 w-4 mr-1" /> Guia de Webhook
                 </TabsTrigger>
               )}
               <TabsTrigger value="csv">
@@ -138,6 +148,11 @@ export default function Migration() {
             {platform?.apiSupport && (
               <TabsContent value="api">
                 <MigrationAPIConnect platformId={selectedPlatform} platformName={platform.name} />
+              </TabsContent>
+            )}
+            {platform?.webhookSupport && (
+              <TabsContent value="webhook">
+                <MigrationWebhookGuide platformId={selectedPlatform} platformName={platform.name} />
               </TabsContent>
             )}
             <TabsContent value="csv">
