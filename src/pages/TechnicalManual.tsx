@@ -148,6 +148,7 @@ supabase/
 | \`/purchase-success\` | Sucesso | Confirmação pós-checkout | Público |
 | \`/forms/:formId\` | Formulário | Formulário público de captura | Público |
 | \`/agency-invite/:token\` | Convite Agência | Aceite de convite de agência | Público |
+| \`/support-portal/:orgSlug\` | Portal de Suporte | Portal público white-label para clientes abrirem tickets | Público |
 
 ## 3.2 Rotas Protegidas (ProtectedRoute + DashboardLayout)
 
@@ -188,6 +189,7 @@ supabase/
 | \`/agency-clients\` | Clientes (Agência) | \`agency_management\` | Feature Gate |
 | \`/help-center\` | Central de Ajuda | — | Autenticado |
 | \`/system-guide\` | Guia do Sistema | — | Autenticado |
+| \`/support-portal-settings\` | Config. Portal Suporte | \`customer_support_center\` | Feature Gate |
 | \`/admin\` | Painel Admin | — | \`isAdmin\` (role global) |
 
 ## 3.3 Rotas com Assinatura Expirada
@@ -522,9 +524,51 @@ Dashboard com métricas em tempo real: contatos, deals, funil, engajamento.
 - Ações pontuáveis: \`contact_created\`, \`deal_won\`, \`task_completed\`, \`email_sent\`, \`automation_created\`
 - Nível = \`FLOOR(total_points / 100) + 1\`
 
+## 4.19 Portal de Suporte White-label
+
+### Objetivo
+Permitir que clientes dos usuários da plataforma abram e acompanhem tickets de suporte via portal público, sem necessidade de login.
+
+### Disponibilidade
+- Planos: Professional, Enterprise, Agência
+- Feature Gate: \\\`customer_support_center\\\`
+
+### Rotas
+- \\\`/support-portal/:orgSlug\\\` — Portal público (sem autenticação)
+- \\\`/support-portal-settings\\\` — Configurações do portal (autenticado, feature-gated)
+
+### Funcionalidades do Portal Público
+- **Abrir ticket** — Formulário com nome, e-mail, assunto, categoria e mensagem
+- **Acompanhar ticket** — Consulta por protocolo (SUP-YYYYMMDD-XXXXX) + e-mail
+- **Chat WhatsApp** — Botão direto para conversa via WhatsApp (se configurado)
+- **Protocolo automático** — Gerado no formato \\\`SUP-YYYYMMDD-XXXXX\\\`
+
+### Configurações (\\\`organizations.settings.support_portal\\\`)
+
+| Campo | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| \\\`welcome_message\\\` | text | "Como podemos ajudar você?" | Mensagem de boas-vindas |
+| \\\`categories\\\` | string[] | ["Dúvida", "Problema técnico", ...] | Categorias de chamados |
+| \\\`business_hours\\\` | text | "Segunda a Sexta, 9h às 18h" | Horário de atendimento |
+| \\\`chat_enabled\\\` | boolean | false | Habilitar chat WhatsApp |
+| \\\`chat_whatsapp\\\` | text | "" | Número do WhatsApp |
+
+### Edge Function
+- \\\`public-support-portal\\\` — Processa tickets sem autenticação
+  - Valida organização via slug
+  - Verifica se o plano inclui \\\`customer_support_center\\\`
+  - Cria/vincula contato no CRM automaticamente
+  - Gera protocolo único
+  - Suporta GET (consultar ticket) e POST (criar ticket)
+
+### Integração com CRM
+- Contatos criados automaticamente a partir do e-mail do ticket
+- Tickets vinculados ao contato para histórico unificado
+
 ---
 
 # 5. SISTEMA DE AUTENTICAÇÃO
+
 
 ## 5.1 Métodos de Login
 - E-mail + Senha (Supabase Auth)
@@ -588,7 +632,7 @@ O componente \`FeatureRequiredPage\` envolve rotas protegidas e verifica se o pl
 </FeatureRequiredPage>
 \`\`\`
 
-Features possíveis: \`crm_basico\`, \`pipeline\`, \`tarefas\`, \`automacoes\`, \`email_marketing\`, \`analytics\`, \`lead_scoring\`, \`whatsapp\`, \`instagram\`, \`integrações\`, \`api\`, \`white_label\`, \`suporte_prioritario\`, \`agency_management\`
+Features possíveis: \`crm_basico\`, \`pipeline\`, \`tarefas\`, \`automacoes\`, \`email_marketing\`, \`analytics\`, \`lead_scoring\`, \`whatsapp\`, \`instagram\`, \`integrações\`, \`api\`, \`white_label\`, \`suporte_prioritario\`, \`agency_management\`, \`customer_support_center\`
 
 ## 6.3 Sidebar Feature Lock
 

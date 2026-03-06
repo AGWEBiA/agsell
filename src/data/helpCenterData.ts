@@ -3441,6 +3441,79 @@ Após configurar, sempre teste:
 💡 **Dica**: Configure as integrações de pagamento (Stripe, Hotmart) primeiro se seu negócio depende de vendas online. Isso automatiza a criação de contatos e deals.`,
   },
   {
+    id: 'support-portal',
+    categoryId: 'settings',
+    title: 'Portal de Suporte White-label',
+    icon: HelpCircle,
+    description: 'Configure um portal público de suporte para seus clientes abrirem e acompanharem chamados.',
+    readTime: '6 min',
+    popular: true,
+    content: `O **Portal de Suporte White-label** permite que você ofereça um canal de atendimento profissional para seus clientes, sem que eles precisem criar conta ou fazer login. Disponível nos planos **Professional**, **Enterprise** e **Agência**.
+
+## Como funciona
+
+O portal é uma página pública acessível via link único da sua organização:
+
+\`\`\`
+https://seudominio.com/support-portal/slug-da-sua-organizacao
+\`\`\`
+
+Seus clientes podem:
+- **Abrir tickets de suporte** com nome, e-mail, assunto e categoria
+- **Acompanhar o status** de tickets existentes usando o número de protocolo
+- **Iniciar chat direto** via WhatsApp (se configurado)
+
+> Cada ticket gera um protocolo único (ex: SUP-20260306-12345) que o cliente usa para consultar o andamento.
+
+## Configurando o Portal
+
+1. Acesse **"Portal de Suporte"** no menu lateral (seção Comunicação)
+2. Você verá o **link público** do seu portal — copie e compartilhe com seus clientes
+3. Configure as opções:
+
+### Mensagem de boas-vindas
+Personalize a mensagem que seus clientes veem ao acessar o portal.
+
+### Horário de atendimento
+Informe o horário em que sua equipe está disponível para responder.
+
+### Categorias de chamados
+Adicione categorias para organizar os tickets recebidos:
+- Clique em **"+"** para adicionar uma nova categoria
+- Clique no **"X"** ao lado de uma categoria para removê-la
+- Categorias padrão: Dúvida, Problema técnico, Financeiro, Sugestão, Outro
+
+### Chat via WhatsApp
+Ative para permitir que clientes iniciem uma conversa direta pelo WhatsApp:
+1. Ative o switch **"Chat via WhatsApp"**
+2. Insira o número do WhatsApp no formato internacional (ex: 5511999999999)
+3. O botão de chat aparecerá no portal público
+
+## Integração com o CRM
+
+Quando um cliente abre um ticket pelo portal:
+- O sistema **cria automaticamente um contato** no CRM (se não existir)
+- O ticket é vinculado ao contato pelo e-mail informado
+- Você pode acompanhar os tickets diretamente no SAC/Inbox
+
+## Acompanhamento de tickets
+
+Seus clientes podem consultar o status dos tickets:
+1. No portal, clicam na aba **"Acompanhar Ticket"**
+2. Inserem o **número do protocolo** e o **e-mail** usado na abertura
+3. O sistema mostra o status atual: Aberto, Em andamento ou Resolvido
+
+## Boas práticas
+
+- 🔗 **Compartilhe o link** no seu site, e-mails e redes sociais
+- ⏰ **Mantenha horários atualizados** para definir expectativas corretas
+- 📋 **Use categorias claras** para facilitar a triagem dos tickets
+- 💬 **Ative o WhatsApp** para oferecer atendimento instantâneo
+- 📊 **Monitore os tickets** regularmente para garantir respostas rápidas
+
+💡 **Dica**: Inclua o link do portal de suporte na assinatura de e-mail da sua equipe e no rodapé do seu site para facilitar o acesso dos clientes.`,
+  },
+  {
     id: 'settings-general',
     categoryId: 'settings',
     title: 'Configurações gerais',
