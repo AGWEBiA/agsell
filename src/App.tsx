@@ -143,7 +143,7 @@ const App = () => (
                     <Route path="channels" element={<Channels />} />
                     <Route path="migration" element={<Migration />} />
                     <Route path="support" element={<SupportTickets />} />
-                    <Route path="support-center" element={<SupportCenter />} />
+                    <Route path="support-center" element={<FeatureRequiredPage feature="support_center" featureLabel="Central de Atendimento"><SupportCenter /></FeatureRequiredPage>} />
                   </Route>
                   
                   {/* Plans accessible even with expired subscription */}

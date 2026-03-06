@@ -324,27 +324,79 @@ export default function SupportCenter() {
         </TabsContent>
       </Tabs>
 
-      {/* Contact Info */}
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-primary" />
+      {/* Horário de Atendimento - Destaque */}
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Horários */}
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Horário de Atendimento</h3>
+                  <p className="text-xs text-muted-foreground">Suporte humano disponível nos horários abaixo</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-sm">Precisa de ajuda urgente?</p>
-                <p className="text-xs text-muted-foreground">Nossa equipe está disponível para ajudar você.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60 border">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <MessageCircle className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Chat & WhatsApp</p>
+                    <p className="text-xs text-muted-foreground">Seg a Sex · 9h às 18h</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60 border">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">E-mail & Tickets</p>
+                    <p className="text-xs text-muted-foreground">24h · Resposta em até 24h úteis</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60 border">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Phone className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Suporte Prioritário</p>
+                    <p className="text-xs text-muted-foreground">Plano Enterprise · 8h às 20h</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-background/60 border">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Headphones className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Fins de Semana</p>
+                    <p className="text-xs text-muted-foreground">Somente tickets · Resposta na segunda</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5" />
-                suporte@agsell.com.br
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                Seg-Sex, 9h-18h
+
+            {/* Contato Rápido */}
+            <div className="flex flex-col justify-center gap-3">
+              <div className="p-4 rounded-xl bg-background/80 border space-y-3">
+                <h4 className="font-semibold text-sm">Contato Direto</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 text-primary" />
+                    suporte@agsell.com.br
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5 text-primary" />
+                    (11) 99999-9999
+                  </div>
+                </div>
+                <Button size="sm" className="w-full" onClick={() => navigate('/inbox')}>
+                  <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+                  Iniciar Chat
+                </Button>
               </div>
             </div>
           </div>
