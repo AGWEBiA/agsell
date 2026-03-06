@@ -85,7 +85,12 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
   // Update when settings load
   React.useEffect(() => {
     if (gatewaySettings) {
-      if (gatewaySettings.default_gateway === 'kiwify' && showKiwify) {
+      // If only one gateway is active, force it
+      if (showKiwify && !showStripe) {
+        setPaymentProvider('kiwify');
+      } else if (showStripe && !showKiwify) {
+        setPaymentProvider('stripe');
+      } else if (gatewaySettings.default_gateway === 'kiwify' && showKiwify) {
         setPaymentProvider('kiwify');
       } else if (gatewaySettings.default_gateway === 'stripe' && showStripe) {
         setPaymentProvider('stripe');
