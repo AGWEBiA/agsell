@@ -721,8 +721,8 @@ export default function Inbox() {
               )}
 
               <Separator />
-              <Button variant="link" size="sm" className="px-0 text-xs" onClick={() => setNcStep('new')}>
-                <Plus className="h-3 w-3 mr-1" />
+              <Button variant="outline" size="default" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold" onClick={() => setNcStep('new')}>
+                <Plus className="h-4 w-4 mr-2" />
                 Criar novo contato
               </Button>
             </div>
