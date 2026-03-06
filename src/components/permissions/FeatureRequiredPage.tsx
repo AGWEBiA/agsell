@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePlanFeature } from '@/hooks/usePlans';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Lock, ArrowRight } from 'lucide-react';
@@ -13,7 +14,13 @@ interface FeatureRequiredPageProps {
 
 export function FeatureRequiredPage({ feature, featureLabel, children }: FeatureRequiredPageProps) {
   const { hasFeature, isLoading } = usePlanFeature(feature);
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // Admins always have access to all features
+  if (isAdmin) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return null;
