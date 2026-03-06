@@ -4054,6 +4054,8 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      normalize_br_phone: { Args: { phone: string }; Returns: string }
+      unify_sac_contacts: { Args: never; Returns: Json }
     }
     Enums: {
       app_action:

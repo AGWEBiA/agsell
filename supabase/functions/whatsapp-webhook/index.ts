@@ -504,26 +504,24 @@ async function routeToInbox(
     const normalizePhone = (value: string | null | undefined) => (value || "").replace(/\D/g, "");
     const extractLocal = (phone: string) => {
       const digits = phone.replace(/\D/g, "");
-      // Brazilian numbers: strip leading 55 if total length > 11 (DDD + 8-9 digits)
       if (digits.startsWith("55") && digits.length > 11) return digits.slice(2);
       return digits;
     };
-    // Extract tail (last 8-9 digits) for fuzzy matching across country code variations
-    const extractTail = (phone: string) => {
+    // Brazilian normalization: DDD + last 8 subscriber digits (handles 8→9 digit migration)
+    const normalizeBR = (phone: string) => {
       const digits = phone.replace(/\D/g, "");
-      // Brazilian mobile: DDD(2) + number(8-9) = 10-11 digits
-      if (digits.length >= 10) return digits.slice(-Math.min(digits.length, 11));
-      return digits;
+      if (digits.length < 10) return digits;
+      let local = digits;
+      if (local.startsWith("55") && local.length > 11) local = local.slice(2);
+      const ddd = local.slice(0, 2);
+      const subscriber = local.slice(-8);
+      return ddd + subscriber;
     };
 
     const localClean = extractLocal(cleanPhone);
-    const tailClean = extractTail(cleanPhone);
+    const brKey = normalizeBR(cleanPhone);
     const comparablePhones = Array.from(
-      new Set([
-        cleanPhone,
-        `55${localClean}`,
-        localClean,
-      ].filter(Boolean))
+      new Set([cleanPhone, `55${localClean}`, localClean].filter(Boolean))
     );
 
     const { data: orgContacts } = await supabase
@@ -532,23 +530,20 @@ async function routeToInbox(
       .eq("organization_id", organizationId)
       .limit(2000);
 
-    // Score contacts: prefer "real" contacts (with names that aren't just phone numbers) over auto-created
     const allContacts = orgContacts || [];
-    const isAutoCreatedName = (name: string) => /^\d+$/.test(name.replace(/\D/g, ""));
+    const isAutoCreatedName = (name: string) => /^\+?\d[\d\s\-\.]+$/.test(name.trim());
 
     const matchingContacts = allContacts.filter((contact) => {
       const phone = normalizePhone(contact.phone);
       const whatsapp = normalizePhone(contact.whatsapp);
-      const phoneLocal = extractLocal(phone);
-      const whatsappLocal = extractLocal(whatsapp);
-      const phoneTail = extractTail(phone);
-      const whatsappTail = extractTail(whatsapp);
 
       // Exact or local match
       if (comparablePhones.includes(phone) || comparablePhones.includes(whatsapp)) return true;
-      if (localClean && (phoneLocal === localClean || whatsappLocal === localClean)) return true;
-      // Tail match (last 10-11 digits) for robustness across country code formats
-      if (tailClean.length >= 10 && (phoneTail === tailClean || whatsappTail === tailClean)) return true;
+      if (localClean && (extractLocal(phone) === localClean || extractLocal(whatsapp) === localClean)) return true;
+      // Brazilian DDD+8 match (handles 8→9 digit migration)
+      if (brKey.length >= 10) {
+        if ((phone && normalizeBR(phone) === brKey) || (whatsapp && normalizeBR(whatsapp) === brKey)) return true;
+      }
       return false;
     });
 
