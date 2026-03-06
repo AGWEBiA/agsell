@@ -56,6 +56,7 @@ const channelIcons: Record<string, typeof MessageSquare> = {
 };
 
 type QueueTab = 'fila' | 'meus' | 'todos';
+type NcStep = 'search' | 'new' | 'device';
 
 export default function Inbox() {
   const { conversations, isLoading, createConversation, sendMessage, markAsRead, updateConversation } = useInbox();
@@ -80,7 +81,7 @@ export default function Inbox() {
 
   // Nova Conversa dialog state
   const [novaConversaOpen, setNovaConversaOpen] = useState(false);
-  const [ncStep, setNcStep] = useState<'search' | 'new'>('search');
+  const [ncStep, setNcStep] = useState<NcStep>('search');
   const [ncSearch, setNcSearch] = useState('');
   const [ncSelectedContact, setNcSelectedContact] = useState<string | null>(null);
   const [ncChannel, setNcChannel] = useState('whatsapp');
@@ -111,7 +112,7 @@ export default function Inbox() {
   const queueFiltered = conversations.filter(c => {
     if (queueTab === 'fila') return !c.assigned_to && c.status !== 'resolved' && c.status !== 'closed';
     if (queueTab === 'meus') return c.assigned_to === user?.id && c.status !== 'resolved' && c.status !== 'closed';
-    if (queueTab === 'todos') return c.status === 'resolved' || c.status === 'closed';
+    if (queueTab === 'todos') return true; // ALL conversations
     return true;
   });
 
@@ -126,7 +127,7 @@ export default function Inbox() {
   const queueCounts = {
     fila: conversations.filter(c => !c.assigned_to && c.status !== 'resolved' && c.status !== 'closed').length,
     meus: conversations.filter(c => c.assigned_to === user?.id && c.status !== 'resolved' && c.status !== 'closed').length,
-    todos: conversations.filter(c => c.status === 'resolved' || c.status === 'closed').length,
+    todos: conversations.length,
   };
 
   // Puxar atendimento = assign to me
@@ -219,8 +220,21 @@ export default function Inbox() {
 
   const handleNovaConversaStart = () => {
     if (!ncSelectedContact) { toast.error('Selecione um contato'); return; }
+    // If whatsapp channel with devices, go to device step
+    if (ncChannel === 'whatsapp' && instances && instances.length > 0 && !ncDeviceId) {
+      setNcStep('device');
+      return;
+    }
     createConversation.mutate({ contact_id: ncSelectedContact, channel: ncChannel });
     resetNovaConversa();
+  };
+
+  const handleDeviceSelected = (deviceId: string) => {
+    setNcDeviceId(deviceId);
+    if (ncSelectedContact) {
+      createConversation.mutate({ contact_id: ncSelectedContact, channel: ncChannel });
+      resetNovaConversa();
+    }
   };
 
   const handleCreateContactAndStart = async () => {
@@ -242,9 +256,16 @@ export default function Inbox() {
       }
       const { data: contact, error } = await supabase.from('contacts').insert(contactData).select().single();
       if (error) throw error;
-      createConversation.mutate({ contact_id: contact.id, channel: ncChannel });
-      resetNovaConversa();
-      toast.success('Contato criado e atendimento iniciado!');
+      setNcSelectedContact(contact.id);
+      // If whatsapp with devices, go to device step
+      if (ncChannel === 'whatsapp' && instances && instances.length > 0) {
+        setNcStep('device');
+        toast.success('Contato criado! Selecione o dispositivo.');
+      } else {
+        createConversation.mutate({ contact_id: contact.id, channel: ncChannel });
+        resetNovaConversa();
+        toast.success('Contato criado e atendimento iniciado!');
+      }
     } catch (e: any) {
       toast.error('Erro: ' + e.message);
     } finally {
@@ -703,22 +724,7 @@ export default function Inbox() {
                 </Select>
               </div>
 
-              {/* Device selection for WhatsApp */}
-              {ncChannel === 'whatsapp' && instances && instances.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm">Dispositivo</Label>
-                  <Select value={ncDeviceId} onValueChange={setNcDeviceId}>
-                    <SelectTrigger className="h-9"><SelectValue placeholder="Selecione o dispositivo" /></SelectTrigger>
-                    <SelectContent>
-                      {instances.map((inst: any) => (
-                        <SelectItem key={inst.id} value={inst.id}>
-                          {inst.name} {inst.phone_number ? `(${inst.phone_number})` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {/* Device selection removed — now a dedicated step */}
 
               <Separator />
               <Button variant="outline" size="default" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold" onClick={() => setNcStep('new')}>
@@ -758,19 +764,63 @@ export default function Inbox() {
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={resetNovaConversa}>Cancelar</Button>
-            {ncStep === 'search' ? (
-              <Button onClick={handleNovaConversaStart} disabled={!ncSelectedContact}>
-                Iniciar Atendimento
-              </Button>
-            ) : (
-              <Button onClick={handleCreateContactAndStart} disabled={isCreatingContact || !ncNewName.trim()}>
-                {isCreatingContact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Salvar e Iniciar
-              </Button>
-            )}
-          </DialogFooter>
+          {/* Device selection step */}
+          {ncStep === 'device' && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Dispositivos conectados</Label>
+                <p className="text-xs text-primary">Selecione um dispositivo para iniciar a conversa</p>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input placeholder="Pesquisar nome ou número" className="pl-8 h-9 text-sm" />
+                </div>
+              </div>
+              <ScrollArea className="max-h-60">
+                <div className="space-y-1">
+                  {instances?.map((inst: any) => (
+                    <div
+                      key={inst.id}
+                      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border border-border/50"
+                      onClick={() => handleDeviceSelected(inst.id)}
+                    >
+                      <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{inst.name || 'Sem nome'}</p>
+                        <p className="text-xs text-muted-foreground">{inst.phone_number || '—'}</p>
+                      </div>
+                      {inst.integration_type && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">
+                          {inst.integration_type === 'evolution_api' ? 'Suporte' : 'Comercial'}
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              <DialogFooter>
+                <Button variant="link" size="sm" onClick={() => setNcStep('search')}>Voltar</Button>
+                <Button variant="outline" onClick={resetNovaConversa}>Fechar</Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {ncStep !== 'device' && (
+            <DialogFooter>
+              <Button variant="outline" onClick={resetNovaConversa}>Cancelar</Button>
+              {ncStep === 'search' ? (
+                <Button onClick={handleNovaConversaStart} disabled={!ncSelectedContact}>
+                  Iniciar Atendimento
+                </Button>
+              ) : (
+                <Button onClick={handleCreateContactAndStart} disabled={isCreatingContact || !ncNewName.trim()}>
+                  {isCreatingContact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Salvar
+                </Button>
+              )}
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>
