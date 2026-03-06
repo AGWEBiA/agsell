@@ -306,7 +306,9 @@ function TicketDetailView({ ticket, tickets, members, onBack, onUpdate, onDelete
   onCreateSubTicket: (title: string) => void;
 }) {
   const { notes, addNote, deleteNote } = useSupportTicketNotes(ticket.id);
+  const { replies, sendReply, deleteReply } = useTicketReplies(ticket.id);
   const [noteInput, setNoteInput] = useState('');
+  const [replyInput, setReplyInput] = useState('');
   const [subTicketTitle, setSubTicketTitle] = useState('');
   const [showSubForm, setShowSubForm] = useState(false);
 
