@@ -119,6 +119,63 @@ Deno.serve(async (req) => {
 
     const customerEmail = payload.Customer?.email?.toLowerCase();
 
+    // --- Update checkout_leads with payment status ---
+    if (customerEmail) {
+      const paymentMethod = (payload.payment_method || "").toLowerCase();
+      let leadStatus = "started";
+
+      if (payload.order_status === "paid" || payload.order_status === "completed") {
+        leadStatus = "converted";
+      } else if (payload.order_status === "waiting_payment") {
+        if (paymentMethod.includes("boleto") || paymentMethod === "bank_slip") {
+          leadStatus = "boleto_generated";
+        } else if (paymentMethod.includes("pix")) {
+          leadStatus = "pix_generated";
+        } else {
+          leadStatus = "waiting_payment";
+        }
+      } else if (payload.order_status === "refused") {
+        leadStatus = "expired";
+      } else if (payload.order_status === "refunded") {
+        leadStatus = "refunded";
+      } else if (payload.order_status === "chargedback") {
+        leadStatus = "refunded";
+      }
+
+      const leadUpdate: Record<string, unknown> = {
+        status: leadStatus,
+        source: "kiwify",
+        updated_at: new Date().toISOString(),
+      };
+      if (leadStatus === "converted") {
+        leadUpdate.converted = true;
+        leadUpdate.converted_at = new Date().toISOString();
+      }
+
+      const { data: existingLead } = await supabase
+        .from("checkout_leads")
+        .select("id")
+        .ilike("email", customerEmail)
+        .maybeSingle();
+
+      if (existingLead) {
+        await supabase.from("checkout_leads").update(leadUpdate).eq("id", existingLead.id);
+        logStep("checkout_leads updated", { email: customerEmail, status: leadStatus });
+      } else {
+        await supabase.from("checkout_leads").insert({
+          email: customerEmail,
+          name: payload.Customer?.full_name || "Kiwify Lead",
+          plan_id: plan?.id || null,
+          billing_cycle: detectBillingCycle(payload),
+          source: "kiwify",
+          status: leadStatus,
+          converted: leadStatus === "converted",
+          converted_at: leadStatus === "converted" ? new Date().toISOString() : null,
+        });
+        logStep("checkout_leads created", { email: customerEmail, status: leadStatus });
+      }
+    }
+
     // --- Process based on event type ---
     if ((payload.order_status === "paid" || payload.order_status === "completed") && customerEmail) {
       logStep("Processing approved purchase");
