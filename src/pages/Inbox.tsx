@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,13 +6,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import {
-  Search, Send, Paperclip, Smile, Phone, Video,
+  Search, Send, Paperclip, Smile, Phone,
   MessageSquare, Mail, CheckCheck, Plus, Bot, Image as ImageIcon,
   FileAudio, File as FileIcon, X, Loader2,
-  AlertTriangle, Clock, Hash, ChevronLeft, UserPlus, Inbox as InboxIcon, User, Ticket,
+  Hash, ChevronLeft, Inbox as InboxIcon, User, Ticket,
+  BarChart3, Brain, Calendar, Users, CheckCircle2,
+  ArrowDownToLine,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useInbox } from '@/hooks/useInbox';
 import { useContacts } from '@/hooks/useContacts';
 import { useAssignmentRules } from '@/hooks/useAssignmentRules';
@@ -24,21 +26,20 @@ import { AudioTranscription } from '@/components/inbox/AudioTranscription';
 import { ContactInfoPanel } from '@/components/inbox/ContactInfoPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupportTickets } from '@/hooks/useSupportTickets';
+import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
 import { toast } from 'sonner';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PhoneInput } from '@/components/ui/phone-input';
+  Tooltip, TooltipContent, TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const channelColors: Record<string, string> = {
   whatsapp: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
@@ -54,13 +55,6 @@ const channelIcons: Record<string, typeof MessageSquare> = {
   telegram: MessageSquare,
 };
 
-const priorityIndicator: Record<string, string> = {
-  low: '',
-  medium: 'border-l-2 border-l-yellow-400',
-  high: 'border-l-2 border-l-orange-500',
-  urgent: 'border-l-2 border-l-destructive',
-};
-
 type QueueTab = 'fila' | 'meus' | 'todos';
 
 export default function Inbox() {
@@ -69,31 +63,34 @@ export default function Inbox() {
   const contacts = contactsQuery.data ?? [];
   const { assignConversation } = useAssignmentRules();
   const { createTicket: createSupportTicket } = useSupportTickets();
+  const { instances } = useWhatsAppInstances();
   const { user } = useAuth();
   const { currentOrganization } = useOrganization();
   const navigate = useNavigate();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isNewContactDialogOpen, setIsNewContactDialogOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ file: File; preview?: string; type: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [channelFilter] = useState<string>('all');
-  const [statusFilter] = useState<string>('all');
-  const [queueTab, setQueueTab] = useState<QueueTab>('todos');
-  const [newConversation, setNewConversation] = useState({ contact_id: '', channel: 'whatsapp' });
-  const [newContact, setNewContact] = useState({ first_name: '', email: '', phone: '', channel: 'whatsapp' });
+  const [queueTab, setQueueTab] = useState<QueueTab>('fila');
+
+  // Nova Conversa dialog state
+  const [novaConversaOpen, setNovaConversaOpen] = useState(false);
+  const [ncStep, setNcStep] = useState<'search' | 'new'>('search');
+  const [ncSearch, setNcSearch] = useState('');
+  const [ncSelectedContact, setNcSelectedContact] = useState<string | null>(null);
+  const [ncChannel, setNcChannel] = useState('whatsapp');
+  const [ncDeviceId, setNcDeviceId] = useState('');
+  const [ncNewName, setNcNewName] = useState('');
+  const [ncNewEmail, setNcNewEmail] = useState('');
+  const [ncNewPhone, setNcNewPhone] = useState('');
   const [isCreatingContact, setIsCreatingContact] = useState(false);
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
-
-  useEffect(() => {
-    if (conversations.length > 0 && !selectedId) setSelectedId(conversations[0].id);
-  }, [conversations, selectedId]);
 
   useEffect(() => {
     if (selectedConversation) markAsRead.mutate(selectedConversation.id);
@@ -103,11 +100,57 @@ export default function Inbox() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversation?.messages]);
 
-  const handleEmojiSelect = (emoji: any) => {
-    setMessageInput(prev => prev + emoji.native);
-    setEmojiOpen(false);
+  // Helpers
+  const getInitials = (f?: string, l?: string | null) => `${f?.[0] || ''}${l?.[0] || ''}`.toUpperCase() || '??';
+  const getUnreadCount = (c: any) => c.messages?.filter((m: any) => !m.is_read && m.sender_type === 'contact').length || 0;
+
+  // Queue logic:
+  // Fila = unassigned (waiting to be pulled)
+  // Meus = assigned to current user (active conversations)
+  // Todos = resolved/closed (finished)
+  const queueFiltered = conversations.filter(c => {
+    if (queueTab === 'fila') return !c.assigned_to && c.status !== 'resolved' && c.status !== 'closed';
+    if (queueTab === 'meus') return c.assigned_to === user?.id && c.status !== 'resolved' && c.status !== 'closed';
+    if (queueTab === 'todos') return c.status === 'resolved' || c.status === 'closed';
+    return true;
+  });
+
+  const filteredConversations = queueFiltered.filter(c => {
+    if (!searchQuery) return true;
+    const name = `${c.contacts?.first_name || ''} ${c.contacts?.last_name || ''}`.toLowerCase();
+    const protocol = (c as any).protocol_number?.toLowerCase() || '';
+    const phone = c.contacts?.phone?.toLowerCase() || '';
+    return name.includes(searchQuery.toLowerCase()) || protocol.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery.toLowerCase());
+  });
+
+  const queueCounts = {
+    fila: conversations.filter(c => !c.assigned_to && c.status !== 'resolved' && c.status !== 'closed').length,
+    meus: conversations.filter(c => c.assigned_to === user?.id && c.status !== 'resolved' && c.status !== 'closed').length,
+    todos: conversations.filter(c => c.status === 'resolved' || c.status === 'closed').length,
   };
 
+  // Puxar atendimento = assign to me
+  const handlePuxar = (convId: string) => {
+    if (!user?.id) return;
+    updateConversation.mutate({ id: convId, assigned_to: user.id, status: 'open' });
+    setSelectedId(convId);
+    setQueueTab('meus');
+    toast.success('Atendimento puxado para você!');
+  };
+
+  // Finalizar atendimento = mark as resolved
+  const handleFinalizar = () => {
+    if (!selectedConversation) return;
+    updateConversation.mutate({
+      id: selectedConversation.id,
+      status: 'resolved',
+      resolved_at: new Date().toISOString(),
+    });
+    setSelectedId(null);
+    toast.success('Atendimento finalizado!');
+  };
+
+  // File handling
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -132,12 +175,10 @@ export default function Inbox() {
   const handleSendMessage = async () => {
     if ((!messageInput.trim() && !pendingFile) || !selectedConversation) return;
     setIsUploading(!!pendingFile);
-
     let mediaUrl: string | null = null;
     let messageType = 'text';
     let mediaMimeType: string | null = null;
     let fileName: string | null = null;
-
     if (pendingFile) {
       mediaUrl = await uploadFile(pendingFile.file);
       if (!mediaUrl) { setIsUploading(false); return; }
@@ -145,7 +186,6 @@ export default function Inbox() {
       mediaMimeType = pendingFile.file.type;
       fileName = pendingFile.file.name;
     }
-
     sendMessage.mutate({
       conversation_id: selectedConversation.id,
       content: messageInput || (pendingFile ? `📎 ${pendingFile.file.name}` : ''),
@@ -160,467 +200,579 @@ export default function Inbox() {
     setIsUploading(false);
   };
 
-  const handleCreateConversation = () => {
-    if (!newConversation.contact_id) return;
-    createConversation.mutate(newConversation);
-    setNewConversation({ contact_id: '', channel: 'whatsapp' });
-    setIsDialogOpen(false);
+  const handleEmojiSelect = (emoji: any) => {
+    setMessageInput(prev => prev + emoji.native);
+    setEmojiOpen(false);
   };
 
-  const handleCreateContactAndConversation = async () => {
-    if (!newContact.first_name.trim()) { toast.error('Nome é obrigatório'); return; }
+  // Nova Conversa: search contacts
+  const ncFilteredContacts = ncSearch.trim()
+    ? contacts.filter(c => {
+        const s = ncSearch.toLowerCase();
+        return c.first_name.toLowerCase().includes(s) ||
+          (c.last_name || '').toLowerCase().includes(s) ||
+          (c.phone || '').includes(s) ||
+          (c.whatsapp || '').includes(s) ||
+          (c.email || '').toLowerCase().includes(s);
+      })
+    : contacts.slice(0, 10);
+
+  const handleNovaConversaStart = () => {
+    if (!ncSelectedContact) { toast.error('Selecione um contato'); return; }
+    createConversation.mutate({ contact_id: ncSelectedContact, channel: ncChannel });
+    resetNovaConversa();
+  };
+
+  const handleCreateContactAndStart = async () => {
+    if (!ncNewName.trim()) { toast.error('Nome é obrigatório'); return; }
     if (!user?.id) return;
     setIsCreatingContact(true);
     try {
       const contactData: any = {
-        first_name: newContact.first_name.trim(),
+        first_name: ncNewName.trim(),
         user_id: user.id,
         organization_id: currentOrganization?.id || null,
         source: 'sac',
       };
-      if (newContact.email.trim()) contactData.email = newContact.email.trim();
-      if (newContact.phone.trim()) {
-        contactData.phone = newContact.phone.trim();
-        contactData.whatsapp = newContact.phone.trim();
+      if (ncNewEmail.trim()) contactData.email = ncNewEmail.trim();
+      if (ncNewPhone.trim()) {
+        const phone = ncNewPhone.trim().replace(/\D/g, '');
+        contactData.phone = phone;
+        contactData.whatsapp = phone;
       }
-
-      const { data: contact, error: contactError } = await supabase
-        .from('contacts')
-        .insert(contactData)
-        .select()
-        .single();
-      if (contactError) throw contactError;
-
-      createConversation.mutate({ contact_id: contact.id, channel: newContact.channel });
-      setNewContact({ first_name: '', email: '', phone: '', channel: 'whatsapp' });
-      setIsNewContactDialogOpen(false);
+      const { data: contact, error } = await supabase.from('contacts').insert(contactData).select().single();
+      if (error) throw error;
+      createConversation.mutate({ contact_id: contact.id, channel: ncChannel });
+      resetNovaConversa();
       toast.success('Contato criado e atendimento iniciado!');
     } catch (e: any) {
-      toast.error('Erro ao criar contato: ' + e.message);
+      toast.error('Erro: ' + e.message);
     } finally {
       setIsCreatingContact(false);
     }
   };
 
-  const handleAssumirAtendimento = () => {
-    if (!selectedConversation || !user?.id) return;
-    updateConversation.mutate({ id: selectedConversation.id, assigned_to: user.id });
+  const resetNovaConversa = () => {
+    setNovaConversaOpen(false);
+    setNcStep('search');
+    setNcSearch('');
+    setNcSelectedContact(null);
+    setNcChannel('whatsapp');
+    setNcDeviceId('');
+    setNcNewName('');
+    setNcNewEmail('');
+    setNcNewPhone('');
   };
 
-  const getInitials = (f?: string, l?: string | null) => `${f?.[0] || ''}${l?.[0] || ''}`.toUpperCase() || '??';
-
-  const getUnreadCount = (c: any) => c.messages?.filter((m: any) => !m.is_read && m.sender_type === 'contact').length || 0;
-
-  // Queue-based filtering
-  const queueFiltered = conversations.filter(c => {
-    if (queueTab === 'fila') return !c.assigned_to;
-    if (queueTab === 'meus') return c.assigned_to === user?.id;
-    return true;
-  });
-
-  const filteredConversations = queueFiltered.filter(c => {
-    const name = `${c.contacts?.first_name || ''} ${c.contacts?.last_name || ''}`.toLowerCase();
-    const protocol = (c as any).protocol_number?.toLowerCase() || '';
-    const matchSearch = !searchQuery || name.includes(searchQuery.toLowerCase()) || protocol.includes(searchQuery.toLowerCase());
-    const matchStatus = statusFilter === 'all' || c.status === statusFilter;
-    const matchChannel = channelFilter === 'all' || c.channel === channelFilter;
-    return matchSearch && matchStatus && matchChannel;
-  });
-
-  // Queue counts
-  const queueCounts = {
-    fila: conversations.filter(c => !c.assigned_to).length,
-    meus: conversations.filter(c => c.assigned_to === user?.id).length,
-    todos: conversations.length,
-  };
-
-
+  // Loading
   if (isLoading) {
     return (
-      <div className="h-[calc(100vh-7rem)] animate-fade-in flex gap-4">
-        <Card className="w-96 flex-shrink-0"><CardHeader className="pb-3"><Skeleton className="h-6 w-24" /><Skeleton className="h-10 w-full mt-3" /></CardHeader><CardContent className="p-0">{[1,2,3].map(i => <div key={i} className="p-4 border-b"><Skeleton className="h-14 w-full" /></div>)}</CardContent></Card>
-        <Card className="flex-1"><Skeleton className="h-full" /></Card>
+      <div className="h-[calc(100vh-7rem)] animate-fade-in flex gap-0">
+        <div className="w-80 border-r flex flex-col">
+          <div className="p-3 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
+          {[1,2,3].map(i => <div key={i} className="p-3 border-b"><Skeleton className="h-14 w-full" /></div>)}
+        </div>
+        <div className="flex-1"><Skeleton className="h-full" /></div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-7rem)] animate-fade-in">
-      <div className="flex h-full gap-0 sm:gap-2">
-        {/* Conversations List */}
-        <Card className={`w-full sm:w-80 md:w-96 flex-shrink-0 flex flex-col ${selectedId && 'hidden sm:flex'}`}>
-          <CardHeader className="pb-2 space-y-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">SAC</CardTitle>
-              <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-xs">{conversations.length}</Badge>
+    <div className="h-[calc(100vh-7rem)] animate-fade-in flex flex-col">
+      {/* Top Bar — Quick Navigation */}
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
+        <div className="flex items-center gap-1">
+          <h1 className="text-base font-semibold mr-3">SAC</h1>
+          <Button variant="default" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setNovaConversaOpen(true)}>
+            <Plus className="h-3 w-3" />
+            Nova Conversa
+          </Button>
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/email-inbox"><Mail className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger><TooltipContent>E-mail</TooltipContent></Tooltip>
 
-                {/* New contact button */}
-                <Dialog open={isNewContactDialogOpen} onOpenChange={setIsNewContactDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Novo contato">
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Novo Contato + Atendimento</DialogTitle>
-                      <DialogDescription>Crie um contato e inicie um atendimento diretamente.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label>Nome *</Label>
-                        <Input
-                          placeholder="Nome do contato"
-                          value={newContact.first_name}
-                          onChange={(e) => setNewContact(p => ({ ...p, first_name: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input
-                          type="email"
-                          placeholder="email@exemplo.com"
-                          value={newContact.email}
-                          onChange={(e) => setNewContact(p => ({ ...p, email: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Telefone com DDD</Label>
-                        <Input
-                          placeholder="11999999999"
-                          value={newContact.phone}
-                          onChange={(e) => setNewContact(p => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Canal</Label>
-                        <Select value={newContact.channel} onValueChange={(v) => setNewContact(p => ({ ...p, channel: v }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="instagram">Instagram</SelectItem>
-                            <SelectItem value="telegram">Telegram</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsNewContactDialogOpen(false)}>Voltar</Button>
-                      <Button onClick={handleCreateContactAndConversation} disabled={isCreatingContact}>
-                        {isCreatingContact ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                        Salvar
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/support"><Ticket className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger><TooltipContent>Tickets de Suporte</TooltipContent></Tooltip>
 
-                {/* Existing contact ticket */}
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Novo ticket"><Plus className="h-4 w-4" /></Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Novo Ticket</DialogTitle><DialogDescription>Inicie um atendimento com um contato existente.</DialogDescription></DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2"><Label>Contato</Label><Select value={newConversation.contact_id} onValueChange={(v) => setNewConversation(p => ({ ...p, contact_id: v }))}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{contacts.map(c => <SelectItem key={c.id} value={c.id}>{c.first_name} {c.last_name}</SelectItem>)}</SelectContent></Select></div>
-                      <div className="space-y-2"><Label>Canal</Label><Select value={newConversation.channel} onValueChange={(v) => setNewConversation(p => ({ ...p, channel: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="whatsapp">WhatsApp</SelectItem><SelectItem value="email">Email</SelectItem><SelectItem value="instagram">Instagram</SelectItem><SelectItem value="telegram">Telegram</SelectItem></SelectContent></Select></div>
-                    </div>
-                    <DialogFooter><Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button onClick={handleCreateConversation}>Criar Ticket</Button></DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/inbox-reports"><BarChart3 className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger><TooltipContent>Relatórios</TooltipContent></Tooltip>
 
-            {/* Queue Tabs - Fila / Meus Atendimentos / Todos */}
-            <Tabs value={queueTab} onValueChange={(v) => setQueueTab(v as QueueTab)} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 h-8">
-                <TabsTrigger value="fila" className="text-xs gap-1 px-1">
-                  <InboxIcon className="h-3 w-3" />
-                  Fila
-                  {queueCounts.fila > 0 && (
-                    <Badge variant="destructive" className="text-[10px] h-4 px-1 ml-0.5">{queueCounts.fila}</Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="meus" className="text-xs gap-1 px-1">
-                  <User className="h-3 w-3" />
-                  Meus
-                  {queueCounts.meus > 0 && (
-                    <Badge variant="secondary" className="text-[10px] h-4 px-1 ml-0.5">{queueCounts.meus}</Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="todos" className="text-xs gap-1 px-1">
-                  Todos
-                  <Badge variant="secondary" className="text-[10px] h-4 px-1 ml-0.5">{queueCounts.todos}</Badge>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/ai-agents"><Brain className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger><TooltipContent>Agentes IA</TooltipContent></Tooltip>
 
-            {/* Search */}
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/tasks"><Calendar className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger><TooltipContent>Agenda</TooltipContent></Tooltip>
+
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Link to="/contacts"><Users className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger><TooltipContent>CRM</TooltipContent></Tooltip>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar — Conversation List */}
+        <div className={`w-full sm:w-80 border-r flex flex-col shrink-0 bg-background ${selectedId ? 'hidden sm:flex' : 'flex'}`}>
+          {/* Queue Tabs */}
+          <div className="flex border-b shrink-0">
+            {([
+              { key: 'fila', label: 'Fila', icon: InboxIcon, count: queueCounts.fila },
+              { key: 'meus', label: 'Meus', icon: User, count: queueCounts.meus },
+              { key: 'todos', label: 'Todos', icon: CheckCircle2, count: queueCounts.todos },
+            ] as const).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setQueueTab(tab.key)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors border-b-2 ${
+                  queueTab === tab.key
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <tab.icon className="h-3.5 w-3.5" />
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className={`text-[10px] min-w-4 h-4 flex items-center justify-center rounded-full px-1 ${
+                    tab.key === 'fila' && tab.count > 0 ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="p-2 shrink-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar por nome ou protocolo..." className="pl-9 h-8 text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar chats..."
+                className="pl-8 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
+          </div>
+
+          {/* Conversation List */}
+          <ScrollArea className="flex-1">
             {filteredConversations.length === 0 ? (
               <div className="p-8 text-center">
-                <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  {queueTab === 'fila' ? 'Nenhum ticket na fila' : queueTab === 'meus' ? 'Nenhum atendimento atribuído a você' : conversations.length === 0 ? 'Nenhum ticket ainda' : 'Nenhum resultado'}
+                <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                <p className="text-xs text-muted-foreground">
+                  {queueTab === 'fila' ? 'Fila vazia' : queueTab === 'meus' ? 'Nenhum atendimento ativo' : 'Nenhum atendimento finalizado'}
                 </p>
-                {conversations.length === 0 && (
-                  <Button className="mt-3" size="sm" onClick={() => setIsDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-1" /> Novo Ticket
-                  </Button>
-                )}
               </div>
             ) : (
-              <ScrollArea className="h-full">
-                {filteredConversations.map((conversation) => {
-                  const ChannelIcon = channelIcons[conversation.channel] || MessageSquare;
-                  const lastMessage = conversation.messages?.[conversation.messages.length - 1];
-                  const unreadCount = getUnreadCount(conversation);
-                  const prio = (conversation as any).priority || 'medium';
-                  const isUnassigned = !conversation.assigned_to;
+              filteredConversations.map((conversation) => {
+                const ChannelIcon = channelIcons[conversation.channel] || MessageSquare;
+                const lastMessage = conversation.messages?.[conversation.messages.length - 1];
+                const unreadCount = getUnreadCount(conversation);
+                const isSelected = selectedId === conversation.id;
 
-                  return (
-                    <div
-                      key={conversation.id}
-                      onClick={() => setSelectedId(conversation.id)}
-                      className={`flex items-center gap-3 p-3 hover:bg-muted cursor-pointer border-b transition-colors ${
-                        selectedId === conversation.id ? 'bg-muted' : ''
-                      } ${priorityIndicator[prio] || ''}`}
-                    >
-                      <div className="relative shrink-0">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {getInitials(conversation.contacts?.first_name, conversation.contacts?.last_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center ${channelColors[conversation.channel]}`}>
-                          <ChannelIcon className="h-2.5 w-2.5" />
-                        </div>
+                return (
+                  <div
+                    key={conversation.id}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors ${
+                      isSelected ? 'bg-accent' : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => setSelectedId(conversation.id)}
+                  >
+                    <div className="relative shrink-0">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {getInitials(conversation.contacts?.first_name, conversation.contacts?.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full flex items-center justify-center text-[8px] ${channelColors[conversation.channel]}`}>
+                        <ChannelIcon className="h-2 w-2" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium truncate">
-                            {conversation.contacts?.first_name} {conversation.contacts?.last_name}
-                          </span>
-                          <div className="flex items-center gap-1 shrink-0 ml-1">
-                            {isUnassigned && (
-                              <Badge variant="outline" className="text-[9px] h-4 px-1 border-yellow-500 text-yellow-600 dark:text-yellow-400">
-                                Fila
-                              </Badge>
-                            )}
-                            <span className="text-[10px] text-muted-foreground">
-                              {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Hash className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-                          <span className="text-[10px] text-muted-foreground font-mono truncate">
-                            {(conversation as any).protocol_number || '—'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {lastMessage?.content || 'Sem mensagens'}
-                        </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium truncate">
+                          {conversation.contacts?.first_name} {conversation.contacts?.last_name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
+                          {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
                       </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {lastMessage?.content || 'Sem mensagens'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
                       {unreadCount > 0 && (
-                        <Badge className="bg-primary text-primary-foreground text-[10px] h-5 min-w-5 flex items-center justify-center shrink-0">{unreadCount}</Badge>
+                        <span className="bg-primary text-primary-foreground text-[10px] h-4.5 min-w-4.5 flex items-center justify-center rounded-full px-1 font-medium">
+                          {unreadCount}
+                        </span>
+                      )}
+                      {/* Puxar button for Fila tab */}
+                      {queueTab === 'fila' && !conversation.assigned_to && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-5 text-[10px] px-1.5"
+                          onClick={(e) => { e.stopPropagation(); handlePuxar(conversation.id); }}
+                        >
+                          <ArrowDownToLine className="h-2.5 w-2.5 mr-0.5" />
+                          Puxar
+                        </Button>
                       )}
                     </div>
-                  );
-                })}
-              </ScrollArea>
+                  </div>
+                );
+              })
             )}
-          </CardContent>
-        </Card>
+          </ScrollArea>
+        </div>
 
         {/* Chat Area */}
         {selectedConversation ? (
-          <>
-            <Card className={`flex-1 flex flex-col ${!selectedId ? 'hidden sm:flex' : ''}`}>
-              {/* Chat Header */}
-              <CardHeader className="py-3 px-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="sm:hidden shrink-0 -ml-2 h-8 w-8" onClick={() => setSelectedId(null)}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {getInitials(selectedConversation.contacts?.first_name, selectedConversation.contacts?.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-sm font-semibold">
-                        {selectedConversation.contacts?.first_name} {selectedConversation.contacts?.last_name}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`${channelColors[selectedConversation.channel]} text-[10px]`} variant="secondary">
-                          {selectedConversation.channel}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {(selectedConversation as any).protocol_number}
-                        </span>
+          <div className={`flex-1 flex flex-col bg-background ${!selectedId ? 'hidden sm:flex' : 'flex'}`}>
+            {/* Chat Header */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Button variant="ghost" size="icon" className="sm:hidden shrink-0 h-7 w-7 -ml-1" onClick={() => setSelectedId(null)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {getInitials(selectedConversation.contacts?.first_name, selectedConversation.contacts?.last_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-sm font-medium leading-tight">
+                    {selectedConversation.contacts?.first_name} {selectedConversation.contacts?.last_name}
+                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className={`${channelColors[selectedConversation.channel]} text-[9px] h-4 px-1`} variant="secondary">
+                      {selectedConversation.channel}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {(selectedConversation as any).protocol_number}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                {/* Puxar se na fila */}
+                {!selectedConversation.assigned_to && selectedConversation.status !== 'resolved' && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handlePuxar(selectedConversation.id)}>
+                    <ArrowDownToLine className="h-3 w-3" />
+                    Puxar
+                  </Button>
+                )}
+                {/* Finalizar */}
+                {selectedConversation.assigned_to === user?.id && selectedConversation.status !== 'resolved' && selectedConversation.status !== 'closed' && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950" onClick={handleFinalizar}>
+                    <CheckCircle2 className="h-3 w-3" />
+                    Finalizar
+                  </Button>
+                )}
+                {/* Ticket de suporte */}
+                <Tooltip><TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      createSupportTicket.mutate({
+                        title: `Suporte: ${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`.trim(),
+                        contact_id: selectedConversation.contact_id,
+                        conversation_id: selectedConversation.id,
+                      }, { onSuccess: () => navigate('/support') });
+                    }}
+                  >
+                    <Ticket className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger><TooltipContent>Abrir Ticket</TooltipContent></Tooltip>
+                {/* IA */}
+                <SendIAButton
+                  conversationId={selectedConversation.id}
+                  contactName={`${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`}
+                  lastMessages={selectedConversation.messages || []}
+                  onSendMessage={(content) => {
+                    sendMessage.mutate({ conversation_id: selectedConversation.id, content, sender_type: 'user' });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-2.5 max-w-3xl mx-auto">
+                {selectedConversation.messages?.map((message: any) => {
+                  const msgType = message.message_type || 'text';
+                  const isUser = message.sender_type === 'user';
+                  return (
+                    <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[70%] rounded-xl px-3 py-2 ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        {isUser && message.sender_name && (
+                          <p className="text-[10px] font-semibold mb-0.5 opacity-75">{message.sender_name}</p>
+                        )}
+                        {msgType === 'image' && message.media_url && (
+                          <a href={message.media_url} target="_blank" rel="noopener noreferrer">
+                            <img src={message.media_url} alt={message.file_name || 'Imagem'} className="rounded-lg max-w-full max-h-52 object-cover mb-1" loading="lazy" />
+                          </a>
+                        )}
+                        {msgType === 'audio' && message.media_url && (
+                          <audio controls className="max-w-full mb-1" preload="metadata">
+                            <source src={message.media_url} type={message.media_mime_type || 'audio/mpeg'} />
+                          </audio>
+                        )}
+                        {msgType === 'file' && message.media_url && (
+                          <a href={message.media_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded border border-current/20 hover:opacity-80 mb-1">
+                            <FileIcon className="h-4 w-4 shrink-0" />
+                            <span className="text-xs truncate">{message.file_name || 'Arquivo'}</span>
+                          </a>
+                        )}
+                        {message.content && !(msgType !== 'text' && message.content.startsWith('📎')) && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        )}
+                        <div className={`flex items-center justify-end gap-1 mt-0.5 text-[10px] ${isUser ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                          <span>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                          {isUser && <CheckCheck className="h-2.5 w-2.5" />}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                   <div className="flex items-center gap-1">
-                     {/* Assumir atendimento button */}
-                     {!selectedConversation.assigned_to && (
-                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleAssumirAtendimento}>
-                         <User className="h-3 w-3" />
-                         Assumir
-                       </Button>
-                     )}
-                     {/* Abrir Ticket de Suporte */}
-                     <Button
-                       size="sm"
-                       variant="outline"
-                       className="h-7 text-xs gap-1"
-                       onClick={() => {
-                         createSupportTicket.mutate({
-                           title: `Suporte: ${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`.trim(),
-                           contact_id: selectedConversation.contact_id,
-                           conversation_id: selectedConversation.id,
-                         }, {
-                           onSuccess: () => navigate('/support'),
-                         });
-                       }}
-                     >
-                       <Ticket className="h-3 w-3" />
-                       Abrir Ticket
-                     </Button>
-                     <SendIAButton
-                       conversationId={selectedConversation.id}
-                       contactName={`${selectedConversation.contacts?.first_name || ''} ${selectedConversation.contacts?.last_name || ''}`}
-                       lastMessages={selectedConversation.messages || []}
-                       onSendMessage={(content) => {
-                         sendMessage.mutate({
-                           conversation_id: selectedConversation.id,
-                           content,
-                           sender_type: 'user',
-                         });
-                       }}
-                     />
-                   </div>
-                </div>
-              </CardHeader>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
 
-              {/* Messages */}
-              <CardContent className="flex-1 overflow-hidden p-0">
-                <ScrollArea className="h-[calc(100vh-22rem)] p-4">
-                  <div className="space-y-3">
-                    {selectedConversation.messages?.map((message: any) => {
-                      const msgType = message.message_type || 'text';
-                      return (
-                        <div key={message.id} className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-lg p-3 ${message.sender_type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                            {message.sender_type === 'user' && message.sender_name && (
-                              <p className="text-xs font-semibold mb-1 opacity-80">{message.sender_name}</p>
-                            )}
-                            {msgType === 'image' && message.media_url && (
-                              <a href={message.media_url} target="_blank" rel="noopener noreferrer">
-                                <img src={message.media_url} alt={message.file_name || 'Imagem'} className="rounded-md max-w-full max-h-60 object-cover mb-1" loading="lazy" />
-                              </a>
-                            )}
-                            {msgType === 'audio' && message.media_url && (
-                              <audio controls className="max-w-full mb-1" preload="metadata">
-                                <source src={message.media_url} type={message.media_mime_type || 'audio/mpeg'} />
-                              </audio>
-                            )}
-                            {msgType === 'file' && message.media_url && (
-                              <a href={message.media_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded border border-current/20 hover:opacity-80 mb-1">
-                                <FileIcon className="h-5 w-5 shrink-0" />
-                                <span className="text-sm truncate">{message.file_name || 'Arquivo'}</span>
-                              </a>
-                            )}
-                            {message.content && !(msgType !== 'text' && message.content.startsWith('📎')) && (
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            )}
-                            <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${message.sender_type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                              <span>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                              {message.sender_type === 'user' && <CheckCheck className="h-3 w-3" />}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
+            {/* Pending file preview */}
+            {pendingFile && (
+              <div className="px-4 pt-2 border-t shrink-0">
+                <div className="flex items-center gap-2.5 p-2 rounded-lg bg-muted">
+                  {pendingFile.type === 'image' && pendingFile.preview ? (
+                    <img src={pendingFile.preview} alt="Preview" className="h-10 w-10 rounded object-cover" />
+                  ) : pendingFile.type === 'audio' ? (
+                    <FileAudio className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <FileIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{pendingFile.file.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{(pendingFile.file.size / 1024).toFixed(0)} KB</p>
                   </div>
-                </ScrollArea>
-              </CardContent>
-
-              {/* Pending file preview */}
-              {pendingFile && (
-                <div className="px-4 pt-2 border-t">
-                  <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
-                    {pendingFile.type === 'image' && pendingFile.preview ? (
-                      <img src={pendingFile.preview} alt="Preview" className="h-10 w-10 rounded object-cover" />
-                    ) : pendingFile.type === 'audio' ? (
-                      <FileAudio className="h-6 w-6 text-muted-foreground" />
-                    ) : (
-                      <FileIcon className="h-6 w-6 text-muted-foreground" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{pendingFile.file.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{(pendingFile.file.size / 1024).toFixed(0)} KB</p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPendingFile(null)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Message Input */}
-              <div className="p-3 border-t">
-                <div className="flex items-center gap-1">
-                  <input ref={fileInputRef} type="file" className="hidden" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" onChange={handleFileSelect} />
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => fileInputRef.current?.click()}>
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <AudioTranscription onTranscription={(text) => setMessageInput(prev => prev + text)} />
-                  <Input placeholder="Digite uma mensagem..." className="flex-1 h-8 text-sm" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()} />
-                  <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><Smile className="h-4 w-4" /></Button>
-                    </PopoverTrigger>
-                    <PopoverContent side="top" align="end" className="w-auto p-0 border-none shadow-xl">
-                      <Picker data={data} onEmojiSelect={handleEmojiSelect} theme="auto" locale="pt" previewPosition="none" skinTonePosition="none" />
-                    </PopoverContent>
-                  </Popover>
-                  <Button size="icon" className="h-8 w-8 shrink-0" onClick={handleSendMessage} disabled={isUploading}>
-                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPendingFile(null)}>
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
-            </Card>
+            )}
 
-            {/* Contact & Ticket Info Panel */}
-            <Card className="w-72 flex-shrink-0 hidden lg:flex flex-col overflow-hidden">
-              <ContactInfoPanel
-                conversation={selectedConversation}
-                onUpdateConversation={(updates) => updateConversation.mutate({ id: selectedConversation.id, ...updates })}
-                onTransfer={(userId) => assignConversation.mutate({ conversationId: selectedConversation.id, userId })}
-                onInsertQuickReply={(content) => setMessageInput(content)}
-              />
-            </Card>
-          </>
-        ) : (
-          <Card className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Selecione um ticket para começar</p>
+            {/* Message Input */}
+            <div className="p-2.5 border-t shrink-0">
+              <div className="flex items-center gap-1 max-w-3xl mx-auto">
+                <input ref={fileInputRef} type="file" className="hidden" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" onChange={handleFileSelect} />
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <AudioTranscription onTranscription={(text) => setMessageInput(prev => prev + text)} />
+                <Input
+                  placeholder="Digite uma mensagem..."
+                  className="flex-1 h-9 text-sm rounded-full bg-muted/50 border-0 focus-visible:ring-1 px-4"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                />
+                <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><Smile className="h-4 w-4" /></Button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="end" className="w-auto p-0 border-none shadow-xl">
+                    <Picker data={data} onEmojiSelect={handleEmojiSelect} theme="auto" locale="pt" previewPosition="none" skinTonePosition="none" />
+                  </PopoverContent>
+                </Popover>
+                <Button size="icon" className="h-9 w-9 rounded-full shrink-0" onClick={handleSendMessage} disabled={isUploading}>
+                  {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
-          </Card>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">Selecione uma conversa para começar</p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => setNovaConversaOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Nova Conversa
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Right Panel — Contact Info (desktop only) */}
+        {selectedConversation && (
+          <div className="w-72 border-l shrink-0 hidden xl:flex flex-col overflow-hidden bg-background">
+            <ContactInfoPanel
+              conversation={selectedConversation}
+              onUpdateConversation={(updates) => updateConversation.mutate({ id: selectedConversation.id, ...updates })}
+              onTransfer={(userId) => assignConversation.mutate({ conversationId: selectedConversation.id, userId })}
+              onInsertQuickReply={(content) => setMessageInput(content)}
+            />
+          </div>
         )}
       </div>
+
+      {/* Nova Conversa Dialog */}
+      <Dialog open={novaConversaOpen} onOpenChange={(v) => { if (!v) resetNovaConversa(); else setNovaConversaOpen(true); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Conversa</DialogTitle>
+            <DialogDescription>Busque um contato existente ou crie um novo para iniciar o atendimento.</DialogDescription>
+          </DialogHeader>
+
+          {ncStep === 'search' ? (
+            <div className="space-y-4 py-2">
+              {/* Contact search */}
+              <div className="space-y-2">
+                <Label className="text-sm">Buscar Contato</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Nome, telefone ou e-mail..."
+                    className="pl-8 h-9 text-sm"
+                    value={ncSearch}
+                    onChange={e => setNcSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <ScrollArea className="max-h-40 border rounded-md">
+                  {ncFilteredContacts.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum contato encontrado</p>
+                  ) : (
+                    ncFilteredContacts.map(c => (
+                      <div
+                        key={c.id}
+                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-sm ${
+                          ncSelectedContact === c.id ? 'bg-accent' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => setNcSelectedContact(c.id)}
+                      >
+                        <Avatar className="h-7 w-7">
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                            {getInitials(c.first_name, c.last_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{c.first_name} {c.last_name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{c.phone || c.email || '—'}</p>
+                        </div>
+                        {ncSelectedContact === c.id && <CheckCheck className="h-4 w-4 text-primary shrink-0" />}
+                      </div>
+                    ))
+                  )}
+                </ScrollArea>
+              </div>
+
+              {/* Channel */}
+              <div className="space-y-2">
+                <Label className="text-sm">Canal</Label>
+                <Select value={ncChannel} onValueChange={setNcChannel}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="telegram">Telegram</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Device selection for WhatsApp */}
+              {ncChannel === 'whatsapp' && instances && instances.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Dispositivo</Label>
+                  <Select value={ncDeviceId} onValueChange={setNcDeviceId}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Selecione o dispositivo" /></SelectTrigger>
+                    <SelectContent>
+                      {instances.map((inst: any) => (
+                        <SelectItem key={inst.id} value={inst.id}>
+                          {inst.name} {inst.phone_number ? `(${inst.phone_number})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <Separator />
+              <Button variant="link" size="sm" className="px-0 text-xs" onClick={() => setNcStep('new')}>
+                <Plus className="h-3 w-3 mr-1" />
+                Criar novo contato
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="text-sm">Nome *</Label>
+                <Input value={ncNewName} onChange={e => setNcNewName(e.target.value)} placeholder="Nome do contato" className="h-9" autoFocus />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Email</Label>
+                <Input type="email" value={ncNewEmail} onChange={e => setNcNewEmail(e.target.value)} placeholder="email@exemplo.com" className="h-9" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Telefone com DDD</Label>
+                <Input value={ncNewPhone} onChange={e => setNcNewPhone(e.target.value.replace(/\D/g, ''))} placeholder="11999999999" className="h-9" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Canal</Label>
+                <Select value={ncChannel} onValueChange={setNcChannel}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="telegram">Telegram</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="link" size="sm" className="px-0 text-xs" onClick={() => setNcStep('search')}>
+                ← Voltar para busca
+              </Button>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetNovaConversa}>Cancelar</Button>
+            {ncStep === 'search' ? (
+              <Button onClick={handleNovaConversaStart} disabled={!ncSelectedContact}>
+                Iniciar Atendimento
+              </Button>
+            ) : (
+              <Button onClick={handleCreateContactAndStart} disabled={isCreatingContact || !ncNewName.trim()}>
+                {isCreatingContact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Salvar e Iniciar
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
