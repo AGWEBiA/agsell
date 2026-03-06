@@ -508,8 +508,16 @@ async function routeToInbox(
       if (digits.startsWith("55") && digits.length > 11) return digits.slice(2);
       return digits;
     };
+    // Extract tail (last 8-9 digits) for fuzzy matching across country code variations
+    const extractTail = (phone: string) => {
+      const digits = phone.replace(/\D/g, "");
+      // Brazilian mobile: DDD(2) + number(8-9) = 10-11 digits
+      if (digits.length >= 10) return digits.slice(-Math.min(digits.length, 11));
+      return digits;
+    };
 
     const localClean = extractLocal(cleanPhone);
+    const tailClean = extractTail(cleanPhone);
     const comparablePhones = Array.from(
       new Set([
         cleanPhone,
@@ -520,29 +528,77 @@ async function routeToInbox(
 
     const { data: orgContacts } = await supabase
       .from("contacts")
-      .select("id, phone, whatsapp")
+      .select("id, first_name, phone, whatsapp, source")
       .eq("organization_id", organizationId)
-      .limit(1000);
+      .limit(2000);
 
-    const matchedContact = (orgContacts || []).find((contact) => {
+    // Score contacts: prefer "real" contacts (with names that aren't just phone numbers) over auto-created
+    const allContacts = orgContacts || [];
+    const isAutoCreatedName = (name: string) => /^\d+$/.test(name.replace(/\D/g, ""));
+
+    const matchingContacts = allContacts.filter((contact) => {
       const phone = normalizePhone(contact.phone);
       const whatsapp = normalizePhone(contact.whatsapp);
       const phoneLocal = extractLocal(phone);
       const whatsappLocal = extractLocal(whatsapp);
-      return comparablePhones.includes(phone) || comparablePhones.includes(whatsapp)
-        || (localClean && (phoneLocal === localClean || whatsappLocal === localClean));
+      const phoneTail = extractTail(phone);
+      const whatsappTail = extractTail(whatsapp);
+
+      // Exact or local match
+      if (comparablePhones.includes(phone) || comparablePhones.includes(whatsapp)) return true;
+      if (localClean && (phoneLocal === localClean || whatsappLocal === localClean)) return true;
+      // Tail match (last 10-11 digits) for robustness across country code formats
+      if (tailClean.length >= 10 && (phoneTail === tailClean || whatsappTail === tailClean)) return true;
+      return false;
     });
+
+    // Prefer "real" contacts (manually created, with actual names) over auto-created ones
+    const realContact = matchingContacts.find((c) => c.source !== "whatsapp_inbound" && !isAutoCreatedName(c.first_name));
+    const anyContact = matchingContacts[0];
+    const matchedContact = realContact || anyContact || null;
 
     if (matchedContact) {
       contactId = matchedContact.id;
+
+      // If there's also an auto-created duplicate, merge it into the real contact
+      if (realContact && matchingContacts.length > 1) {
+        const autoCreated = matchingContacts.find((c) => c.id !== realContact.id && (c.source === "whatsapp_inbound" || isAutoCreatedName(c.first_name)));
+        if (autoCreated) {
+          // Reassign conversations from auto-created contact to real contact
+          await supabase
+            .from("conversations")
+            .update({ contact_id: realContact.id })
+            .eq("contact_id", autoCreated.id);
+          // Delete the auto-created duplicate
+          await supabase
+            .from("contacts")
+            .delete()
+            .eq("id", autoCreated.id);
+          console.log(`Merged auto-created contact ${autoCreated.id} into real contact ${realContact.id}`);
+        }
+      }
+
+      // Ensure whatsapp field is populated on the matched contact
+      const existingWhatsapp = normalizePhone(matchedContact.whatsapp);
+      if (!existingWhatsapp) {
+        await supabase
+          .from("contacts")
+          .update({ whatsapp: cleanPhone })
+          .eq("id", matchedContact.id);
+      }
     } else {
       // Auto-create contact from incoming message
+      // Format phone for display name
+      const displayPhone = cleanPhone.length > 11
+        ? `+${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4)}`
+        : cleanPhone;
+
       const { data: newContact } = await supabase
         .from("contacts")
         .insert({
           organization_id: organizationId,
           user_id: userId,
-          first_name: cleanPhone,
+          first_name: displayPhone,
           whatsapp: cleanPhone,
           phone: cleanPhone,
           source: "whatsapp_inbound",
