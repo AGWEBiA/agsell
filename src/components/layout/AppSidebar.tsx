@@ -123,6 +123,7 @@ const menuSections: MenuSection[] = [
       { label: 'Permissões', icon: Shield, path: '/permissions', orgAdminOnly: true },
       { label: 'Config. SAC', icon: SlidersHorizontal, path: '/inbox-settings', orgAdminOnly: true },
       { label: 'Relatórios SAC', icon: BarChart3, path: '/inbox-reports' },
+      { label: 'Portal de Suporte', icon: Headphones, path: '/support-portal-settings', orgAdminOnly: true, featureRequired: 'customer_support_center' },
       { label: 'Domínio E-mail', icon: Mail, path: '/email-domain', featureRequired: 'email_marketing' },
       { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true, featureRequired: 'api' },
       { label: 'Webhooks', icon: Webhook, path: '/webhooks', featureRequired: 'api' },

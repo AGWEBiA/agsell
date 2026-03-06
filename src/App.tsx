@@ -68,6 +68,8 @@ import TechnicalManual from "./pages/TechnicalManual";
 import Migration from "./pages/Migration";
 import SupportTickets from "./pages/SupportTickets";
 import SupportCenter from "./pages/SupportCenter";
+import SupportPortal from "./pages/SupportPortal";
+import SupportPortalSettingsPage from "./pages/SupportPortalSettings";
 import TicketTracker from "./pages/TicketTracker";
 import NotFound from "./pages/NotFound";
 
@@ -98,6 +100,7 @@ const App = () => (
                   <Route path="/ticket/:protocol" element={<TicketTracker />} />
                   <Route path="/ticket" element={<TicketTracker />} />
                   <Route path="/agency-invite/:token" element={<AgencyInvite />} />
+                  <Route path="/support-portal/:orgSlug" element={<SupportPortal />} />
                   <Route path="/manual-tecnico" element={<TechnicalManual />} />
                   <Route path="/subscription-expired" element={<ProtectedRoute allowExpired><SubscriptionExpired /></ProtectedRoute>} />
                   
@@ -144,6 +147,7 @@ const App = () => (
                     <Route path="migration" element={<Migration />} />
                     <Route path="support" element={<SupportTickets />} />
                     <Route path="support-center" element={<SupportCenter />} />
+                    <Route path="support-portal-settings" element={<FeatureRequiredPage feature="customer_support_center" featureLabel="Portal de Suporte"><SupportPortalSettingsPage /></FeatureRequiredPage>} />
                   </Route>
                   
                   {/* Plans accessible even with expired subscription */}
