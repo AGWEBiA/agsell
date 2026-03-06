@@ -18,8 +18,10 @@ import {
 import {
   Plus, Search, Ticket, Clock, CheckCircle2, AlertTriangle, BarChart3,
   Hash, Trash2, StickyNote, ChevronRight, ArrowLeft, UserCheck, Link as LinkIcon,
+  Send, MessageSquareReply,
 } from 'lucide-react';
 import { useSupportTickets, useSupportTicketNotes, SupportTicket } from '@/hooks/useSupportTickets';
+import { useTicketReplies } from '@/hooks/useTicketReplies';
 import { useContacts } from '@/hooks/useContacts';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { useAuth } from '@/contexts/AuthContext';
