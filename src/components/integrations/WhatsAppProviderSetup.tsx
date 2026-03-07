@@ -516,6 +516,9 @@ export function WhatsAppProviderSetup() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Conecte usando sua própria instância do Evolution API. Informe a URL, API Key e o nome da instância.
                 </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <strong>Vantagem:</strong> Maior estabilidade por ser uma instância dedicada ao seu uso. Porém, não há garantia de que números não serão banidos ou que o serviço não cairá — as regras são regidas pelo WhatsApp e não pela AG Sell.
+                </p>
               </div>
 
               {/* Existing own instances */}
