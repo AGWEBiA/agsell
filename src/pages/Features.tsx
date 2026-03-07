@@ -206,7 +206,7 @@ export default function Features() {
               <div key={ci}>
                 <div className="flex items-center gap-3 mb-6">
                   <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center', cat.bgColor)}>
-                    <cat.features[0].icon className={cn('h-4 w-4', cat.color)} />
+                    {React.createElement(cat.features[0].icon, { className: cn('h-4 w-4', cat.color) })}
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">{cat.category}</h2>
