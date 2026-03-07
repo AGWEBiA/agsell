@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Plus, Search, Trash2, Edit, Eye, Clock, CheckCircle, XCircle, AlertCircle,
-  FileText, Link as LinkIcon, MessageSquare, Phone, RefreshCw,
+  FileText, Link as LinkIcon, MessageSquare, Phone, RefreshCw, Send,
 } from 'lucide-react';
 import { useWhatsAppTemplates, WhatsAppTemplate, TemplateButton, TemplateVariable } from '@/hooks/useWhatsAppTemplates';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
