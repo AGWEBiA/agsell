@@ -79,6 +79,11 @@ import LandingPagesPage from "./pages/LandingPages";
 import AIBuilder from "./pages/AIBuilder";
 import PredictiveSending from "./pages/PredictiveSending";
 import SentimentDashboard from "./pages/SentimentDashboard";
+import SiteTracking from "./pages/SiteTracking";
+import SalesRouting from "./pages/SalesRouting";
+import Goals from "./pages/Goals";
+import WinProbability from "./pages/WinProbability";
+import ConditionalContent from "./pages/ConditionalContent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
