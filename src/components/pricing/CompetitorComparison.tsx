@@ -200,6 +200,7 @@ export function CompetitorComparison({ showChart = true }: CompetitorComparisonP
                       tickLine={false}
                     />
                     <Tooltip
+                      cursor={false}
                       formatter={(value: number) => [`${value}%`, 'Cobertura']}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--popover))',
