@@ -4,9 +4,10 @@ import { PaidGroupsConfig } from '@/components/paid-groups/PaidGroupsConfig';
 import { PaidGroupsManager } from '@/components/paid-groups/PaidGroupsManager';
 import { PaidGroupProducts } from '@/components/paid-groups/PaidGroupProducts';
 import { PaidGroupMembers } from '@/components/paid-groups/PaidGroupMembers';
+import { PaidGroupsDashboard } from '@/components/paid-groups/PaidGroupsDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Users, Package, Users2, BookOpen, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Webhook, ShieldCheck, Zap } from 'lucide-react';
+import { Settings, Users, Package, Users2, BookOpen, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Webhook, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -101,6 +102,7 @@ export default function PaidGroups() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="guide" className="gap-1.5"><BookOpen className="h-4 w-4" /> Passo a Passo</TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Dashboard</TabsTrigger>
           <TabsTrigger value="config" className="gap-1.5"><Settings className="h-4 w-4" /> Configuração</TabsTrigger>
           <TabsTrigger value="groups" className="gap-1.5"><Users className="h-4 w-4" /> Grupos</TabsTrigger>
           <TabsTrigger value="products" className="gap-1.5"><Package className="h-4 w-4" /> Produtos</TabsTrigger>
@@ -184,6 +186,7 @@ export default function PaidGroups() {
           </div>
         </TabsContent>
 
+        <TabsContent value="dashboard"><PaidGroupsDashboard /></TabsContent>
         <TabsContent value="config"><PaidGroupsConfig /></TabsContent>
         <TabsContent value="groups"><PaidGroupsManager /></TabsContent>
         <TabsContent value="products"><PaidGroupProducts /></TabsContent>
