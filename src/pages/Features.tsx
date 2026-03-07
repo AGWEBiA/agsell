@@ -249,6 +249,13 @@ export default function Features() {
         </div>
       </section>
 
+      {/* Competitor Comparison */}
+      <section className="border-t border-border/40">
+        <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24">
+          <CompetitorComparison />
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-border/40">
         <div className="container mx-auto px-4 sm:px-6 py-16 md:py-20 text-center">
