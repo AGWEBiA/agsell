@@ -71,6 +71,7 @@ import SupportCenter from "./pages/SupportCenter";
 import SupportPortal from "./pages/SupportPortal";
 import SupportPortalSettingsPage from "./pages/SupportPortalSettings";
 import TicketTracker from "./pages/TicketTracker";
+import WhatsAppTemplates from "./pages/WhatsAppTemplates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
