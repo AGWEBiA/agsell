@@ -154,6 +154,13 @@ const App = () => (
                     <Route path="sequences" element={<Sequences />} />
                     <Route path="channels" element={<Channels />} />
                     <Route path="migration" element={<Migration />} />
+                    <Route path="contact-preferences" element={<ContactPreferences />} />
+                    <Route path="event-tracking" element={<EventTracking />} />
+                    <Route path="attribution" element={<Attribution />} />
+                    <Route path="landing-pages" element={<LandingPagesPage />} />
+                    <Route path="ai-builder" element={<AIBuilder />} />
+                    <Route path="predictive-sending" element={<PredictiveSending />} />
+                    <Route path="sentiment" element={<SentimentDashboard />} />
                     <Route path="support" element={<SupportTickets />} />
                     <Route path="support-center" element={<SupportCenter />} />
                     <Route path="support-portal-settings" element={<FeatureRequiredPage feature="customer_support_center" featureLabel="Portal de Suporte"><SupportPortalSettingsPage /></FeatureRequiredPage>} />
