@@ -55,7 +55,7 @@ export const helpCategories: HelpCategory[] = [
     id: 'intelligence',
     title: 'Inteligência e Analytics',
     icon: BarChart3,
-    description: 'Dashboards analíticos, Assistente IA, Agentes de IA e Gamificação.',
+    description: 'Dashboards, Assistente IA, Agentes IA, Gamificação, Site Tracking, Atribuição, Sentimento, Relatórios e Metas.',
   },
   {
     id: 'settings',
@@ -3586,5 +3586,349 @@ Em conformidade com a Lei Geral de Proteção de Dados (LGPD), você pode:
 - 🔒 **Revise permissões** periodicamente
 
 💡 **Dica**: Ative notificações de novas mensagens no navegador para nunca perder um atendimento. A rapidez de resposta impacta diretamente a satisfação do cliente.`,
+  },
+
+  // =====================================================
+  // NOVOS MÓDULOS — INTELIGÊNCIA E MARKETING AVANÇADO
+  // =====================================================
+  {
+    id: 'sms-marketing',
+    categoryId: 'marketing',
+    title: 'SMS Marketing',
+    icon: Megaphone,
+    description: 'Campanhas SMS em massa, automações e mensagens bidirecionais.',
+    readTime: '6 min',
+    content: `O módulo de **SMS Marketing** permite enviar campanhas de texto em massa, criar automações baseadas em SMS e gerenciar conversas bidirecionais — tudo integrado ao CRM.
+
+## Campanhas SMS
+
+1. Acesse **SMS Marketing** no menu lateral
+2. Clique em **"Nova Campanha"**
+3. Selecione destinatários (todos, por tag, por segmento)
+4. Escreva a mensagem (até 160 caracteres)
+5. Envie agora ou agende
+
+### Métricas
+- Enviados, Entregues, Respostas, Taxa de entrega
+
+## Automações SMS
+- Carrinho abandonado, boas-vindas, follow-up, reengajamento
+- Integre SMS como ação em qualquer automação ou sequência
+
+## Two-Way Messaging
+- Respostas de SMS aparecem no Inbox
+- Responda pelo Inbox e o contato recebe por SMS
+
+## Configuração
+Configure Twilio ou Vonage em **Canais** → **SMS** com Account SID, Auth Token e número de envio.
+
+💡 **Dica**: Use SMS como fallback — se WhatsApp não entregar em 30 min, envie por SMS automaticamente.`,
+  },
+  {
+    id: 'site-tracking',
+    categoryId: 'intelligence',
+    title: 'Rastreamento de Site',
+    icon: Globe,
+    description: 'Monitore visitantes do seu site com snippet JS e visualize sessões.',
+    readTime: '7 min',
+    content: `O **Site Tracking** monitora visitantes do seu site em tempo real com um snippet JavaScript.
+
+## Instalação
+1. Acesse **Site Tracking** → copie o snippet JS
+2. Cole no \`<head>\` do seu site
+3. O rastreamento inicia automaticamente
+
+## O que é rastreado
+- Visualizações de página (URL, título, referrer)
+- Sessões (início, duração, páginas/sessão)
+- Dispositivos (Desktop, Mobile, Tablet)
+- Origem (Direto, Orgânico, Social, Pago)
+
+## Dashboard
+- Visitantes únicos, sessões, páginas/sessão, tempo médio
+- Distribuição por dispositivo (gráfico pizza)
+- Páginas mais visitadas (ranking)
+
+## Integração com CRM
+Quando o visitante é identificado via formulário, as sessões são vinculadas ao perfil do contato para uso em Lead Scoring e automações.
+
+💡 **Dica**: Combine com Lead Scoring para pontuar leads que visitam páginas de preço.`,
+  },
+  {
+    id: 'attribution',
+    categoryId: 'intelligence',
+    title: 'Atribuição de Receita',
+    icon: Target,
+    description: 'Rastreie a jornada do cliente e atribua receita a canais e campanhas.',
+    readTime: '6 min',
+    content: `O módulo de **Atribuição** rastreia a jornada completa e atribui receita aos canais que contribuíram para a conversão.
+
+## Modelos
+| Modelo | Descrição |
+|--------|-----------|
+| **Primeiro toque** | 100% ao primeiro canal |
+| **Último toque** | 100% ao último canal |
+| **Linear** | Distribui igualmente entre todos |
+
+## Dashboard
+- Receita por canal (barras), touchpoints recentes, canal top, ROI por canal
+
+## Como funciona
+1. Cada interação cria um touchpoint
+2. Quando deal é ganho, receita é distribuída conforme modelo
+3. Dashboard consolida a visão
+
+💡 **Dica**: Use linear para visão equilibrada. Primeiro toque mostra o que atrai, último mostra o que converte.`,
+  },
+  {
+    id: 'ai-builder',
+    categoryId: 'intelligence',
+    title: 'AI Builder',
+    icon: Brain,
+    description: 'Gere e-mails, automações e copy com IA. Inclui Brand Kit e segmentação inteligente.',
+    readTime: '8 min',
+    content: `O **AI Builder** gera conteúdo e estratégia com inteligência artificial.
+
+## Geração de Conteúdo
+- **E-mails HTML** — Descreva o objetivo, IA cria o e-mail
+- **Fluxos de automação** — Descreva a estratégia, receba o fluxo
+- **Copy para WhatsApp** — Mensagens persuasivas
+
+## AI Brand Kit
+1. Cole a URL do site da marca
+2. IA extrai: cores, fontes e tom de comunicação
+3. Use para consistência visual em e-mails e landing pages
+
+## Segmentos Sugeridos por IA
+1. Clique em "Gerar Sugestões"
+2. IA analisa padrões de engajamento e comportamento
+3. Receba sugestões como "Leads quentes sem follow-up"
+4. Aplique como filtro no CRM
+
+💡 **Dica**: Gere séries de e-mails de onboarding — "série de 5 e-mails de boas-vindas para SaaS" e receba tudo pronto.`,
+  },
+  {
+    id: 'predictive-sending',
+    categoryId: 'intelligence',
+    title: 'Envio Preditivo',
+    icon: Search,
+    description: 'IA determina o melhor horário para enviar mensagens a cada contato.',
+    readTime: '5 min',
+    content: `O **Envio Preditivo** usa IA para determinar o melhor horário de envio para cada contato.
+
+## Como funciona
+1. IA analisa histórico de interações
+2. Identifica padrões de horários com maior engajamento
+3. Cria perfil de envio (timezone, canal preferido, horário ideal)
+4. Aplica automaticamente em campanhas e automações
+
+## Dashboard
+- Perfis analisados, melhoria estimada, horário mais popular
+- Distribuição por horário e canal preferido
+
+💡 **Dica**: Deixe coletar 2+ semanas de dados antes de confiar nas predições.`,
+  },
+  {
+    id: 'sentiment-analysis',
+    categoryId: 'intelligence',
+    title: 'Análise de Sentimento',
+    icon: Brain,
+    description: 'IA classifica o sentimento das conversas e identifica padrões.',
+    readTime: '5 min',
+    content: `A **Análise de Sentimento** classifica automaticamente o tom das mensagens recebidas.
+
+## Classificações
+- **Positivo** — Tom satisfeito, elogioso
+- **Neutro** — Informativo, sem carga emocional
+- **Negativo** — Insatisfeito, reclamação, urgência
+
+## Dashboard
+- Distribuição de sentimentos (gráfico)
+- Palavras-chave mais frequentes
+- Tendências temporais
+
+## Uso prático
+- Priorize atendimentos negativos
+- Identifique tendências de insatisfação
+- Automatize escalação de mensagens negativas
+
+💡 **Dica**: Combine com CSAT para visão completa. Sentimento = tempo real, CSAT = pós-atendimento.`,
+  },
+  {
+    id: 'sales-routing',
+    categoryId: 'intelligence',
+    title: 'Roteamento de Vendas',
+    icon: SlidersHorizontal,
+    description: 'Distribua leads automaticamente entre vendedores com regras inteligentes.',
+    readTime: '5 min',
+    content: `O **Sales Routing** distribui leads automaticamente entre vendedores.
+
+## Estratégias
+| Estratégia | Descrição |
+|-----------|-----------|
+| **Round Robin** | Alternando entre vendedores |
+| **Por Carga** | Vendedor com menos leads ativos |
+| **Por Território** | Baseado na região do contato |
+| **Por Especialidade** | Conforme tags ou produto |
+
+## Configuração
+1. Acesse Sales Routing → "Nova Regra"
+2. Defina nome, estratégia e membros elegíveis
+3. Configure limites (máx. concurrent)
+4. Ative
+
+💡 **Dica**: Round Robin para equipes homogêneas, por carga para equipes com níveis diferentes.`,
+  },
+  {
+    id: 'goals',
+    categoryId: 'intelligence',
+    title: 'Metas e Conversões',
+    icon: Target,
+    description: 'Defina metas de vendas e acompanhe progresso em tempo real.',
+    readTime: '5 min',
+    content: `O módulo de **Metas** permite definir objetivos e acompanhar progresso.
+
+## Tipos
+| Tipo | Exemplo |
+|------|---------|
+| **Receita** | R$ 100.000 em vendas no mês |
+| **Contagem** | 500 novos leads no trimestre |
+| **Evento** | 1.000 page views na landing page |
+
+## Criar meta
+1. Acesse Metas → "Nova Meta"
+2. Defina nome, tipo, valor alvo e deadline
+3. Acompanhe progresso no dashboard
+
+## Status automáticos
+- **Ativa** — Em andamento
+- **Atingida** — Valor atual ≥ alvo
+- **Expirada** — Deadline passou sem atingir
+
+💡 **Dica**: Metas mensais de receita + semanais de leads. Acompanhe diariamente.`,
+  },
+  {
+    id: 'win-probability',
+    categoryId: 'intelligence',
+    title: 'Probabilidade de Fechamento',
+    icon: Target,
+    description: 'IA calcula a probabilidade de fechar cada negócio do pipeline.',
+    readTime: '5 min',
+    content: `A **Win Probability** usa IA para calcular chances de converter cada negócio.
+
+## Como funciona
+1. IA analisa: valor, tempo na etapa, atividades, contato
+2. Compara com padrões históricos
+3. Calcula probabilidade (0-100%)
+4. Lista fatores positivos e negativos
+
+## Dashboard
+- Total de deals analisados
+- Probabilidade média do pipeline
+- Deals de alta probabilidade (>70%)
+
+## Uso prático
+- Foque nos top deals (>70%)
+- Recupere deals em risco (queda de probabilidade)
+- Forecast: valor × probabilidade
+
+💡 **Dica**: Recalcule semanalmente. Deals estagnados perdem probabilidade — aja rápido.`,
+  },
+  {
+    id: 'conditional-content',
+    categoryId: 'marketing',
+    title: 'Conteúdo Condicional',
+    icon: Vote,
+    description: 'Blocos de conteúdo dinâmico que mudam conforme o perfil do contato.',
+    readTime: '5 min',
+    content: `O **Conteúdo Condicional** cria blocos dinâmicos em e-mails que mudam com base no contato.
+
+## Condições disponíveis
+- **Tag** — Contato possui ou não uma tag
+- **Lead Score** — Acima/abaixo de um valor
+- **Status** — Lead, Cliente, Churned
+- **Campo customizado** — Qualquer campo
+
+## Criar bloco
+1. Acesse Conteúdo Condicional → "Novo Bloco"
+2. Defina condição
+3. Escreva conteúdo verdadeiro e alternativo (fallback)
+4. Use o código gerado nos templates
+
+## Preview
+Editor lado a lado: Se verdadeiro vs Se falso
+
+💡 **Dica**: Ofertas de upgrade para Starter, features avançadas para Enterprise — tudo no mesmo e-mail.`,
+  },
+  {
+    id: 'custom-reports',
+    categoryId: 'intelligence',
+    title: 'Relatórios Personalizados',
+    icon: BarChart3,
+    description: 'Dashboards customizados combinando métricas de CRM, e-mail e WhatsApp.',
+    readTime: '5 min',
+    content: `Os **Relatórios Personalizados** permitem criar dashboards sob medida.
+
+## Criar relatório
+1. Acesse Relatórios Personalizados → "Novo Relatório"
+2. Adicione widgets (Barras, Linhas, Pizza)
+3. Escolha fontes: CRM, E-mail, WhatsApp, Inbox
+4. Configure período e filtros
+
+## Fontes de dados
+- **CRM** — Contatos, deals, receita, pipeline
+- **E-mail** — Campanhas, aberturas, cliques
+- **WhatsApp** — Mensagens, respostas, campanhas
+- **Inbox** — Conversas, tempo de resposta, CSAT
+
+💡 **Dica**: Relatório semanal com: novos leads, deals ganhos, receita e CSAT para reuniões de equipe.`,
+  },
+  {
+    id: 'revenue-reporting',
+    categoryId: 'intelligence',
+    title: 'Relatório de Receita',
+    icon: BarChart3,
+    description: 'Receita por canal, campanha e período com dashboards detalhados.',
+    readTime: '5 min',
+    content: `O **Relatório de Receita** consolida toda receita segmentada por canal, campanha e período.
+
+## Dashboard
+- Receita total no período
+- Receita por canal (E-mail, WhatsApp, SMS, Site)
+- Crescimento vs período anterior
+- Top campanhas por receita
+
+## Filtros
+- Período (7, 30, 90 dias ou customizado)
+- Canal e campanha
+
+## Integração
+Alimentado pelos dados de **Atribuição** para visão clara de contribuição por canal.
+
+💡 **Dica**: Compare receita por canal mensalmente para redistribuir investimentos.`,
+  },
+  {
+    id: 'landing-pages',
+    categoryId: 'marketing',
+    title: 'Landing Pages',
+    icon: Globe,
+    description: 'Crie landing pages de captura com integração direta ao CRM.',
+    readTime: '5 min',
+    content: `O módulo de **Landing Pages** permite criar páginas de captura de leads sem ferramentas externas.
+
+## Criar Landing Page
+1. Acesse Landing Pages → "Nova Landing Page"
+2. Defina título, slug (URL) e descrição
+3. Edite conteúdo HTML no editor
+4. Configure formulário de captura
+5. Publique
+
+## Integração com CRM
+Formulário preenchido → Contato criado automaticamente → Tags aplicadas → Automações disparadas
+
+## Métricas
+- Visualizações, conversões, taxa de conversão
+
+💡 **Dica**: Use para campanhas específicas (Black Friday, lançamento) com URLs personalizadas.`,
   },
 ];

@@ -906,6 +906,16 @@ Checkout → Stripe Session → Webhook checkout.session.completed
 | \`sms_configs\` | Configuração SMS | organization_id |
 | \`organization_integrations\` | Integrações de terceiros | organization_id |
 | \`import_jobs\` | Jobs de importação CSV | organization_id |
+| \`site_events\` | Eventos de rastreamento de site | organization_id |
+| \`site_tracking_sessions\` | Sessões de visitantes | organization_id |
+| \`sentiment_analysis\` | Análise de sentimento IA | organization_id |
+| \`attribution_touchpoints\` | Touchpoints de atribuição | organization_id |
+| \`landing_pages\` | Landing pages de captura | organization_id |
+| \`predictive_send_profiles\` | Perfis de envio preditivo | organization_id |
+| \`contact_preferences\` | Preferências de opt-out | organization_id |
+| \`conversion_goals\` | Metas de conversão | organization_id |
+| \`sales_routing_rules\` | Regras de roteamento de vendas | organization_id |
+| \`deal_win_scores\` | Scores de probabilidade de fechamento | organization_id |
 
 ## 12.2 Funções RPC
 
@@ -1069,6 +1079,95 @@ Checkout → Stripe Session → Webhook checkout.session.completed
 | \`admin-manage-users\` | Gestão de usuários (admin) |
 | \`delete-user-data\` | Exclusão de dados (LGPD) |
 | \`export-user-data\` | Exportação de dados (LGPD) |
+| \`ai-builder\` | Geração de conteúdo IA (e-mails, fluxos, brand kit, segmentos) |
+| \`analyze-sentiment\` | Análise de sentimento de mensagens via IA |
+| \`track-event\` | Rastreamento de eventos de sites (snippet JS) |
+| \`predict-win\` | Cálculo de probabilidade de fechamento de deals via IA |
+| \`send-sms\` | Envio de SMS via Twilio/Vonage |
+
+---
+
+# 16. MÓDULOS AVANÇADOS (Marketing Intelligence Suite)
+
+## 16.1 SMS Marketing (\`/sms-marketing\`)
+- Campanhas SMS em massa com agendamento
+- Automações SMS (carrinho abandonado, boas-vindas, reengajamento)
+- Mensagens bidirecionais (two-way) integradas ao Inbox
+- Provedores: Twilio, Vonage
+- Edge Function: \`send-sms\`
+
+## 16.2 Site Tracking (\`/site-tracking\`)
+- Snippet JavaScript para instalação em sites externos
+- Rastreia: pageviews, sessões, dispositivos, referrers
+- Tabelas: \`site_events\`, \`site_tracking_sessions\`
+- Edge Function: \`track-event\` (endpoint público)
+- Integração com Lead Scoring (visitas como fator de pontuação)
+
+## 16.3 Atribuição de Receita (\`/attribution\`)
+- Modelos: primeiro toque, último toque, linear
+- Tabela: \`attribution_touchpoints\`
+- Vincula touchpoints a deals e contatos
+- Dashboard com receita por canal e campanha
+
+## 16.4 Landing Pages (\`/landing-pages\`)
+- Editor HTML com preview
+- Tabela: \`landing_pages\`
+- Integração com formulários e CRM
+- Métricas: views, conversões, taxa de conversão
+
+## 16.5 AI Builder (\`/ai-builder\`)
+- Geração de e-mails HTML, fluxos de automação e copy via IA
+- AI Brand Kit: extração de identidade visual de URLs
+- Segmentos sugeridos por IA (análise de base de contatos)
+- Edge Function: \`ai-builder\`
+- Modelos: Gemini 3 Flash Preview
+
+## 16.6 Envio Preditivo (\`/predictive-sending\`)
+- IA analisa histórico de interações por contato
+- Determina melhor horário e canal para envio
+- Tabela: \`predictive_send_profiles\`
+- Aplicável a campanhas, automações e sequências
+
+## 16.7 Análise de Sentimento (\`/sentiment\`)
+- Classificação automática: positivo, neutro, negativo
+- Extração de palavras-chave
+- Tabela: \`sentiment_analysis\`
+- Edge Function: \`analyze-sentiment\`
+- Dashboard com tendências temporais
+
+## 16.8 Sales Routing (\`/sales-routing\`)
+- Distribuição automática de leads entre vendedores
+- Estratégias: Round Robin, por carga, por território, por especialidade
+- Tabela: \`sales_routing_rules\`
+- Limites de leads concorrentes por vendedor
+
+## 16.9 Metas de Conversão (\`/goals\`)
+- Tipos: receita, contagem, eventos
+- Tabela: \`conversion_goals\`
+- Status automático: ativa, atingida, expirada
+- Deadline e progresso em tempo real
+
+## 16.10 Win Probability (\`/win-probability\`)
+- IA calcula probabilidade de fechamento (0-100%)
+- Fatores: valor, tempo na etapa, atividades, engajamento
+- Tabela: \`deal_win_scores\`
+- Edge Function: \`predict-win\`
+
+## 16.11 Conteúdo Condicional (\`/conditional-content\`)
+- Blocos dinâmicos baseados em tags, score, status
+- Preview lado a lado (verdadeiro vs falso)
+- Aplicável em templates de e-mail
+
+## 16.12 Relatórios Personalizados (\`/custom-reports\`)
+- Dashboards customizados com widgets configuráveis
+- Fontes: CRM, E-mail, WhatsApp, Inbox
+- Tipos de gráfico: Bar, Line, Pie
+- Filtros por período, canal e agente
+
+## 16.13 Relatório de Receita (\`/revenue-reporting\`)
+- Receita por canal, campanha e período
+- Integração com módulo de Atribuição
+- Comparativo temporal e ranking de campanhas
 
 ---
 

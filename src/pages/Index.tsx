@@ -162,7 +162,7 @@ function ToolReplacementSection() {
 
 // ─── Stats ──────────────────────────────────────────────────
 const STATS = [
-  { value: '20+', label: 'Funcionalidades integradas' },
+  { value: '30+', label: 'Funcionalidades integradas' },
   { value: '6', label: 'Ferramentas substituídas' },
   { value: '50%', label: 'Mais conversões' },
   { value: '24/7', label: 'IA trabalhando por você' },
@@ -232,6 +232,19 @@ const FEATURE_CATEGORIES = [
       { icon: Headphones, title: 'Portal de Suporte White-label', desc: 'Portal público com sua marca para clientes abrirem e acompanharem tickets sem login.' },
     ]
   },
+  {
+    category: 'Inteligência & Analytics',
+    color: 'text-rose-500',
+    bgColor: 'bg-rose-500/10',
+    items: [
+      { icon: Brain, title: 'AI Builder com Brand Kit', desc: 'Gere e-mails, automações e copy com IA. Extraia identidade visual de qualquer site automaticamente.' },
+      { icon: Target, title: 'Win Probability por IA', desc: 'IA calcula a probabilidade de fechar cada negócio do pipeline com base em dados históricos.' },
+      { icon: BarChart3, title: 'Atribuição Multi-toque', desc: 'Descubra quais canais e campanhas geram mais receita com modelos de atribuição avançados.' },
+      { icon: Phone, title: 'SMS Marketing Bidirecional', desc: 'Campanhas SMS em massa, automações e respostas bidirecionais integradas ao Inbox.' },
+      { icon: Globe, title: 'Site Tracking + Envio Preditivo', desc: 'Rastreie visitantes com snippet JS. IA determina o melhor horário de envio para cada contato.' },
+      { icon: BarChart3, title: 'Relatórios & Metas', desc: 'Dashboards customizados, metas de conversão, relatórios de receita e conteúdo condicional.' },
+    ]
+  },
 ];
 
 function FeatureShowcase() {
@@ -243,7 +256,7 @@ function FeatureShowcase() {
         <div className="max-w-xl mx-auto text-center mb-14">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
             <Layers className="h-3 w-3" />
-            +20 funcionalidades
+            +30 funcionalidades
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
             Tudo que você precisa,
