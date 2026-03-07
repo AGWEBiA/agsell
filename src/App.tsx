@@ -122,6 +122,7 @@ const App = () => (
                   <Route path="/agency-invite/:token" element={<AgencyInvite />} />
                   <Route path="/support-portal/:orgSlug" element={<SupportPortal />} />
                   <Route path="/manual-tecnico" element={<TechnicalManual />} />
+                  <Route path="/status" element={<SystemStatus />} />
                   <Route path="/subscription-expired" element={<ProtectedRoute allowExpired><SubscriptionExpired /></ProtectedRoute>} />
                   
                   {/* Protected Routes */}
