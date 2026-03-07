@@ -77,7 +77,7 @@ export function WhatsAppProviderSetup() {
   const [officialPhoneNumberId, setOfficialPhoneNumberId] = useState('');
   const [officialAccessToken, setOfficialAccessToken] = useState('');
   const [officialWabaId, setOfficialWabaId] = useState('');
-  const [officialWebhookToken, setOfficialWebhookToken] = useState('');
+  // webhook token is auto-generated
   const [officialPhone, setOfficialPhone] = useState('');
 
   // QR Code states
