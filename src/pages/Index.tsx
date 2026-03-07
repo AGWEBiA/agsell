@@ -367,7 +367,7 @@ const EXCLUSIVE_DIFFERENTIALS = [
   {
     icon: Users,
     title: 'Grupos Pagos Automatizados',
-    description: 'Integre 20+ gateways de pagamento (Kiwify, Hotmart, Stripe, Eduzz e mais) para adicionar e remover membros de grupos WhatsApp automaticamente. Importação de grupos com um clique.',
+    description: 'Integre 20+ gateways de pagamento (Kiwify, Hotmart, Stripe, Eduzz e mais) para adicionar e remover membros automaticamente. Dashboard de métricas com churn, crescimento e distribuição por gateway. Mapeamento híbrido: detecta gateways integrados e permite adicionar manualmente.',
     badge: 'Beta',
     span: '',
   },
