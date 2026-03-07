@@ -93,7 +93,10 @@ const menuSections: MenuSection[] = [
       { label: 'Formulários', icon: FileText, path: '/forms' },
       { label: 'Landing Pages', icon: Layout, path: '/landing-pages' },
       { label: 'Event Tracking', icon: Activity, path: '/event-tracking' },
+      { label: 'Site Tracking', icon: Monitor, path: '/site-tracking' },
       { label: 'Predictive Send', icon: Clock, path: '/predictive-sending' },
+      { label: 'Metas', icon: Crosshair, path: '/goals' },
+      { label: 'Conteúdo Dinâmico', icon: Wand2, path: '/conditional-content' },
     ],
   },
   {
