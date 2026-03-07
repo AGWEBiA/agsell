@@ -42,6 +42,7 @@ const ALL_FEATURES = [
       { icon: Instagram, name: 'Instagram DM & Automações', desc: 'Responda DMs, comentários e stories. Automações por palavra-chave e broadcasts.', plans: ['professional', 'enterprise', 'agencia'] },
       { icon: Phone, name: 'SMS Marketing Bidirecional', desc: 'Campanhas SMS em massa, automações e respostas bidirecionais via Twilio/Vonage.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
       { icon: Globe, name: 'Telegram & Shopify', desc: 'Bot Telegram integrado ao CRM. Shopify com sincronização de pedidos e clientes.', plans: ['professional', 'enterprise', 'agencia'] },
+      { icon: Users, name: 'Grupos Pagos (Beta)', desc: 'Automatize entrada e saída de membros em grupos WhatsApp com 20+ gateways de pagamento integrados.', plans: ['professional', 'enterprise', 'agencia'] },
       { icon: Headphones, name: 'SAC com Distribuição Inteligente', desc: 'Round-robin, por capacidade ou manual. Pesquisa CSAT automática e relatórios.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
       { icon: Sparkles, name: 'Transcrição de Áudio por IA', desc: 'Áudios do WhatsApp e Instagram transcritos automaticamente para texto.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
     ],

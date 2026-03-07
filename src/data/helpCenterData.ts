@@ -3931,4 +3931,137 @@ Formulário preenchido → Contato criado automaticamente → Tags aplicadas →
 
 💡 **Dica**: Use para campanhas específicas (Black Friday, lançamento) com URLs personalizadas.`,
   },
+  {
+    id: 'paid-groups',
+    categoryId: 'communication',
+    title: 'Grupos Pagos (Beta)',
+    icon: Users,
+    description: 'Automatize a gestão de membros em grupos de WhatsApp com integração a 20+ gateways de pagamento.',
+    readTime: '10 min',
+    popular: true,
+    content: `O módulo **Grupos Pagos** permite automatizar completamente a entrada e saída de membros em grupos de WhatsApp com base em pagamentos recebidos de plataformas digitais. Disponível a partir do plano **Professional**.
+
+> 🚧 **Beta**: Esta funcionalidade está em fase beta. Novos gateways e melhorias são adicionados continuamente.
+
+## Como funciona?
+
+O fluxo é simples:
+
+1. **Cliente paga** em qualquer gateway (Kiwify, Hotmart, Stripe, etc.)
+2. **Webhook é enviado** para a AG Sell automaticamente
+3. **Sistema identifica** o produto e o grupo vinculado
+4. **Membro é adicionado** ao grupo de WhatsApp via Evolution API
+5. Em caso de **cancelamento ou reembolso**, o membro é removido automaticamente
+
+## Passo a Passo de Configuração
+
+### 1. Configurar a Evolution API
+
+A Evolution API é necessária para que o sistema consiga adicionar e remover participantes dos seus grupos de WhatsApp.
+
+1. Acesse **Grupos Pagos** no menu lateral
+2. Vá na aba **"Configuração"**
+3. Insira a **URL** da sua instância da Evolution API (ex: \`https://api.meudominio.com\`)
+4. Insira a **API Key** da sua instância
+5. Ative o toggle **"Ativo"**
+6. Clique em **"Salvar Configuração"**
+
+> ⚠️ Certifique-se de que a Evolution API está rodando e acessível. O sistema precisa dela para gerenciar os grupos.
+
+### 2. Importar seus Grupos de WhatsApp
+
+Após configurar a Evolution API, você pode importar os grupos automaticamente:
+
+1. Vá na aba **"Grupos"**
+2. Clique em **"Buscar Grupos"**
+3. O sistema buscará todas as instâncias conectadas e listará os grupos encontrados
+4. **Selecione os grupos** que deseja utilizar para membros pagos
+5. Clique em **"Adicionar Selecionados"**
+
+> Grupos já importados não aparecem na lista para evitar duplicatas. Você pode remover um grupo a qualquer momento.
+
+### 3. Criar Produtos
+
+Cada produto representa um item de venda no seu gateway de pagamento:
+
+1. Vá na aba **"Produtos"**
+2. Clique em **"Novo Produto"**
+3. Defina o **nome** (ex: "Acesso Comunidade VIP")
+4. Opcionalmente defina **descrição**, **preço** e **ciclo de cobrança**
+5. Na seção **"Mapeamento de Gateways"**, vincule os IDs dos produtos de cada plataforma:
+   - Ex: No Kiwify, o product_id é \`abc123\`
+   - Ex: No Hotmart, o product_id é \`xyz789\`
+6. Salve o produto
+
+> O mapeamento é essencial para que o sistema saiba qual produto do gateway corresponde a qual grupo.
+
+### 4. Vincular Produtos a Grupos
+
+Após criar produtos, vincule-os aos grupos:
+
+1. No card do produto, clique em **"Gerenciar Vínculos"**
+2. Selecione os grupos de WhatsApp que devem receber membros quando esse produto for comprado
+3. Um produto pode estar vinculado a múltiplos grupos (ex: grupo geral + grupo exclusivo)
+
+### 5. Configurar Webhooks nos Gateways
+
+Copie a URL do webhook exibida na aba **"Passo a Passo"** e configure-a nos seus gateways:
+
+**URL padrão do webhook:**
+\`\`\`
+https://[seu-projeto].supabase.co/functions/v1/paid-groups-webhook?org=[id-da-organizacao]&gateway=[nome-do-gateway]
+\`\`\`
+
+**Gateways suportados (20+):**
+- 💳 **Stripe** — \`gateway=stripe\`
+- 🟢 **Kiwify** — \`gateway=kiwify\`
+- 🔥 **Hotmart** — \`gateway=hotmart\`
+- 📦 **Eduzz** — \`gateway=eduzz\`
+- 💰 **Monetizze** — \`gateway=monetizze\`
+- ✅ **PerfectPay** — \`gateway=perfectpay\`
+- 🎯 **Braip** — \`gateway=braip\`
+- 🧘 **Guru** — \`gateway=guru\`
+- 🔗 **Lastlink** — \`gateway=lastlink\`
+- 🌶️ **Pepper** — \`gateway=pepper\`
+- 🛒 **Yampi** — \`gateway=yampi\`
+- ⚡ **Ticto** — \`gateway=ticto\`
+- 🏷️ **Kirvano** — \`gateway=kirvano\`
+- 💵 **Payt** — \`gateway=payt\`
+- 🟩 **Greenn** — \`gateway=greenn\`
+- 🛍️ **CartPanda** — \`gateway=cartpanda\`
+- 🚀 **HeroSpark** — \`gateway=herospark\`
+- 📱 **AppMax** — \`gateway=appmax\`
+- 🎪 **Doppus** — \`gateway=doppus\`
+- 🔧 **Webhook Genérico** — \`gateway=generic\`
+
+### 6. Acompanhar Membros
+
+Na aba **"Membros"**, você visualiza:
+- **Membros ativos** — adicionados automaticamente após compra
+- **Membros removidos** — retirados após cancelamento/reembolso
+- **Informações** — Nome, WhatsApp, grupo, produto, data de entrada/saída
+
+## Eventos Processados
+
+O webhook processa os seguintes tipos de evento:
+
+| Evento | Ação |
+|--------|------|
+| Compra aprovada | Adiciona membro ao grupo |
+| Assinatura ativa | Adiciona membro ao grupo |
+| Cancelamento | Remove membro do grupo |
+| Reembolso | Remove membro do grupo |
+| Estorno (chargeback) | Remove membro do grupo |
+| Assinatura expirada | Remove membro do grupo |
+
+## Dicas e Boas Práticas
+
+- 📋 **Teste o webhook** antes de ativar em produção. Use um gateway de sandbox se disponível.
+- 🔗 **Vincule corretamente** os IDs dos produtos — um mapeamento incorreto impede a automação.
+- 👥 **Use grupos exclusivos** — Crie grupos separados para cada produto/nível de acesso.
+- 🔄 **Monitore membros** — Verifique periodicamente a aba de membros para garantir que tudo funciona.
+- ⚙️ **Evolution API estável** — Use uma instância dedicada para evitar quedas.
+
+💡 **Dica**: O webhook genérico aceita qualquer payload com campos \`email\`, \`phone\`, \`product_id\` e \`event\` — ideal para integrações customizadas.`,
+  },
 ];
