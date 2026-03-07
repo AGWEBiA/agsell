@@ -89,6 +89,7 @@ import SMSMarketing from "./pages/SMSMarketing";
 import CustomReports from "./pages/CustomReports";
 import RevenueReporting from "./pages/RevenueReporting";
 import PaidGroups from "./pages/PaidGroups";
+import SystemStatus from "./pages/SystemStatus";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -121,6 +122,7 @@ const App = () => (
                   <Route path="/agency-invite/:token" element={<AgencyInvite />} />
                   <Route path="/support-portal/:orgSlug" element={<SupportPortal />} />
                   <Route path="/manual-tecnico" element={<TechnicalManual />} />
+                  <Route path="/status" element={<SystemStatus />} />
                   <Route path="/subscription-expired" element={<ProtectedRoute allowExpired><SubscriptionExpired /></ProtectedRoute>} />
                   
                   {/* Protected Routes */}
