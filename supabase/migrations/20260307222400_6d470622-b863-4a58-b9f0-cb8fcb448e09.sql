@@ -1,0 +1,1 @@
+ALTER TABLE paid_group_members ADD CONSTRAINT paid_group_members_org_group_phone_unique UNIQUE (organization_id, group_id, phone_number);
