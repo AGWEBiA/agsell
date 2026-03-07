@@ -282,7 +282,7 @@ export function WhatsAppProviderSetup() {
           phone_number_id: officialPhoneNumberId,
           access_token: officialAccessToken,
           waba_id: officialWabaId,
-          webhook_verify_token: officialWebhookToken,
+          webhook_verify_token: crypto.randomUUID(),
           phone_number: officialPhone,
         } as Record<string, string>,
         phone_number: officialPhone || officialPhoneNumberId,
