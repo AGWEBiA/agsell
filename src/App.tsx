@@ -88,6 +88,7 @@ import ConditionalContent from "./pages/ConditionalContent";
 import SMSMarketing from "./pages/SMSMarketing";
 import CustomReports from "./pages/CustomReports";
 import RevenueReporting from "./pages/RevenueReporting";
+import PaidGroups from "./pages/PaidGroups";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -179,6 +180,7 @@ const App = () => (
                     <Route path="sms-marketing" element={<SMSMarketing />} />
                     <Route path="custom-reports" element={<CustomReports />} />
                     <Route path="revenue-reporting" element={<RevenueReporting />} />
+                    <Route path="paid-groups" element={<FeatureRequiredPage feature="paid_groups" featureLabel="Grupos Pagos"><PaidGroups /></FeatureRequiredPage>} />
                     <Route path="support" element={<SupportTickets />} />
                     <Route path="support-center" element={<SupportCenter />} />
                     <Route path="support-portal-settings" element={<FeatureRequiredPage feature="customer_support_center" featureLabel="Portal de Suporte"><SupportPortalSettingsPage /></FeatureRequiredPage>} />

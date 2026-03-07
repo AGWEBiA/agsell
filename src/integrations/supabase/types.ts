@@ -2727,6 +2727,241 @@ export type Database = {
           },
         ]
       }
+      paid_group_members: {
+        Row: {
+          added_at: string | null
+          customer_email: string | null
+          customer_name: string | null
+          external_subscription_id: string | null
+          gateway_source: string | null
+          group_id: string
+          id: string
+          organization_id: string
+          phone_number: string
+          product_id: string | null
+          removed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          external_subscription_id?: string | null
+          gateway_source?: string | null
+          group_id: string
+          id?: string
+          organization_id: string
+          phone_number: string
+          product_id?: string | null
+          removed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          external_subscription_id?: string | null
+          gateway_source?: string | null
+          group_id?: string
+          id?: string
+          organization_id?: string
+          phone_number?: string
+          product_id?: string | null
+          removed_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "paid_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paid_group_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paid_group_members_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "paid_group_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_group_product_links: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_group_product_links_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "paid_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paid_group_product_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "paid_group_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_group_products: {
+        Row: {
+          billing_cycle: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          gateway_mappings: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          gateway_mappings?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          gateway_mappings?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_group_products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_groups: {
+        Row: {
+          created_at: string | null
+          group_jid: string
+          id: string
+          instance_name: string | null
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_jid: string
+          id?: string
+          instance_name?: string | null
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_jid?: string
+          id?: string
+          instance_name?: string | null
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_groups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_groups_config: {
+        Row: {
+          created_at: string | null
+          evolution_api_key: string | null
+          evolution_api_url: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          updated_at: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_groups_config_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_profiles: {
         Row: {
           created_at: string

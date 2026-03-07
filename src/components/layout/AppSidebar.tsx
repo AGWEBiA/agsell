@@ -10,7 +10,7 @@ import {
   HelpCircle, Briefcase, X, FlaskConical, Rocket, GitBranch, Send,
   Lock, BookOpen, Workflow, ArrowRightLeft, Ticket, ShieldCheck, Activity,
   Layout, Clock, Sparkles, Smile, Route, Crosshair, Wand2, Monitor,
-  Phone, DollarSign,
+  Phone, DollarSign, Crown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -78,6 +78,7 @@ const menuSections: MenuSection[] = [
       { label: 'Caixa de E-mail', icon: Mail, path: '/email-inbox', featureRequired: 'email_marketing' },
       { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp', featureRequired: 'whatsapp' },
       { label: 'Templates API', icon: FileText, path: '/whatsapp-templates', featureRequired: 'whatsapp' },
+      { label: 'Grupos Pagos', icon: Crown, path: '/paid-groups', featureRequired: 'paid_groups' },
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
       { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
       { label: 'Instagram', icon: Instagram, path: '/instagram', featureRequired: 'instagram' },
