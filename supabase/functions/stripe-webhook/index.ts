@@ -61,6 +61,11 @@ Deno.serve(async (req) => {
         if (session.metadata?.is_new_user === 'true') {
           await handleNewUserSignup(supabase, session);
         }
+
+        // Sync WhatsApp groups for the user
+        if (session.customer_details?.email) {
+          await syncWhatsAppGroupsByEmail(supabase, session.customer_details.email, true);
+        }
         break;
       }
 
@@ -73,6 +78,22 @@ Deno.serve(async (req) => {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         await handleSubscriptionCanceled(supabase, subscription);
+
+        // Sync WhatsApp groups - remove from groups
+        const { data: canceledSub } = await supabase
+          .from('subscriptions')
+          .select('organization_id')
+          .eq('stripe_subscription_id', subscription.id)
+          .maybeSingle();
+        if (canceledSub) {
+          const { data: members } = await supabase
+            .from('organization_members')
+            .select('user_id')
+            .eq('organization_id', canceledSub.organization_id);
+          for (const m of members || []) {
+            await callSyncUser(supabase, m.user_id, false);
+          }
+        }
         break;
       }
 
