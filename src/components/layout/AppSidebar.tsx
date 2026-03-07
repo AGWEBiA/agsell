@@ -78,6 +78,7 @@ const menuSections: MenuSection[] = [
       { label: 'WhatsApp', icon: MessageSquare, path: '/whatsapp', featureRequired: 'whatsapp' },
       { label: 'Templates API', icon: FileText, path: '/whatsapp-templates', featureRequired: 'whatsapp' },
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
+      { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
       { label: 'Instagram', icon: Instagram, path: '/instagram', featureRequired: 'instagram' },
     ],
   },
