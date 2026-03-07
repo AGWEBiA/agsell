@@ -156,10 +156,10 @@ export function PaidGroupsDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Novos (7 dias)</p>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{addedLast7}</p>
+                <p className="text-3xl font-bold text-primary">{addedLast7}</p>
               </div>
-              <div className="rounded-full bg-green-500/10 p-3">
-                <UserPlus className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="rounded-full bg-primary/10 p-3">
+                <UserPlus className="h-5 w-5 text-primary" />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
