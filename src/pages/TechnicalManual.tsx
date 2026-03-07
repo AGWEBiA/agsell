@@ -524,7 +524,47 @@ Dashboard com métricas em tempo real: contatos, deals, funil, engajamento.
 - Ações pontuáveis: \`contact_created\`, \`deal_won\`, \`task_completed\`, \`email_sent\`, \`automation_created\`
 - Nível = \`FLOOR(total_points / 100) + 1\`
 
-## 4.19 Portal de Suporte White-label
+## 4.19 Grupos Pagos (Beta)
+
+### Objetivo
+Automatizar a gestão de membros em grupos de WhatsApp com base em pagamentos recebidos de 20+ gateways de pagamento.
+
+### Disponibilidade
+- Planos: Professional, Enterprise, Agência
+- Feature Gate: \\\`paid_groups\\\`
+
+### Rotas
+- \\\`/paid-groups\\\` — Configuração e gestão (autenticado, feature-gated)
+
+### Tabelas
+- \\\`paid_groups_config\\\` — Configuração da Evolution API por organização (URL, API Key, is_active)
+- \\\`paid_groups\\\` — Grupos de WhatsApp importados (name, group_jid, instance_name)
+- \\\`paid_group_products\\\` — Produtos internos com mapeamento de gateways (gateway_mappings JSONB)
+- \\\`paid_group_product_links\\\` — Vínculo N:N entre produtos e grupos
+- \\\`paid_group_members\\\` — Membros adicionados/removidos (status, phone, added_at, removed_at)
+
+### Edge Functions
+- \\\`paid-groups-webhook\\\` — Handler unificado multi-gateway com parsers para 20 plataformas
+  - Query params: \\\`org\\\` (organization_id), \\\`gateway\\\` (nome do parser)
+  - Fluxo: Parse evento → Identifica produto via gateway_mappings → Busca grupos vinculados → Adiciona/remove via Evolution API
+- \\\`fetch-evolution-groups\\\` — Descobre instâncias e grupos do WhatsApp automaticamente
+  - Busca instâncias com status open/connected
+  - Retorna JID, subject e tamanho de cada grupo
+
+### Gateways Suportados (20)
+Stripe, Kiwify, Hotmart, Eduzz, Monetizze, PerfectPay, Braip, Guru, Lastlink, Pepper, Yampi, Ticto, Kirvano, Payt, Greenn, CartPanda, HeroSpark, AppMax, Doppus e Webhook Genérico.
+
+### Eventos Processados
+- \\\`add\\\` — Compra aprovada, assinatura ativa → adiciona membro ao grupo
+- \\\`remove\\\` — Cancelamento, reembolso, chargeback, expiração → remove membro do grupo
+
+### RLS
+- Isolamento por \\\`organization_id\\\`
+- \\\`is_org_member()\\\` para SELECT, INSERT, UPDATE, DELETE
+
+---
+
+## 4.20 Portal de Suporte White-label
 
 ### Objetivo
 Permitir que clientes dos usuários da plataforma abram e acompanhem tickets de suporte via portal público, sem necessidade de login.

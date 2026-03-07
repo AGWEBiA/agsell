@@ -78,6 +78,10 @@ const EXCLUSIVE_FEATURES = [
     title: 'Portal de Suporte White-label',
     description: 'Ofereça um portal público personalizado com sua marca para clientes abrirem e acompanharem tickets sem login.',
   },
+  {
+    title: 'Grupos Pagos Automatizados (Beta)',
+    description: 'Integre 20+ gateways de pagamento para adicionar e remover membros de grupos WhatsApp automaticamente. Nenhum concorrente oferece isso.',
+  },
 ];
 
 // Calculate scores for chart

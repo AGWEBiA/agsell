@@ -364,6 +364,13 @@ const EXCLUSIVE_DIFFERENTIALS = [
     badge: 'Exclusivo',
     span: 'md:col-span-2',
   },
+  {
+    icon: Users,
+    title: 'Grupos Pagos Automatizados',
+    description: 'Integre 20+ gateways de pagamento (Kiwify, Hotmart, Stripe, Eduzz e mais) para adicionar e remover membros de grupos WhatsApp automaticamente. Importação de grupos com um clique.',
+    badge: 'Beta',
+    span: '',
+  },
 ];
 
 function DifferentialsSection() {
