@@ -8,7 +8,8 @@ import {
   ChevronDown, Trophy, Shield, Key, Webhook, SlidersHorizontal,
   Instagram, ListChecks, Home, Megaphone, Lightbulb, Wrench, Headphones,
   HelpCircle, Briefcase, X, FlaskConical, Rocket, GitBranch, Send,
-  Lock, BookOpen, Workflow, ArrowRightLeft, Ticket,
+  Lock, BookOpen, Workflow, ArrowRightLeft, Ticket, ShieldCheck, Activity,
+  Layout, Clock, Sparkles, Smile,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
