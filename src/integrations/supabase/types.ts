@@ -600,6 +600,77 @@ export type Database = {
           },
         ]
       }
+      automation_contact_timeline: {
+        Row: {
+          action_type: string
+          automation_id: string
+          contact_id: string | null
+          created_at: string
+          details: Json | null
+          execution_id: string | null
+          id: string
+          node_id: string | null
+          node_label: string | null
+          organization_id: string | null
+          status: string
+        }
+        Insert: {
+          action_type: string
+          automation_id: string
+          contact_id?: string | null
+          created_at?: string
+          details?: Json | null
+          execution_id?: string | null
+          id?: string
+          node_id?: string | null
+          node_label?: string | null
+          organization_id?: string | null
+          status?: string
+        }
+        Update: {
+          action_type?: string
+          automation_id?: string
+          contact_id?: string | null
+          created_at?: string
+          details?: Json | null
+          execution_id?: string | null
+          id?: string
+          node_id?: string | null
+          node_label?: string | null
+          organization_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_contact_timeline_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_contact_timeline_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_contact_timeline_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "automation_executions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_contact_timeline_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_executions: {
         Row: {
           automation_id: string
@@ -1701,6 +1772,66 @@ export type Database = {
           },
           {
             foreignKeyName: "email_mailboxes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flow_node_analytics: {
+        Row: {
+          automation_id: string
+          avg_duration_seconds: number | null
+          conversions_count: number
+          created_at: string
+          entries_count: number
+          errors_count: number
+          exits_count: number
+          id: string
+          last_triggered_at: string | null
+          node_id: string
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          automation_id: string
+          avg_duration_seconds?: number | null
+          conversions_count?: number
+          created_at?: string
+          entries_count?: number
+          errors_count?: number
+          exits_count?: number
+          id?: string
+          last_triggered_at?: string | null
+          node_id: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          automation_id?: string
+          avg_duration_seconds?: number | null
+          conversions_count?: number
+          created_at?: string
+          entries_count?: number
+          errors_count?: number
+          exits_count?: number
+          id?: string
+          last_triggered_at?: string | null
+          node_id?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_node_analytics_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_node_analytics_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3349,6 +3480,57 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      predictive_lead_scores: {
+        Row: {
+          calculated_at: string
+          confidence: number
+          contact_id: string
+          created_at: string
+          factors: Json | null
+          id: string
+          model_version: string | null
+          organization_id: string
+          predicted_score: number
+        }
+        Insert: {
+          calculated_at?: string
+          confidence?: number
+          contact_id: string
+          created_at?: string
+          factors?: Json | null
+          id?: string
+          model_version?: string | null
+          organization_id: string
+          predicted_score?: number
+        }
+        Update: {
+          calculated_at?: string
+          confidence?: number
+          contact_id?: string
+          created_at?: string
+          factors?: Json | null
+          id?: string
+          model_version?: string | null
+          organization_id?: string
+          predicted_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictive_lead_scores_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: true
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictive_lead_scores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       predictive_send_profiles: {
         Row: {
