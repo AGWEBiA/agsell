@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
                     body: JSON.stringify({
                       organization_id: integration.organization_id,
                       to: ownerPhone.replace(/\D/g, ""),
-                      message: `⚠️ *WhatsApp Desconectado*\n\nA instância "${displayName}" foi desconectada do AG Sell.\n\nReconecte o quanto antes para não perder mensagens de clientes.\n\n👉 Acesse: https://agsell.lovable.app/integrations`,
+                      message: `⚠️ *WhatsApp Desconectado*\n\nA instância "${displayName}" foi desconectada do AG Sell.\n\nReconecte o quanto antes para não perder mensagens de clientes.\n\n👉 Acesse: https://site.agsell.com.br/integrations`,
                       instance_id: otherActiveInstance.organization_id,
                     }),
                   });
