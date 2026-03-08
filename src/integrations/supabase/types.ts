@@ -5783,6 +5783,20 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
       }
+      get_ticket_by_protocol: {
+        Args: { _protocol: string }
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          protocol_number: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
