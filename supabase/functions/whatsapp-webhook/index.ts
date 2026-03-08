@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
                         <li>Clique em <strong>Reconectar</strong> na instância desconectada</li>
                         <li>Escaneie o novo QR Code com seu WhatsApp</li>
                       </ol>
-                      <a href="https://agsell.lovable.app/integrations" style="display: inline-block; background: #dc2626; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 12px;">
+                      <a href="https://site.agsell.com.br/integrations" style="display: inline-block; background: #dc2626; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 12px;">
                         Reconectar Agora
                       </a>
                       <p style="color: #6b7280; font-size: 12px; margin-top: 24px;">Este é um alerta automático do AG Sell.</p>
@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
                     body: JSON.stringify({
                       organization_id: integration.organization_id,
                       to: ownerPhone.replace(/\D/g, ""),
-                      message: `⚠️ *WhatsApp Desconectado*\n\nA instância "${displayName}" foi desconectada do AG Sell.\n\nReconecte o quanto antes para não perder mensagens de clientes.\n\n👉 Acesse: https://agsell.lovable.app/integrations`,
+                      message: `⚠️ *WhatsApp Desconectado*\n\nA instância "${displayName}" foi desconectada do AG Sell.\n\nReconecte o quanto antes para não perder mensagens de clientes.\n\n👉 Acesse: https://site.agsell.com.br/integrations`,
                       instance_id: otherActiveInstance.organization_id,
                     }),
                   });
