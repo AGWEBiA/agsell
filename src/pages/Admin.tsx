@@ -52,6 +52,7 @@ import { PlatformSupportDashboard } from '@/components/admin/PlatformSupportDash
 import { SupportWhatsAppConfig } from '@/components/admin/SupportWhatsAppConfig';
 import { VoipPackagesAdmin } from '@/components/admin/VoipPackagesAdmin';
 import { VoipProviderConfig } from '@/components/admin/VoipProviderConfig';
+import { SmsPackagesAdmin } from '@/components/admin/SmsPackagesAdmin';
 export default function Admin() {
   const { user, isAdmin, loading: isCheckingAdmin } = useAuth();
   const [assignPlanOrg, setAssignPlanOrg] = useState<{ id: string; name: string } | null>(null);
