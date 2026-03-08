@@ -486,7 +486,7 @@ function FeaturesSection() {
 
   return (
     <section id="funcionalidades" className="relative overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 py-16 md:py-24 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 py-10 md:py-16 relative z-10">
         <div className="max-w-xl mx-auto text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-[hsl(2,76%,53%)]/20 bg-[hsl(2,76%,53%)]/10 px-4 py-1.5 text-xs font-semibold tracking-wider uppercase text-[hsl(2,76%,53%)] mb-4">
             <Layers className="h-3 w-3" />
