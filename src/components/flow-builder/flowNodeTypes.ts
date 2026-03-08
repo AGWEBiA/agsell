@@ -122,6 +122,8 @@ export const triggerTypeMap: Record<string, string> = {
   contact_created: 'contact_created',
   contact_source: 'contact_created',
   form_submitted: 'form_submitted',
+  page_visited: 'page_visited',
+  site_event: 'site_event',
 };
 
 export const TEMPLATE_VARIABLES = [
