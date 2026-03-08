@@ -184,6 +184,7 @@ const App = () => (
                     <Route path="custom-reports" element={<CustomReports />} />
                     <Route path="revenue-reporting" element={<RevenueReporting />} />
                     <Route path="paid-groups" element={<FeatureRequiredPage feature="paid_groups" featureLabel="Grupos Pagos"><PaidGroups /></FeatureRequiredPage>} />
+                    <Route path="voip" element={<VoIP />} />
                     <Route path="support" element={<SupportTickets />} />
                     <Route path="support-center" element={<SupportCenter />} />
                     <Route path="support-portal-settings" element={<FeatureRequiredPage feature="customer_support_center" featureLabel="Portal de Suporte"><SupportPortalSettingsPage /></FeatureRequiredPage>} />

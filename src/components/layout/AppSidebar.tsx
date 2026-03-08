@@ -81,6 +81,7 @@ const menuSections: MenuSection[] = [
       { label: 'Grupos Pagos', icon: Crown, path: '/paid-groups', featureRequired: 'paid_groups' },
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
       { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
+      { label: 'VoIP', icon: PhoneCall, path: '/voip' },
       { label: 'Instagram', icon: Instagram, path: '/instagram', featureRequired: 'instagram' },
     ],
   },
