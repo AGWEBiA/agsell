@@ -254,6 +254,13 @@ const TABLE_ROWS = [
   { feature: 'Instagram DM', ag: true, hub: false, ac: false, rd: false, sf: false },
   { feature: 'Agentes IA com RAG', ag: true, hub: false, ac: false, rd: false, sf: false },
   { feature: 'Flow Builder Visual (20+ ações)', ag: true, hub: true, ac: true, rd: true, sf: true },
+  { feature: 'Analytics por Nó no Flow Builder', ag: true, hub: false, ac: false, rd: false, sf: false },
+  { feature: 'Scoring Preditivo com IA', ag: true, hub: false, ac: true, rd: false, sf: false },
+  { feature: 'Site Tracking → Trigger Automático', ag: true, hub: true, ac: true, rd: false, sf: false },
+  { feature: 'A/B de Fluxos Completos', ag: true, hub: false, ac: false, rd: false, sf: false },
+  { feature: 'Marketplace de 30+ Integrações', ag: true, hub: true, ac: true, rd: false, sf: false },
+  { feature: 'Conteúdo Condicional em E-mails', ag: true, hub: true, ac: true, rd: false, sf: false },
+  { feature: 'Webhooks com Retry + Dead-letter', ag: true, hub: true, ac: false, rd: false, sf: false },
   { feature: 'Gamificação de Vendas', ag: true, hub: false, ac: false, rd: false, sf: false },
   { feature: 'Modo Agência Multi-tenant', ag: true, hub: false, ac: false, rd: false, sf: false },
   { feature: 'Portal de Suporte White-label', ag: true, hub: false, ac: false, rd: false, sf: false },
@@ -354,8 +361,16 @@ const DIFFERENTIALS = [
     desc: 'Seu cliente faz uma pergunta às 2h da manhã. A IA responde com precisão, usando seus próprios documentos e FAQs. Se precisar de um humano, a transferência acontece automaticamente.',
   },
   {
-    icon: Workflow, title: 'Flow Builder com 20+ Ações', badge: 'MAIS COMPLETO', badgeColor: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    desc: 'Construtor visual drag-and-drop com timers, aquecimento, condicionais, tags, WhatsApp, e-mail, SMS, pixel e muito mais. Mais completo que ManyChat e SellFlux — integrado ao CRM.',
+    icon: Workflow, title: 'Flow Builder com Analytics por Nó', badge: 'MAIS COMPLETO', badgeColor: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    desc: 'Construtor visual com 20+ ações, timers, condicionais e aquecimento. Agora com analytics em tempo real: veja entradas, saídas e conversões diretamente em cada nó do fluxo.',
+  },
+  {
+    icon: Brain, title: 'Scoring Preditivo com IA', badge: 'NOVO', badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    desc: 'A IA analisa o comportamento de cada lead — e-mails abertos, mensagens respondidas, páginas visitadas — e calcula automaticamente a probabilidade de conversão. Sem regras manuais.',
+  },
+  {
+    icon: Globe, title: 'Site Tracking → Trigger Automático', badge: 'NOVO', badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    desc: 'Visitou sua página de preços? O fluxo dispara. Abandonou o checkout? Recebe WhatsApp em 30 minutos. Conecte comportamento no site a automações inteligentes.',
   },
   {
     icon: Layers, title: 'Modo Agência Multi-tenant', badge: 'EXCLUSIVO', badgeColor: 'bg-[hsl(2,76%,53%)]/15 text-[hsl(2,76%,53%)] border-[hsl(2,76%,53%)]/30',
@@ -454,18 +469,20 @@ const FEATURE_TABS = [
   {
     id: 'automacao', label: 'Automação & IA',
     items: [
-      { icon: Workflow, title: 'Flow Builder Visual', desc: '20+ ações: timers, condições, aquecimento, tags.' },
+      { icon: Workflow, title: 'Flow Builder com Analytics', desc: '20+ ações com métricas por nó: entradas, saídas e conversões.' },
       { icon: Bot, title: 'Agentes IA com RAG', desc: 'IA que acessa sua base e responde clientes.' },
-      { icon: Zap, title: 'Automações Avançadas', desc: 'Triggers por webhook, formulário, tag ou evento.' },
-      { icon: Sparkles, title: 'Assistente IA', desc: 'Gere relatórios e insights em linguagem natural.' },
+      { icon: Zap, title: 'Automações Avançadas', desc: 'Triggers por webhook, formulário, tag, página visitada ou evento.' },
+      { icon: Sparkles, title: 'Scoring Preditivo (IA)', desc: 'IA calcula probabilidade de conversão de cada lead.' },
+      { icon: Globe, title: 'Site Tracking → Trigger', desc: 'Visitou uma página? Automação dispara.' },
+      { icon: BarChart3, title: 'A/B de Fluxos Completos', desc: 'Compare fluxos inteiros e descubra qual converte mais.' },
     ]
   },
   {
     id: 'gestao', label: 'Gestão & Integrações',
     items: [
       { icon: Layers, title: 'Modo Agência', desc: 'Multi-tenant com dados isolados.' },
-      { icon: Globe, title: 'API Pública + Webhooks', desc: 'REST com rate limiting.' },
-      { icon: FileText, title: 'Formulários Web', desc: 'Capture leads com formulários embarcáveis.' },
+      { icon: Globe, title: 'Marketplace 30+ Integrações', desc: 'Google Ads, Calendly, Zapier, Mercado Pago e mais.' },
+      { icon: Globe, title: 'Webhooks com Retry', desc: 'Fila de entrega com backoff e dead-letter.' },
       { icon: Shield, title: 'Permissões RBAC', desc: 'Controle quem vê e faz o quê.' },
     ]
   },
@@ -475,7 +492,7 @@ const FEATURE_TABS = [
       { icon: Brain, title: 'AI Builder', desc: 'Gere e-mails e copy com IA.' },
       { icon: Target, title: 'Win Probability', desc: 'IA calcula probabilidade de fechamento.' },
       { icon: BarChart3, title: 'Atribuição Multi-toque', desc: 'Descubra quais canais geram mais receita.' },
-      { icon: BarChart3, title: 'Relatórios & Metas', desc: 'Dashboards e relatórios de receita.' },
+      { icon: Mail, title: 'Conteúdo Condicional', desc: 'Blocos dinâmicos em e-mails por tags e score.' },
     ]
   },
 ];

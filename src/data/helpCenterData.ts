@@ -4064,4 +4064,456 @@ O webhook processa os seguintes tipos de evento:
 
 💡 **Dica**: O webhook genérico aceita qualquer payload com campos \`email\`, \`phone\`, \`product_id\` e \`event\` — ideal para integrações customizadas.`,
   },
+
+  // =====================================================
+  // NOVAS FUNCIONALIDADES — AUTOMAÇÃO AVANÇADA
+  // =====================================================
+  {
+    id: 'flow-analytics',
+    categoryId: 'marketing',
+    title: 'Analytics no Flow Builder',
+    icon: BarChart3,
+    description: 'Métricas em tempo real por nó do Flow Builder: entradas, saídas, conversões e taxas.',
+    readTime: '5 min',
+    popular: true,
+    content: `O **Analytics no Flow Builder** permite visualizar métricas de performance diretamente sobre cada nó do seu fluxo de automação, eliminando a necessidade de adivinhar onde os leads estão parando.
+
+## O que você consegue ver
+
+Cada nó do fluxo exibe um overlay com métricas em tempo real:
+
+- **Entradas** — Quantos contatos entraram no nó
+- **Saídas** — Quantos seguiram para o próximo nó
+- **Conversões** — Quantos realizaram a ação esperada
+- **Taxa de conversão** — Percentual de sucesso do nó
+
+## Como ativar
+
+1. Acesse **Flow Builder** e abra um fluxo existente
+2. O overlay de analytics aparece automaticamente sobre cada nó
+3. Passe o mouse sobre qualquer nó para ver métricas detalhadas
+4. Use os dados para identificar **gargalos** e **pontos de perda**
+
+## Casos de uso
+
+### Identificar gargalos
+Se um nó de "Enviar WhatsApp" tem 500 entradas mas apenas 50 cliques, o conteúdo precisa ser otimizado.
+
+### Comparar caminhos
+Em fluxos com condicionais, compare qual caminho tem melhor performance.
+
+### Otimizar timers
+Se muitos leads saem após um nó de espera, reduza o delay.
+
+## Tabela de dados
+
+Os dados são armazenados na tabela \`flow_node_analytics\` com campos:
+- \`node_id\` — Identificador único do nó
+- \`entries\`, \`exits\`, \`conversions\` — Contadores
+- \`last_updated_at\` — Última atualização
+
+💡 **Dica**: Revise os analytics semanalmente para identificar oportunidades de otimização nos seus fluxos mais importantes.`,
+  },
+  {
+    id: 'automation-timeline',
+    categoryId: 'marketing',
+    title: 'Histórico de Execução de Automações',
+    icon: ListChecks,
+    description: 'Timeline visual mostrando cada automação e etapa por onde um contato passou.',
+    readTime: '4 min',
+    popular: true,
+    content: `O **Histórico de Execução** é uma timeline visual que mostra exatamente por quais automações cada contato passou e em qual etapa está ou parou.
+
+## O que aparece na timeline
+
+Para cada evento, a timeline exibe:
+
+- **Ação executada** — Envio de e-mail, WhatsApp, tag adicionada, etc.
+- **Status** — Completado ✅, Falhado ❌, Aguardando ⏳
+- **Automação** — Nome do fluxo que gerou o evento
+- **Data/hora** — Quando aconteceu (com tempo relativo)
+- **Detalhes** — Metadados adicionais (erro, dados enviados)
+
+## Onde encontrar
+
+1. Acesse **Automações** no menu lateral
+2. Abra os detalhes de qualquer automação
+3. O painel de **Timeline de Execução** mostra todos os eventos
+
+## Ícones por tipo de ação
+
+| Ação | Ícone |
+|------|-------|
+| Enviar e-mail | 📧 |
+| Enviar WhatsApp | 💬 |
+| Adicionar/remover tag | 🏷️ |
+| Notificação | 🔔 |
+| Condição (If/Else) | 🔀 |
+| Aguardar (Wait) | ⏰ |
+| Trigger (entrada) | ⚡ |
+
+## Diagnóstico de problemas
+
+Use a timeline para:
+
+- **Identificar falhas** — Veja onde automações estão quebrando
+- **Entender a jornada** — Saiba exatamente o caminho do contato
+- **Depurar condicionais** — Verifique se as condições estão funcionando corretamente
+- **Medir tempos** — Veja quanto tempo cada etapa está levando
+
+💡 **Dica**: Combine a timeline com os analytics do Flow Builder para uma visão completa da performance das suas automações.`,
+  },
+  {
+    id: 'predictive-scoring',
+    categoryId: 'intelligence',
+    title: 'Scoring Preditivo com IA',
+    icon: Brain,
+    description: 'Lead scoring automático baseado em comportamento, usando Inteligência Artificial.',
+    readTime: '6 min',
+    popular: true,
+    content: `O **Scoring Preditivo** usa Inteligência Artificial para calcular automaticamente a probabilidade de conversão de cada lead, baseado em comportamento real — não em regras estáticas.
+
+## Diferença: Lead Scoring vs Scoring Preditivo
+
+| Aspecto | Lead Scoring (regras) | Scoring Preditivo (IA) |
+|---------|----------------------|----------------------|
+| Base | Regras manuais (ex: +10 por abrir e-mail) | Análise comportamental por IA |
+| Precisão | Limitada às regras criadas | Aprende padrões complexos |
+| Manutenção | Requer ajuste manual das regras | Automático e adaptativo |
+| Fatores | Poucos e predefinidos | Dezenas de fatores analisados |
+
+## Fatores analisados pela IA
+
+A IA analisa automaticamente:
+
+- 📧 **Engajamento com e-mails** — Aberturas, cliques, respostas
+- 💬 **Interações no WhatsApp** — Mensagens, respostas, tempo de resposta
+- 🏷️ **Tags aplicadas** — Segmentação e comportamento
+- 💼 **Deals** — Valor, estágio, tempo no pipeline
+- 📊 **Atividades** — Volume e frequência de interações
+- 🌐 **Visitas ao site** — Páginas visitadas (se Site Tracking ativo)
+
+## Como usar
+
+1. Acesse **Lead Scoring** no menu lateral
+2. Vá na aba **"Scoring Preditivo (IA)"**
+3. Clique em **"Calcular para Todos"** para processar toda a base
+4. Ou clique no botão de calcular em um contato específico
+
+## Interpretando os resultados
+
+Cada contato recebe:
+
+- **Score preditivo (0-100)** — Probabilidade de conversão
+- **Confiança** — Grau de certeza da predição
+- **Fatores de impacto** — Os motivos que elevam ou reduzem o score
+- **Versão do modelo** — Para rastreabilidade
+
+### Escala de scores
+
+| Score | Classificação | Ação recomendada |
+|-------|--------------|-----------------|
+| 80-100 | 🔥 Quente | Priorizar contato imediato |
+| 60-79 | 🟡 Morno | Nutrir com conteúdo relevante |
+| 40-59 | 🟠 Frio | Manter em sequência de nutrição |
+| 0-39 | ❄️ Gelado | Requalificar ou remover |
+
+## Automações com Scoring Preditivo
+
+Combine o score preditivo com automações:
+
+- Score > 80 → Notifica vendedor + cria tarefa
+- Score entre 50-80 → Insere em sequência de nutrição
+- Score < 30 → Remove de campanhas ativas
+
+💡 **Dica**: Execute o cálculo semanalmente para manter os scores atualizados conforme o comportamento dos leads evolui.`,
+  },
+  {
+    id: 'site-tracking-trigger',
+    categoryId: 'marketing',
+    title: 'Site Tracking como Trigger de Automação',
+    icon: Globe,
+    description: 'Dispare automações quando um contato visitar uma página específica do seu site.',
+    readTime: '4 min',
+    content: `O **Site Tracking como Trigger** permite disparar automações automaticamente quando um contato visita uma página específica do seu site. É a ponte entre comportamento online e ação automática.
+
+## Como funciona
+
+1. **Contato visita seu site** (com snippet de tracking instalado)
+2. **Evento é registrado** na tabela \`site_events\`
+3. **Trigger detecta** a visita na página configurada
+4. **Automação dispara** — e-mail, WhatsApp, notificação, etc.
+
+## Configurando o trigger no Flow Builder
+
+1. Acesse **Flow Builder** → Crie ou edite um fluxo
+2. Como nó de entrada, selecione **"Página Visitada"** ou **"Evento no Site"**
+3. Configure a URL ou evento específico
+
+### Trigger: Página Visitada
+- **URL da página** — Ex: \`/pricing\`, \`/produto-x\`, \`/checkout\`
+- Dispara quando qualquer contato identificado visitar essa URL
+
+### Trigger: Evento no Site
+- **Nome do evento** — Ex: \`button_click\`, \`video_play\`, \`scroll_50\`
+- Dispara quando o evento personalizado é rastreado via snippet JS
+
+## Exemplos práticos
+
+### Visitou página de preços
+Contato visita \`/pricing\` → Aguarda 2h → Se não comprou → Envia WhatsApp com oferta especial
+
+### Abandonou checkout
+Contato visita \`/checkout\` → Aguarda 30min → Se não converteu → Envia e-mail de recuperação
+
+### Viu produto específico
+Contato visita \`/produto-x\` → Adiciona tag "interesse-produto-x" → Insere em sequência de nutrição
+
+## Pré-requisitos
+
+- **Site Tracking ativo** — O snippet JS deve estar instalado no site
+- **Contato identificado** — O visitante precisa ter sido identificado (ex: via formulário)
+
+💡 **Dica**: Combine triggers de página visitada com condicionais de tag para criar fluxos altamente segmentados.`,
+  },
+  {
+    id: 'flow-ab-tests',
+    categoryId: 'marketing',
+    title: 'Testes A/B de Fluxos Completos',
+    icon: SplitSquareVertical,
+    description: 'Compare fluxos de automação inteiros e descubra qual converte mais.',
+    readTime: '4 min',
+    content: `O **Teste A/B de Fluxos** permite comparar dois fluxos de automação completos para descobrir qual gera mais conversões, não apenas mensagens isoladas.
+
+## Diferença: A/B de Mensagens vs A/B de Fluxos
+
+| Aspecto | A/B de Mensagens | A/B de Fluxos |
+|---------|-----------------|--------------|
+| O que testa | Uma mensagem (assunto, texto) | Caminho inteiro (sequência de ações) |
+| Escopo | Um nó | Fluxo completo |
+| Métricas | Abertura, clique | Conversão end-to-end |
+
+## Como criar
+
+1. Acesse **Automações** no menu lateral
+2. Abra a aba **"Testes A/B de Fluxos"**
+3. Clique em **"Novo Teste"**
+4. Configure:
+   - **Nome** — Identificação do teste
+   - **Fluxo A** — Primeiro fluxo a ser testado
+   - **Fluxo B** — Segundo fluxo alternativo
+   - **Divisão** — Percentual de contatos para cada fluxo (50/50 por padrão)
+5. Inicie o teste
+
+## Métricas comparadas
+
+| Métrica | Descrição |
+|---------|-----------|
+| Entradas | Quantos contatos entraram em cada fluxo |
+| Conversões | Quantos completaram a ação desejada |
+| Taxa | Conversões ÷ Entradas |
+| Vencedor | Fluxo com maior taxa de conversão |
+
+## Exemplos de testes
+
+- **Velocidade de follow-up**: Fluxo A (resposta em 1h) vs Fluxo B (resposta em 24h)
+- **Canal preferido**: Fluxo A (WhatsApp primeiro) vs Fluxo B (E-mail primeiro)
+- **Nutrição longa vs curta**: Fluxo A (7 e-mails) vs Fluxo B (3 e-mails)
+
+## Boas práticas
+
+- 📊 **Aguarde volume** — Pelo menos 100 entradas por fluxo
+- 🔬 **Mude uma variável** — Facilita identificar o que causou a diferença
+- 🏆 **Aplique o vencedor** — Desative o perdedor e escale o ganhador
+- 📅 **Duração mínima** — Execute por pelo menos 2 semanas
+
+💡 **Dica**: Use testes A/B de fluxos para decisões estratégicas — qual canal usar primeiro, quanto tempo esperar, quantos touchpoints ter.`,
+  },
+  {
+    id: 'marketplace-integrations',
+    categoryId: 'settings',
+    title: 'Marketplace de Integrações',
+    icon: Globe,
+    description: 'Catálogo visual de conectores nativos e de terceiros para expandir a plataforma.',
+    readTime: '4 min',
+    content: `O **Marketplace de Integrações** é um catálogo visual com todos os conectores disponíveis para expandir as funcionalidades do AG Sell.
+
+## Como acessar
+
+1. Acesse **Integrações** no menu lateral
+2. A aba **"Marketplace"** exibe todos os conectores disponíveis
+
+## Categorias de conectores
+
+### 📢 Advertising
+- Google Ads, Meta Ads (Facebook/Instagram), TikTok Ads, LinkedIn Ads, Twitter Ads
+
+### 📊 Analytics
+- Google Analytics, Meta Pixel, Mixpanel, Hotjar
+
+### 📅 Scheduling
+- Calendly, Cal.com, Google Calendar
+
+### 🔄 Automation
+- Zapier, Make (Integromat), n8n, Pabbly Connect
+
+### 💳 Payments
+- Stripe, Mercado Pago, PagSeguro, PayPal, Asaas
+
+### 🛒 E-commerce
+- Shopify, WooCommerce, Nuvemshop, Yampi
+
+### 📧 E-mail
+- Resend, SendGrid, Amazon SES, Mailgun
+
+### 💬 Messaging
+- Evolution API, WhatsApp Cloud API, Telegram Bot, Twilio, Vonage
+
+### 🎓 Infoproducts
+- Hotmart, Kiwify, Eduzz, Monetizze, Braip
+
+### ☁️ Cloud & Storage
+- Google Sheets, AWS S3, Notion, Airtable
+
+## Status dos conectores
+
+| Status | Significado |
+|--------|------------|
+| 🟢 Ativo | Configurado e funcionando |
+| 🔵 Disponível | Pronto para ativar |
+| 🟡 Em breve | Será lançado em breve |
+| 🔴 Beta | Em fase de testes |
+
+## Ativando uma integração
+
+1. Encontre o conector desejado no marketplace
+2. Clique em **"Configurar"**
+3. Insira as credenciais necessárias (API Key, Token, etc.)
+4. Teste a conexão
+5. Ative a integração
+
+💡 **Dica**: Comece pelas integrações de pagamento e messaging, que geram mais impacto direto nas vendas.`,
+  },
+  {
+    id: 'email-conditional-content',
+    categoryId: 'marketing',
+    title: 'Conteúdo Condicional em E-mails',
+    icon: Mail,
+    description: 'Blocos dinâmicos em e-mails que mudam conforme tags, score ou status do contato.',
+    readTime: '4 min',
+    content: `O **Conteúdo Condicional** permite criar blocos dentro do e-mail que mostram conteúdos diferentes conforme as características de cada contato.
+
+## Como funciona
+
+Em vez de criar múltiplos e-mails, você cria UM template com blocos condicionais:
+
+- **Se o contato tem a tag "VIP"** → Mostra oferta exclusiva
+- **Se o score > 80** → Mostra CTA de compra direta
+- **Se o status é "lead"** → Mostra conteúdo de nutrição
+
+## Tipos de condição
+
+| Condição | Exemplo |
+|----------|---------|
+| **Tag** | Contato tem a tag "cliente-ativo" |
+| **Score** | Lead score maior que 70 |
+| **Status** | Status é "ativo" ou "inativo" |
+| **Campo** | Cidade = "São Paulo" |
+
+## Criando conteúdo condicional
+
+1. Acesse **Conteúdo Condicional** no menu ou use dentro do editor de e-mail
+2. Defina o **tipo de condição** (tag, score, status)
+3. Configure o **critério** (qual tag, qual valor de score, etc.)
+4. Escreva o **conteúdo quando verdadeiro** — HTML que aparece se a condição for atendida
+5. Escreva o **conteúdo quando falso** — HTML alternativo (fallback)
+6. Copie o **código gerado** e cole no template de e-mail
+
+## Preview lado a lado
+
+O editor mostra uma preview em tempo real com dois painéis:
+- **✅ Quando verdadeiro** — O que o contato vê se atende à condição
+- **❌ Quando falso** — O que aparece caso contrário
+
+## Exemplos práticos
+
+### Oferta por segmento
+- Tag "premium" → Desconto de 30%
+- Sem tag → Desconto de 10%
+
+### CTA por score
+- Score > 80 → "Compre agora com desconto"
+- Score ≤ 80 → "Saiba mais sobre nosso produto"
+
+### Idioma por região
+- Tag "br" → Conteúdo em português
+- Tag "en" → Conteúdo em inglês
+
+💡 **Dica**: Use conteúdo condicional para personalizar sem complexidade — um template, múltiplas experiências.`,
+  },
+  {
+    id: 'webhook-retry-queue',
+    categoryId: 'settings',
+    title: 'Webhooks com Retry e Fila de Entrega',
+    icon: Webhook,
+    description: 'Sistema de fila com retry automático, backoff exponencial e dead-letter queue.',
+    readTime: '5 min',
+    content: `O sistema de **Webhooks com Retry** garante que nenhuma entrega de webhook seja perdida, usando uma fila inteligente com tentativas automáticas.
+
+## Como funciona
+
+1. **Webhook é disparado** — Evento ocorre no AG Sell
+2. **Primeira tentativa** — Envia para o endpoint configurado
+3. **Se falhar** — Entra na fila de retry
+4. **Backoff exponencial** — Espera crescente entre tentativas (1min → 5min → 15min → 1h → 6h)
+5. **Dead-letter** — Após todas as tentativas, move para fila morta
+
+## Dashboard de entregas
+
+Acesse **Webhooks** no menu lateral para ver a aba **"Fila de Entrega"**:
+
+### Métricas do dashboard
+
+| Métrica | Descrição |
+|---------|-----------|
+| Pendentes | Webhooks aguardando envio |
+| Entregues | Entregas bem-sucedidas |
+| Falhados | Entregas que falharam todas as tentativas |
+| Taxa de sucesso | Percentual de entregas bem-sucedidas |
+
+### Status de cada webhook
+
+| Status | Significado |
+|--------|------------|
+| ⏳ Pendente | Aguardando primeira tentativa |
+| 🔄 Retry | Falhou, aguardando próxima tentativa |
+| ✅ Entregue | Enviado com sucesso |
+| ❌ Falhado | Todas as tentativas esgotadas |
+| 💀 Dead-letter | Movido para fila morta |
+
+## Configuração
+
+O sistema de retry é automático para todos os webhooks de saída. Parâmetros:
+
+- **Máximo de tentativas**: 5
+- **Backoff**: Exponencial (1min, 5min, 15min, 1h, 6h)
+- **Timeout**: 30 segundos por tentativa
+- **Dead-letter**: Após 5 falhas consecutivas
+
+## Ações manuais
+
+- **Reenviar** — Force o reenvio de um webhook específico
+- **Cancelar** — Cancele entregas pendentes
+- **Visualizar payload** — Veja o conteúdo enviado
+- **Ver resposta** — Veja o status HTTP e corpo da resposta
+
+## Boas práticas
+
+- 🔗 **Endpoint sempre disponível** — Garanta que seu servidor está online
+- ⚡ **Responda rápido** — Processe webhooks em menos de 30 segundos
+- 📊 **Monitore falhas** — Falhas frequentes indicam problemas no endpoint
+- 🔄 **Use dead-letter** — Investigue webhooks na fila morta regularmente
+
+💡 **Dica**: Se muitos webhooks estão falhando, verifique se o endpoint está retornando status 200. Qualquer outro status é tratado como falha.`,
+  },
 ];

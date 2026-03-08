@@ -1211,6 +1211,178 @@ Checkout → Stripe Session → Webhook checkout.session.completed
 
 ---
 
+# 17. MOTOR DE AUTOMAÇÃO AVANÇADO (v2)
+
+## 17.1 Analytics no Flow Builder
+
+### Objetivo
+Exibir métricas de performance (entradas, saídas, conversões) diretamente sobre cada nó do canvas do Flow Builder.
+
+### Tabela: \\\`flow_node_analytics\\\`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| \\\`id\\\` | uuid | PK |
+| \\\`automation_id\\\` | uuid | FK para automations |
+| \\\`node_id\\\` | text | ID do nó no canvas |
+| \\\`organization_id\\\` | uuid | Isolamento |
+| \\\`entries\\\` | integer | Contatos que entraram no nó |
+| \\\`exits\\\` | integer | Contatos que saíram |
+| \\\`conversions\\\` | integer | Ações concluídas com sucesso |
+| \\\`last_updated_at\\\` | timestamp | Última atualização |
+
+### Componente
+- \\\`FlowNodeAnalyticsOverlay\\\` — Overlay visual posicionado sobre cada nó
+- Hook: \\\`useFlowNodeAnalytics(automationId)\\\`
+
+### RLS
+- Isolamento por \\\`organization_id\\\` via \\\`is_org_member()\\\`
+
+## 17.2 Timeline de Execução por Contato
+
+### Objetivo
+Registrar cada ação executada por automação para cada contato, criando uma timeline completa.
+
+### Tabela: \\\`automation_contact_timeline\\\`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| \\\`id\\\` | uuid | PK |
+| \\\`automation_id\\\` | uuid | FK para automations |
+| \\\`execution_id\\\` | uuid | FK para automation_executions |
+| \\\`contact_id\\\` | uuid | FK para contacts |
+| \\\`node_id\\\` | text | ID do nó no canvas |
+| \\\`node_label\\\` | text | Label legível do nó |
+| \\\`action_type\\\` | text | Tipo de ação (send_email, add_tag, etc.) |
+| \\\`status\\\` | text | completed, failed, waiting, skipped |
+| \\\`details\\\` | jsonb | Metadados adicionais |
+| \\\`organization_id\\\` | uuid | Isolamento |
+| \\\`created_at\\\` | timestamp | Quando ocorreu |
+
+### Componente
+- \\\`AutomationExecutionTimeline\\\` — Timeline visual com ícones por tipo de ação
+- Hook: \\\`useAutomationTimeline(contactId)\\\`
+
+### RLS
+- Isolamento por \\\`organization_id\\\` via \\\`is_org_member()\\\`
+
+## 17.3 Scoring Preditivo com IA
+
+### Objetivo
+Calcular probabilidade de conversão de leads usando IA, baseado em comportamento real.
+
+### Tabela: \\\`predictive_lead_scores\\\`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| \\\`id\\\` | uuid | PK |
+| \\\`contact_id\\\` | uuid | FK para contacts |
+| \\\`organization_id\\\` | uuid | Isolamento |
+| \\\`predicted_score\\\` | numeric | Score 0-100 |
+| \\\`confidence\\\` | numeric | Confiança 0-1 |
+| \\\`factors\\\` | jsonb | Array de fatores com impacto |
+| \\\`model_version\\\` | text | Versão do modelo |
+| \\\`calculated_at\\\` | timestamp | Quando foi calculado |
+
+### Edge Function: \\\`predictive-scoring\\\`
+- Coleta dados do contato: atividades, tags, deals, interações
+- Envia para Lovable AI Gateway (Gemini 2.5 Flash)
+- IA retorna score, confiança e fatores
+- Suporta cálculo individual ou em massa (\\\`calculate_all\\\`)
+
+### Componente
+- \\\`PredictiveScoringDashboard\\\` — Dashboard com ranking, fatores e ações
+- Hook: \\\`usePredictiveScores()\\\`, \\\`useCalculatePredictiveScore()\\\`, \\\`useCalculateAllPredictiveScores()\\\`
+
+## 17.4 Site Tracking como Trigger
+
+### Novos triggers no Flow Builder
+
+| Trigger | Canal | Descrição |
+|---------|-------|-----------|
+| \\\`page_visited\\\` | site | Contato visitou URL específica |
+| \\\`site_event\\\` | site | Evento customizado rastreado via snippet JS |
+
+### Configuração
+- \\\`trigger_config.page_url\\\` — URL da página monitorada
+- \\\`trigger_config.event_name\\\` — Nome do evento customizado
+- Integra com tabelas existentes: \\\`site_events\\\`, \\\`site_tracking_sessions\\\`
+
+## 17.5 Testes A/B de Fluxos Completos
+
+### Tabela: \\\`flow_ab_tests\\\`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| \\\`id\\\` | uuid | PK |
+| \\\`organization_id\\\` | uuid | Isolamento |
+| \\\`name\\\` | text | Nome do teste |
+| \\\`flow_a_id\\\` | uuid | FK para automations (fluxo A) |
+| \\\`flow_b_id\\\` | uuid | FK para automations (fluxo B) |
+| \\\`split_percentage\\\` | integer | % para fluxo A (rest vai para B) |
+| \\\`entries_a\\\` / \\\`entries_b\\\` | integer | Contadores de entrada |
+| \\\`conversions_a\\\` / \\\`conversions_b\\\` | integer | Contadores de conversão |
+| \\\`status\\\` | text | draft, running, completed |
+| \\\`winner\\\` | text | a, b ou null |
+
+### Componente
+- \\\`FlowABTestManager\\\` — Interface para criar e monitorar testes
+
+## 17.6 Marketplace de Integrações
+
+### Tabela: \\\`integration_catalog\\\`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| \\\`id\\\` | uuid | PK |
+| \\\`name\\\` | text | Nome do conector |
+| \\\`category\\\` | text | Categoria (advertising, payments, etc.) |
+| \\\`description\\\` | text | Descrição |
+| \\\`icon_url\\\` | text | URL do ícone |
+| \\\`status\\\` | text | available, coming_soon, beta |
+| \\\`config_schema\\\` | jsonb | Schema de configuração |
+
+### Componente
+- \\\`IntegrationMarketplace\\\` — Catálogo visual com busca e filtros por categoria
+
+## 17.7 Conteúdo Condicional em E-mails
+
+### Componente: \\\`EmailConditionalContent\\\`
+- Tipos de condição: tag, score, status, campo customizado
+- Preview lado a lado (verdadeiro/falso)
+- Gera HTML condicional para inserção em templates
+- Integra com editor de e-mail existente (\\\`EmailTemplateEditor\\\`)
+
+## 17.8 Webhooks com Retry e Dead-Letter Queue
+
+### Tabela: \\\`webhook_deliveries\\\`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| \\\`id\\\` | uuid | PK |
+| \\\`webhook_id\\\` | uuid | FK para inbound_webhooks |
+| \\\`organization_id\\\` | uuid | Isolamento |
+| \\\`payload\\\` | jsonb | Dados enviados |
+| \\\`endpoint_url\\\` | text | URL de destino |
+| \\\`status\\\` | text | pending, delivered, failed, dead_letter |
+| \\\`attempts\\\` | integer | Tentativas realizadas |
+| \\\`max_attempts\\\` | integer | Máximo de tentativas |
+| \\\`last_attempt_at\\\` | timestamp | Última tentativa |
+| \\\`next_retry_at\\\` | timestamp | Próxima tentativa agendada |
+| \\\`response_status\\\` | integer | Status HTTP da resposta |
+| \\\`response_body\\\` | text | Corpo da resposta |
+| \\\`error_message\\\` | text | Mensagem de erro |
+
+### Componente
+- \\\`WebhookDeliveryQueue\\\` — Dashboard de entregas com métricas e ações manuais
+
+### Estratégia de retry
+- Backoff exponencial: 1min → 5min → 15min → 1h → 6h
+- Máximo de 5 tentativas
+- Dead-letter queue após esgotamento
+
+---
+
 **FIM DO DOCUMENTO**
 
 *Este manual reflete o estado atual do sistema AG Sell em produção (Março 2026). Atualizações devem ser versionadas e registradas neste documento.*
