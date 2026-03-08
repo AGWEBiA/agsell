@@ -165,9 +165,18 @@ const VoIP = () => {
                         <p className="text-xs text-muted-foreground">
                           {formatPricePerCredit(pkg.price_per_credit_cents)} por crédito
                         </p>
-                        <Button className="w-full" variant={isPopular ? 'default' : 'outline'}>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Comprar
+                        <Button
+                          className="w-full"
+                          variant={isPopular ? 'default' : 'outline'}
+                          onClick={() => handlePurchase(pkg.id)}
+                          disabled={purchasingId === pkg.id}
+                        >
+                          {purchasingId === pkg.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <CreditCard className="h-4 w-4 mr-2" />
+                          )}
+                          {purchasingId === pkg.id ? 'Processando...' : 'Comprar'}
                         </Button>
                       </CardContent>
                     </Card>
