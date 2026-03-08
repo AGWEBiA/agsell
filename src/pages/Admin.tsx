@@ -244,7 +244,6 @@ export default function Admin() {
             <Ticket className="h-4 w-4" />
             Suporte
           </TabsTrigger>
-          </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           {/* KPIs */}
