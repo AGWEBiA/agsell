@@ -35,9 +35,7 @@ export default function TicketTracker() {
     setTicket(null);
 
     const { data, error: err } = await supabase
-      .from('support_tickets' as any)
-      .select('protocol_number, title, status, priority, category, created_at, sla_deadline_at, resolved_at, closed_at')
-      .eq('protocol_number', protocol.trim().toUpperCase())
+      .rpc('get_ticket_by_protocol', { _protocol: protocol.trim().toUpperCase() })
       .maybeSingle();
 
     setLoading(false);
