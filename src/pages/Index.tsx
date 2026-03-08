@@ -1104,32 +1104,34 @@ function FloatingSupportWidget() {
             </p>
           </div>
           <div className="p-2 space-y-1">
-            <Link
-              to="/inbox"
+            <a
+              href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20a%20AG%20Sell"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors group"
+            >
+              <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0 group-hover:bg-green-500/20 transition-colors">
+                <MessageSquare className="h-4 w-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">WhatsApp</p>
+                <p className="text-[10px] text-muted-foreground">Fale com nossa equipe agora</p>
+              </div>
+            </a>
+            <a
+              href="mailto:suporte@agsell.com.br?subject=Preciso%20de%20ajuda"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors group"
             >
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                <MessageSquare className="h-4 w-4 text-primary" />
+                <Mail className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium">Falar com Atendente</p>
-                <p className="text-[10px] text-muted-foreground">Chat ao vivo com nossa equipe</p>
+                <p className="text-sm font-medium">E-mail</p>
+                <p className="text-[10px] text-muted-foreground">suporte@agsell.com.br</p>
               </div>
-            </Link>
-            <Link
-              to="/support-center"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors group"
-            >
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                <Ticket className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Abrir Ticket</p>
-                <p className="text-[10px] text-muted-foreground">Suporte técnico via protocolo</p>
-              </div>
-            </Link>
+            </a>
           </div>
         </div>
       )}
