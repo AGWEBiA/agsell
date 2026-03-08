@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAutomations } from '@/hooks/useAutomations';
+import { useFlowNodeAnalytics } from '@/hooks/useFlowNodeAnalytics';
 import { useForms } from '@/hooks/useForms';
 import { cn } from '@/lib/utils';
 import type { Json } from '@/integrations/supabase/types';
