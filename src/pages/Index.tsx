@@ -125,17 +125,17 @@ function HeroSection() {
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" />Sem contrato anual, sem multa</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center mb-6">
-            <a href="#planos">
-              <Button size="lg" className="h-14 px-10 text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center mb-6 px-2 sm:px-0">
+            <a href="#planos" className="w-full sm:w-auto">
+              <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20 w-full">
                 Começar agora — a partir de R$ 197/mês
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
               </Button>
             </a>
-            <a href="#comparativo">
-              <Button size="lg" variant="outline" className="h-14 px-8 text-base rounded-full border-white/20 text-white/80 hover:text-white hover:bg-white/5 w-full sm:w-auto">
+            <a href="#comparativo" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-full border-white/20 text-white/80 hover:text-white hover:bg-white/5 w-full">
                 Ver quanto você economiza
-                <ArrowDown className="ml-1 h-4 w-4" />
+                <ArrowDown className="ml-1 h-4 w-4 shrink-0" />
               </Button>
             </a>
           </div>
