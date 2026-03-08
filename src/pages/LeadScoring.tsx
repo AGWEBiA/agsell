@@ -334,6 +334,11 @@ export default function LeadScoring() {
           </CardContent>
         </Card>
       </div>
+        </TabsContent>
+        <TabsContent value="predictive">
+          <PredictiveScoringDashboard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
