@@ -1779,6 +1779,81 @@ export type Database = {
           },
         ]
       }
+      flow_ab_tests: {
+        Row: {
+          automation_id: string
+          conversions_a: number | null
+          conversions_b: number | null
+          created_at: string
+          ended_at: string | null
+          entries_a: number | null
+          entries_b: number | null
+          id: string
+          name: string
+          organization_id: string
+          split_percentage: number | null
+          started_at: string | null
+          status: string | null
+          updated_at: string
+          variant_a_nodes: Json
+          variant_b_nodes: Json
+          winner: string | null
+        }
+        Insert: {
+          automation_id: string
+          conversions_a?: number | null
+          conversions_b?: number | null
+          created_at?: string
+          ended_at?: string | null
+          entries_a?: number | null
+          entries_b?: number | null
+          id?: string
+          name: string
+          organization_id: string
+          split_percentage?: number | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string
+          variant_a_nodes?: Json
+          variant_b_nodes?: Json
+          winner?: string | null
+        }
+        Update: {
+          automation_id?: string
+          conversions_a?: number | null
+          conversions_b?: number | null
+          created_at?: string
+          ended_at?: string | null
+          entries_a?: number | null
+          entries_b?: number | null
+          id?: string
+          name?: string
+          organization_id?: string
+          split_percentage?: number | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string
+          variant_a_nodes?: Json
+          variant_b_nodes?: Json
+          winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_ab_tests_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flow_ab_tests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flow_node_analytics: {
         Row: {
           automation_id: string
@@ -2494,6 +2569,54 @@ export type Database = {
           },
         ]
       }
+      integration_catalog: {
+        Row: {
+          auth_type: string | null
+          category: string
+          config_schema: Json | null
+          created_at: string
+          description: string | null
+          documentation_url: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_native: boolean | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          auth_type?: string | null
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_native?: boolean | null
+          name: string
+          slug: string
+        }
+        Update: {
+          auth_type?: string | null
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_native?: boolean | null
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       landing_pages: {
         Row: {
           content: Json | null
@@ -2718,6 +2841,7 @@ export type Database = {
       }
       organization_integrations: {
         Row: {
+          catalog_id: string | null
           config: Json | null
           created_at: string
           id: string
@@ -2729,6 +2853,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          catalog_id?: string | null
           config?: Json | null
           created_at?: string
           id?: string
@@ -2740,6 +2865,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          catalog_id?: string | null
           config?: Json | null
           created_at?: string
           id?: string
@@ -2751,6 +2877,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_integrations_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "integration_catalog"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "organization_integrations_organization_id_fkey"
             columns: ["organization_id"]
@@ -5253,6 +5386,71 @@ export type Database = {
             columns: ["package_id"]
             isOneToOne: false
             referencedRelation: "voip_credit_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_deliveries: {
+        Row: {
+          attempts: number | null
+          completed_at: string | null
+          created_at: string
+          headers: Json | null
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          last_status_code: number | null
+          max_attempts: number | null
+          method: string | null
+          next_retry_at: string | null
+          organization_id: string | null
+          payload: Json
+          status: string | null
+          url: string
+          webhook_id: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          last_status_code?: number | null
+          max_attempts?: number | null
+          method?: string | null
+          next_retry_at?: string | null
+          organization_id?: string | null
+          payload: Json
+          status?: string | null
+          url: string
+          webhook_id?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          last_status_code?: number | null
+          max_attempts?: number | null
+          method?: string | null
+          next_retry_at?: string | null
+          organization_id?: string | null
+          payload?: Json
+          status?: string | null
+          url?: string
+          webhook_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
