@@ -1006,10 +1006,10 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/30">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/30" role="banner">
         <div className="container mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <Logo variant="red" size="md" showText />
-          <nav className="hidden md:flex items-center gap-6 text-sm">
+          <nav className="hidden md:flex items-center gap-6 text-sm" aria-label="Navegação principal">
             <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">Funcionalidades</Link>
             <a href="#diferenciais" className="text-muted-foreground hover:text-foreground transition-colors">Diferenciais</a>
             <a href="#planos" className="text-muted-foreground hover:text-foreground transition-colors">Planos</a>
@@ -1027,6 +1027,8 @@ export default function LandingPage() {
       </header>
 
       <div className="h-14 sm:h-16" />
+
+      <main role="main">
 
       <HeroSection />
       <StatsBar />
