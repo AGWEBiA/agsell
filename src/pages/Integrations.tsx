@@ -133,6 +133,9 @@ export default function Integrations() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="marketplace" className="mt-6">
+          <IntegrationMarketplace />
+        </TabsContent>
       </Tabs>
 
       {/* Other Integrations by Category */}
