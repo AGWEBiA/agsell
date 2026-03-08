@@ -49,7 +49,6 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "initiate": {
-        // Phase 2: Initiate a WebRTC call
         if (!config.enabled || config.provider === "none") {
           return new Response(
             JSON.stringify({ error: "VoIP WebRTC not configured. Using tel: fallback." }),
@@ -93,14 +92,60 @@ Deno.serve(async (req) => {
 
         if (callError) throw callError;
 
-        // Generate WebRTC token based on provider
         let token = null;
-        if (config.provider === "twilio") {
-          // In production, this would use Twilio's API to generate a capability token
-          // The admin will configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, etc.
+        const provider = config.provider as string;
+
+        if (provider === "zenvia") {
+          // ─── Zenvia Voice API ───
+          const zenviaToken = (config.zenvia_api_token as string) || Deno.env.get("ZENVIA_API_TOKEN");
+          if (!zenviaToken) {
+            return new Response(
+              JSON.stringify({ error: "Zenvia API token not configured." }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          // Initiate outbound call via Zenvia Voice API
+          const callerNumber = (config.zenvia_caller_number as string) || "";
+          const response = await fetch("https://voice-api.zenvia.com/v2/chamada", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Token": zenviaToken,
+            },
+            body: JSON.stringify({
+              numero_origem: callerNumber,
+              numero_destino: fullPhone.replace("+", ""),
+              gravar_audio: config.record_calls ?? true,
+              detectar_caixa: true,
+            }),
+          });
+
+          const zenviaResult = await response.json();
+
+          if (!response.ok || zenviaResult.status === false) {
+            console.error("[VOIP-CALL] Zenvia Voice error:", JSON.stringify(zenviaResult));
+            throw new Error(zenviaResult.mensagem || "Zenvia Voice API error");
+          }
+
+          // Store Zenvia call ID for tracking
+          await supabase
+            .from("calls")
+            .update({
+              metadata: {
+                provider: "zenvia",
+                zenvia_call_id: zenviaResult.dados?.id,
+              },
+            })
+            .eq("id", callRecord.id);
+
+          console.log(`[VOIP-CALL] Zenvia call initiated to ${fullPhone} by ${user.email}, zenvia_id: ${zenviaResult.dados?.id}`);
+          token = `zenvia_${zenviaResult.dados?.id || callRecord.id}`;
+
+        } else if (provider === "twilio") {
           console.log(`[VOIP-CALL] Twilio call initiated to ${fullPhone} by ${user.email}`);
           token = `twilio_token_placeholder_${callRecord.id}`;
-        } else if (config.provider === "vonage") {
+        } else if (provider === "vonage") {
           console.log(`[VOIP-CALL] Vonage call initiated to ${fullPhone} by ${user.email}`);
           token = `vonage_token_placeholder_${callRecord.id}`;
         }
@@ -117,13 +162,12 @@ Deno.serve(async (req) => {
       }
 
       case "end": {
-        // End a call and process recording
         if (!callId) throw new Error("callId is required");
 
         const now = new Date().toISOString();
         const { data: callData } = await supabase
           .from("calls")
-          .select("started_at")
+          .select("started_at, metadata")
           .eq("id", callId)
           .single();
 
@@ -131,7 +175,32 @@ Deno.serve(async (req) => {
           ? Math.round((Date.now() - new Date(callData.started_at).getTime()) / 1000)
           : 0;
 
-        const creditsUsed = Math.max(1, Math.ceil(durationSeconds / 60) * ((config.credits_per_minute as number) || 1));
+        const creditsPerMinute = (config.credits_per_minute as number) || 1;
+        const creditsUsed = Math.max(1, Math.ceil(durationSeconds / 60) * creditsPerMinute);
+
+        // If Zenvia, fetch recording URL from their API
+        let finalRecordingUrl = recordingUrl || null;
+        const callMeta = (callData?.metadata as Record<string, unknown>) || {};
+
+        if (callMeta.provider === "zenvia" && callMeta.zenvia_call_id) {
+          const zenviaToken = (config.zenvia_api_token as string) || Deno.env.get("ZENVIA_API_TOKEN");
+          if (zenviaToken) {
+            try {
+              const statusResp = await fetch(
+                `https://voice-api.zenvia.com/v2/chamada/${callMeta.zenvia_call_id}`,
+                {
+                  headers: { "Access-Token": zenviaToken },
+                }
+              );
+              const statusData = await statusResp.json();
+              if (statusData.dados?.url_gravacao) {
+                finalRecordingUrl = statusData.dados.url_gravacao;
+              }
+            } catch (e) {
+              console.error("[VOIP-CALL] Failed to fetch Zenvia recording:", e);
+            }
+          }
+        }
 
         // Update call record
         await supabase
@@ -141,12 +210,11 @@ Deno.serve(async (req) => {
             ended_at: now,
             duration_seconds: durationSeconds,
             credits_used: creditsUsed,
-            recording_url: recordingUrl || null,
+            recording_url: finalRecordingUrl,
           })
           .eq("id", callId);
 
         // Deduct credits
-        await supabase.rpc("increment_automation_executions", { automation_id: callId }); // placeholder
         const { data: currentCredits } = await supabase
           .from("voip_credits")
           .select("balance, total_used")
@@ -172,8 +240,8 @@ Deno.serve(async (req) => {
           description: `Chamada ${durationSeconds}s → ${creditsUsed} créditos`,
         });
 
-        // Phase 3: Auto-transcribe if enabled and recording exists
-        if (config.auto_transcribe && recordingUrl) {
+        // Auto-transcribe if enabled and recording exists
+        if (config.auto_transcribe && finalRecordingUrl) {
           try {
             const transcribeResp = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
               method: "POST",
@@ -181,7 +249,7 @@ Deno.serve(async (req) => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${supabaseServiceKey}`,
               },
-              body: JSON.stringify({ audioUrl: recordingUrl }),
+              body: JSON.stringify({ audioUrl: finalRecordingUrl }),
             });
             const transcribeData = await transcribeResp.json();
 
@@ -193,7 +261,7 @@ Deno.serve(async (req) => {
 
               console.log(`[VOIP-CALL] Transcription completed for call ${callId}`);
 
-              // Phase 3: Auto-analyze sentiment if enabled
+              // Auto-analyze sentiment if enabled
               if (config.auto_sentiment) {
                 try {
                   const sentimentResp = await fetch(`${supabaseUrl}/functions/v1/analyze-sentiment`, {
@@ -211,14 +279,13 @@ Deno.serve(async (req) => {
                       .from("calls")
                       .update({
                         metadata: {
-                          provider: config.provider,
+                          ...callMeta,
                           sentiment: sentimentData.sentiment,
                           sentiment_score: sentimentData.score,
                           sentiment_summary: sentimentData.summary,
                         },
                       })
                       .eq("id", callId);
-                    console.log(`[VOIP-CALL] Sentiment analysis: ${sentimentData.sentiment} for call ${callId}`);
                   }
                 } catch (sentErr) {
                   console.error("[VOIP-CALL] Sentiment analysis failed:", sentErr);

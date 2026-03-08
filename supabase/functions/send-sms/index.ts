@@ -1,12 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -25,71 +24,131 @@ serve(async (req) => {
       );
     }
 
-    // Get SMS config for org
+    // Get platform-level SMS provider config
+    const { data: smsProviderData } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "sms_provider")
+      .maybeSingle();
+
+    const providerConfig = (smsProviderData?.value as Record<string, unknown>) ?? {};
+    const provider = (providerConfig.provider as string) || "zenvia";
+
+    // Also check org-level sms_configs for backward compat
     const { data: smsConfig } = await supabase
       .from("sms_configs")
       .select("*")
       .eq("organization_id", organization_id)
       .eq("is_active", true)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (!smsConfig) {
+    const activeProvider = smsConfig?.provider || provider;
+
+    // Check SMS credits
+    const { data: credits } = await supabase
+      .from("sms_credits")
+      .select("balance")
+      .eq("organization_id", organization_id)
+      .maybeSingle();
+
+    if (!credits || credits.balance < 1) {
       return new Response(
-        JSON.stringify({ error: "SMS not configured for this organization" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Créditos SMS insuficientes. Adquira mais créditos." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get org settings for API credentials
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("settings")
-      .eq("id", organization_id)
-      .single();
+    // Normalize phone number
+    let cleanPhone = to.replace(/\D/g, "");
+    if (cleanPhone.length >= 10 && cleanPhone.length <= 11 && !cleanPhone.startsWith("55")) {
+      cleanPhone = "55" + cleanPhone;
+    }
 
-    const settings = org?.settings || {};
-    let result;
+    let result: Record<string, unknown>;
 
-    if (smsConfig.provider === "twilio") {
-      const accountSid = settings.twilio_account_sid;
-      const authToken = settings.twilio_auth_token;
+    if (activeProvider === "zenvia") {
+      // ─── Zenvia SMS API v2 ───
+      const zenviaToken = providerConfig.zenvia_api_token as string ||
+        Deno.env.get("ZENVIA_API_TOKEN");
 
-      if (!accountSid || !authToken) {
+      if (!zenviaToken) {
         return new Response(
-          JSON.stringify({ error: "Twilio credentials not configured. Go to Organization settings." }),
+          JSON.stringify({ error: "Zenvia API token not configured. Admin must set ZENVIA_API_TOKEN." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-      const auth = btoa(`${accountSid}:${authToken}`);
+      const zenviaFrom = (providerConfig.zenvia_sender_name as string) || "AG Sell";
 
-      const response = await fetch(twilioUrl, {
+      const response = await fetch("https://api.zenvia.com/v2/channels/sms/messages", {
         method: "POST",
         headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
+          "X-API-Token": zenviaToken,
         },
-        body: new URLSearchParams({
-          To: to,
-          From: smsConfig.from_number || "",
-          Body: message,
+        body: JSON.stringify({
+          from: zenviaFrom,
+          to: cleanPhone,
+          contents: [
+            {
+              type: "text",
+              text: message,
+            },
+          ],
         }),
       });
 
       result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Twilio API error");
+        console.error("[SEND-SMS] Zenvia error:", JSON.stringify(result));
+        throw new Error((result as any).message || (result as any).code || "Zenvia API error");
       }
-    } else if (smsConfig.provider === "vonage") {
+
+      console.log(`[SEND-SMS] Zenvia SMS sent to ${cleanPhone}: ${(result as any).id}`);
+
+    } else if (activeProvider === "twilio") {
+      // ─── Twilio ───
+      const org = await supabase.from("organizations").select("settings").eq("id", organization_id).single();
+      const settings = (org.data?.settings as Record<string, string>) || {};
+      const accountSid = settings.twilio_account_sid;
+      const authToken = settings.twilio_auth_token;
+
+      if (!accountSid || !authToken) {
+        return new Response(
+          JSON.stringify({ error: "Twilio credentials not configured." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const response = await fetch(twilioUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: `+${cleanPhone}`,
+          From: smsConfig?.from_number || "",
+          Body: message,
+        }),
+      });
+
+      result = await response.json();
+      if (!response.ok) throw new Error((result as any).message || "Twilio API error");
+
+    } else if (activeProvider === "vonage") {
+      // ─── Vonage ───
+      const org = await supabase.from("organizations").select("settings").eq("id", organization_id).single();
+      const settings = (org.data?.settings as Record<string, string>) || {};
       const apiKey = settings.vonage_api_key;
       const apiSecret = settings.vonage_api_secret;
 
       if (!apiKey || !apiSecret) {
         return new Response(
-          JSON.stringify({ error: "Vonage credentials not configured. Go to Organization settings." }),
+          JSON.stringify({ error: "Vonage credentials not configured." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -100,38 +159,54 @@ serve(async (req) => {
         body: JSON.stringify({
           api_key: apiKey,
           api_secret: apiSecret,
-          to: to.replace(/\D/g, ""),
-          from: smsConfig.from_number || "AG Sell",
+          to: cleanPhone,
+          from: smsConfig?.from_number || "AG Sell",
           text: message,
         }),
       });
 
       result = await response.json();
-
-      if (result.messages?.[0]?.status !== "0") {
-        throw new Error(result.messages?.[0]?.["error-text"] || "Vonage API error");
+      if ((result as any).messages?.[0]?.status !== "0") {
+        throw new Error((result as any).messages?.[0]?.["error-text"] || "Vonage API error");
       }
     } else {
       return new Response(
-        JSON.stringify({ error: `Unsupported SMS provider: ${smsConfig.provider}` }),
+        JSON.stringify({ error: `Unsupported SMS provider: ${activeProvider}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Update messages_sent counter
+    // Deduct 1 SMS credit
     await supabase
-      .from("sms_configs")
-      .update({ messages_sent: (smsConfig.messages_sent || 0) + 1 })
-      .eq("id", smsConfig.id);
+      .from("sms_credits")
+      .update({ balance: Math.max(0, credits.balance - 1) })
+      .eq("organization_id", organization_id);
+
+    // Record transaction
+    await supabase.from("sms_transactions").insert({
+      organization_id,
+      type: "consumption",
+      amount: 1,
+      description: `SMS enviado para ${cleanPhone}`,
+    });
+
+    // Update legacy counter if exists
+    if (smsConfig) {
+      await supabase
+        .from("sms_configs")
+        .update({ messages_sent: (smsConfig.messages_sent || 0) + 1 })
+        .eq("id", smsConfig.id);
+    }
 
     return new Response(
-      JSON.stringify({ success: true, provider: smsConfig.provider, result }),
+      JSON.stringify({ success: true, provider: activeProvider, result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Send SMS error:", error);
+  } catch (error: unknown) {
+    console.error("[SEND-SMS] Error:", error);
+    const msg = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
