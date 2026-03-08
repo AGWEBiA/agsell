@@ -128,3 +128,6 @@ verify_jwt = false
 
 [functions.predictive-scoring]
 verify_jwt = false
+
+[functions.support-agent]
+verify_jwt = false
