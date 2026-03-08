@@ -245,6 +245,10 @@ export default function Admin() {
             <Ticket className="h-4 w-4" />
             Suporte
           </TabsTrigger>
+          <TabsTrigger value="voip-config" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            VoIP
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           {/* KPIs */}
