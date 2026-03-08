@@ -251,6 +251,10 @@ export default function Admin() {
             <Activity className="h-4 w-4" />
             VoIP
           </TabsTrigger>
+          <TabsTrigger value="sms-config" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            SMS
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           {/* KPIs */}
