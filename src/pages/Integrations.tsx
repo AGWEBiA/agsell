@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useIntegrations, Integration } from '@/hooks/useIntegrations';
+import { IntegrationMarketplace } from '@/components/integrations/IntegrationMarketplace';
 import { WhatsAppProviderSetup } from '@/components/integrations/WhatsAppProviderSetup';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, HelpTooltip } from '@/components/ui/help-tooltip';
