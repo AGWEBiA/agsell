@@ -361,8 +361,16 @@ const DIFFERENTIALS = [
     desc: 'Seu cliente faz uma pergunta às 2h da manhã. A IA responde com precisão, usando seus próprios documentos e FAQs. Se precisar de um humano, a transferência acontece automaticamente.',
   },
   {
-    icon: Workflow, title: 'Flow Builder com 20+ Ações', badge: 'MAIS COMPLETO', badgeColor: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    desc: 'Construtor visual drag-and-drop com timers, aquecimento, condicionais, tags, WhatsApp, e-mail, SMS, pixel e muito mais. Mais completo que ManyChat e SellFlux — integrado ao CRM.',
+    icon: Workflow, title: 'Flow Builder com Analytics por Nó', badge: 'MAIS COMPLETO', badgeColor: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    desc: 'Construtor visual com 20+ ações, timers, condicionais e aquecimento. Agora com analytics em tempo real: veja entradas, saídas e conversões diretamente em cada nó do fluxo.',
+  },
+  {
+    icon: Brain, title: 'Scoring Preditivo com IA', badge: 'NOVO', badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    desc: 'A IA analisa o comportamento de cada lead — e-mails abertos, mensagens respondidas, páginas visitadas — e calcula automaticamente a probabilidade de conversão. Sem regras manuais.',
+  },
+  {
+    icon: Globe, title: 'Site Tracking → Trigger Automático', badge: 'NOVO', badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    desc: 'Visitou sua página de preços? O fluxo dispara. Abandonou o checkout? Recebe WhatsApp em 30 minutos. Conecte comportamento no site a automações inteligentes.',
   },
   {
     icon: Layers, title: 'Modo Agência Multi-tenant', badge: 'EXCLUSIVO', badgeColor: 'bg-[hsl(2,76%,53%)]/15 text-[hsl(2,76%,53%)] border-[hsl(2,76%,53%)]/30',
