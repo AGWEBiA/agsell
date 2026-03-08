@@ -239,6 +239,11 @@ export default function Admin() {
             <Users className="h-4 w-4" />
             Grupos WA
           </TabsTrigger>
+          <TabsTrigger value="platform-support" className="flex items-center gap-2">
+            <Ticket className="h-4 w-4" />
+            Suporte
+          </TabsTrigger>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           {/* KPIs */}
