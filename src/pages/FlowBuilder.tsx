@@ -43,12 +43,16 @@ import { TagFilterNodeConfig } from '@/components/flow-builder/TagFilterNodeConf
 import { WhatsAppNodeConfig } from '@/components/flow-builder/WhatsAppNodeConfig';
 import { ConditionalNodeConfig } from '@/components/flow-builder/ConditionalNodeConfig';
 
+import { FlowNodeAnalyticsOverlay } from '@/components/automations/FlowNodeAnalyticsOverlay';
+import type { FlowNodeAnalytic } from '@/hooks/useFlowNodeAnalytics';
+
 // ─── Node Component ───
-function FlowNodeCard({ node, onEdit, onDelete, onAddAfter }: {
+function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
   node: FlowNode;
   onEdit: () => void;
   onDelete: () => void;
   onAddAfter: () => void;
+  analytics?: FlowNodeAnalytic;
 }) {
   const getTriggerInfo = () => triggerOptions.find(t => t.id === node.subtype);
   const getActionInfo = () => [...actionOptions, ...conditionOptions].find(a => a.id === node.subtype);
