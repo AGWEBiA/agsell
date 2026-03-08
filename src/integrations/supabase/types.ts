@@ -4748,10 +4748,13 @@ export type Database = {
           credits: number
           id: string
           is_active: boolean | null
+          kiwify_checkout_url: string | null
+          kiwify_product_id: string | null
           name: string
           price_cents: number
           price_per_credit_cents: number
           sort_order: number | null
+          stripe_price_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -4759,10 +4762,13 @@ export type Database = {
           credits: number
           id?: string
           is_active?: boolean | null
+          kiwify_checkout_url?: string | null
+          kiwify_product_id?: string | null
           name: string
           price_cents: number
           price_per_credit_cents: number
           sort_order?: number | null
+          stripe_price_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -4770,10 +4776,13 @@ export type Database = {
           credits?: number
           id?: string
           is_active?: boolean | null
+          kiwify_checkout_url?: string | null
+          kiwify_product_id?: string | null
           name?: string
           price_cents?: number
           price_per_credit_cents?: number
           sort_order?: number | null
+          stripe_price_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
