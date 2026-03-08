@@ -25,6 +25,8 @@ import { supabase } from '@/integrations/supabase/client';
 // ─── SECTION 1: Navbar ──────────────────────────────────────
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handler);
@@ -50,16 +52,45 @@ function Navbar() {
           <a href="#planos" className="text-[hsl(0,0%,63%)] hover:text-white transition-colors">Planos</a>
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link to="/login">
+          <Link to="/login" className="hidden sm:block">
             <Button variant="outline" size="sm" className="border-white/20 text-white/80 hover:text-white hover:bg-white/5 text-xs sm:text-sm">Entrar</Button>
           </Link>
-          <a href="#planos">
+          <a href="#planos" className="hidden sm:block">
             <Button size="sm" className="rounded-full px-4 sm:px-5 text-xs sm:text-sm bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white">
               Começar agora
             </Button>
           </a>
+          <button
+            className="md:hidden p-2 text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[hsl(0,0%,5%)]/95 backdrop-blur-xl border-t border-[hsl(0,0%,16%)] animate-fade-in">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-3">
+            <a href="#funcionalidades" onClick={() => setMobileMenuOpen(false)} className="text-[hsl(0,0%,63%)] hover:text-white transition-colors py-2 text-sm">Funcionalidades</a>
+            <a href="#diferenciais" onClick={() => setMobileMenuOpen(false)} className="text-[hsl(0,0%,63%)] hover:text-white transition-colors py-2 text-sm">Diferenciais</a>
+            <a href="#comparativo" onClick={() => setMobileMenuOpen(false)} className="text-[hsl(0,0%,63%)] hover:text-white transition-colors py-2 text-sm">Comparativo</a>
+            <a href="#planos" onClick={() => setMobileMenuOpen(false)} className="text-[hsl(0,0%,63%)] hover:text-white transition-colors py-2 text-sm">Planos</a>
+            <div className="flex gap-2 pt-2 border-t border-[hsl(0,0%,16%)]">
+              <Link to="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full border-white/20 text-white/80 hover:text-white hover:bg-white/5 text-xs">Entrar</Button>
+              </Link>
+              <a href="#planos" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                <Button size="sm" className="w-full rounded-full text-xs bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white">
+                  Começar agora
+                </Button>
+              </a>
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
