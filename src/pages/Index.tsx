@@ -12,7 +12,8 @@ import {
   Workflow, Vote, SplitSquareVertical, CreditCard, Tag, X,
   Instagram, Headphones, Trophy, Flame, DollarSign, Replace,
   CheckCircle2, ArrowDown, MousePointerClick, Gauge, Lock,
-  Megaphone, PieChart, Hash, ArrowLeftRight, Upload, FileJson
+  Megaphone, PieChart, Hash, ArrowLeftRight, Upload, FileJson,
+  Ticket,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1073,6 +1074,78 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Support Widget */}
+      <FloatingSupportWidget />
     </div>
+  );
+}
+
+function FloatingSupportWidget() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Overlay */}
+      {open && (
+        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+      )}
+
+      {/* Popup */}
+      {open && (
+        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-72 rounded-2xl border bg-card shadow-xl animate-fade-in">
+          <div className="p-4 border-b">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Headphones className="h-4 w-4 text-primary" />
+              Como podemos ajudar?
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Escolha o melhor canal de atendimento
+            </p>
+          </div>
+          <div className="p-2 space-y-1">
+            <Link
+              to="/inbox"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors group"
+            >
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <MessageSquare className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Falar com Atendente</p>
+                <p className="text-[10px] text-muted-foreground">Chat ao vivo com nossa equipe</p>
+              </div>
+            </Link>
+            <Link
+              to="/support-center"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors group"
+            >
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Ticket className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Abrir Ticket</p>
+                <p className="text-[10px] text-muted-foreground">Suporte técnico via protocolo</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* FAB Button */}
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          'fixed bottom-4 right-4 sm:right-6 z-50 h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300',
+          'bg-primary text-primary-foreground hover:scale-105 hover:shadow-xl',
+          open && 'rotate-45'
+        )}
+        aria-label="Suporte"
+      >
+        {open ? <X className="h-6 w-6" /> : <Headphones className="h-6 w-6" />}
+      </button>
+    </>
   );
 }
