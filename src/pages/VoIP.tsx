@@ -114,10 +114,18 @@ const VoIP = () => {
       </div>
 
       <Tabs defaultValue="packages" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="softphone" className="gap-1.5">
+            <Phone className="h-4 w-4" />
+            Softphone
+          </TabsTrigger>
           <TabsTrigger value="packages" className="gap-1.5">
             <Package className="h-4 w-4" />
             Pacotes de Créditos
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-1.5">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-1.5">
             <History className="h-4 w-4" />
