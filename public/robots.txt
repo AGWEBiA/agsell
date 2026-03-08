@@ -1,5 +1,5 @@
 # AG Sell - Robots.txt
-# https://agsell.lovable.app
+# https://site.agsell.com.br
 
 User-agent: Googlebot
 Allow: /
@@ -53,4 +53,4 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://agsell.lovable.app/sitemap.xml
+Sitemap: https://site.agsell.com.br/sitemap.xml
