@@ -920,10 +920,10 @@ function CTASection() {
           <p className="text-white/60 text-base sm:text-lg max-w-lg mx-auto mb-8">
             Comece hoje com a AG Sell e economize mais de R$ 1.650/mês — com mais integração, mais velocidade e mais vendas.
           </p>
-          <a href="#planos">
-            <Button size="lg" className="h-14 px-10 text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20">
+          <a href="#planos" className="inline-block w-full sm:w-auto px-4 sm:px-0">
+            <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20 w-full sm:w-auto">
               Começar agora — a partir de R$ 197/mês
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
             </Button>
           </a>
           <p className="text-xs text-white/40 mt-4">
