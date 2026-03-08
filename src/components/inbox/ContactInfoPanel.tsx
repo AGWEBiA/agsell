@@ -23,6 +23,7 @@ import {
   Plus, Trash2, Copy,
 } from 'lucide-react';
 import { useConversationNotes } from '@/hooks/useConversationNotes';
+import { SoftphoneTrigger } from '@/components/voip/Softphone';
 import { useQuickReplies } from '@/hooks/useQuickReplies';
 import { useOrganizationMembers } from '@/hooks/useOrganizationMembers';
 import { useSacAgents } from '@/hooks/useSacAgents';
