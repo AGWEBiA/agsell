@@ -442,13 +442,13 @@ export function WhatsAppProviderSetup() {
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="plataforma" className="gap-1.5 text-xs sm:text-sm">
-                <QrCode className="h-4 w-4" /> Plataforma
+                <QrCode className="h-4 w-4" /> 1) QR Code
               </TabsTrigger>
               <TabsTrigger value="propria" className="gap-1.5 text-xs sm:text-sm">
-                <Monitor className="h-4 w-4" /> Própria
+                <Server className="h-4 w-4" /> 2) Evolution Própria
               </TabsTrigger>
               <TabsTrigger value="oficial" className="gap-1.5 text-xs sm:text-sm">
-                <Globe className="h-4 w-4" /> API Oficial
+                <Globe className="h-4 w-4" /> 3) API Oficial
               </TabsTrigger>
             </TabsList>
 
