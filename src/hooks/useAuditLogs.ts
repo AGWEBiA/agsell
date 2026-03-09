@@ -27,7 +27,7 @@ export function useAuditLogs() {
       action: string;
       resourceType: string;
       resourceId?: string;
-      details?: Record<string, unknown>;
+      details?: any;
     }) => {
       if (!orgId) return;
       const { error } = await supabase.rpc('log_audit_event', {
