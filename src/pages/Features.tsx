@@ -37,7 +37,7 @@ const ALL_FEATURES = [
     bgColor: 'bg-green-500/10',
     features: [
       { icon: Inbox, name: 'Inbox Unificado', desc: 'WhatsApp, E-mail, Instagram, Telegram e SMS em uma única tela com CSAT e notas internas.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
-      { icon: MessageSquare, name: 'WhatsApp Multi-instância', desc: 'Conecte múltiplos números via QR Code + API Oficial Meta. Campanhas em massa e flows.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
+      { icon: MessageSquare, name: 'WhatsApp Multi-instância', desc: '3 modos de conexão: QR Code (gerenciado), Evolution API própria (mais estável) ou API Oficial Meta. Campanhas em massa, flows e grupos pagos.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
       { icon: Mail, name: 'E-mail Marketing', desc: 'Campanhas, templates HTML, domínio próprio com SPF/DKIM/DMARC e warmup automático.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
       { icon: Instagram, name: 'Instagram DM & Automações', desc: 'Responda DMs, comentários e stories. Automações por palavra-chave e broadcasts.', plans: ['professional', 'enterprise', 'agencia'] },
       { icon: Phone, name: 'SMS Marketing Bidirecional', desc: 'Campanhas SMS em massa, automações e respostas bidirecionais via Twilio/Vonage.', plans: ['starter', 'professional', 'enterprise', 'agencia'] },
