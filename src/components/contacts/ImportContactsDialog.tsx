@@ -28,7 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, FileSpreadsheet, Check, AlertCircle, Loader2 } from 'lucide-react';
-import { parseCSV, CONTACT_FIELDS, useImportContacts } from '@/hooks/useImportContacts';
+import { parseCSV, CONTACT_FIELDS, autoMapHeaders, useImportContacts } from '@/hooks/useImportContacts';
 
 interface ImportContactsDialogProps {
   open: boolean;
@@ -64,25 +64,7 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
       
       setHeaders(parsedHeaders);
       setRows(parsedRows);
-
-      // Auto-map fields by similarity
-      const autoMapping: Record<string, string> = {};
-      parsedHeaders.forEach((header) => {
-        const headerLower = header.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        
-        const match = CONTACT_FIELDS.find((field) => {
-          const labelLower = field.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return (
-            headerLower.includes(field.key) ||
-            headerLower.includes(labelLower) ||
-            field.key.includes(headerLower)
-          );
-        });
-
-        autoMapping[header] = match?.key || 'ignore';
-      });
-
-      setFieldMapping(autoMapping);
+      setFieldMapping(autoMapHeaders(parsedHeaders));
       setStep('mapping');
     };
 
@@ -128,7 +110,6 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
           </DialogDescription>
         </DialogHeader>
 
-        {/* Upload Step */}
         {step === 'upload' && (
           <div className="flex flex-col items-center justify-center py-10 gap-4">
             <div className="rounded-full bg-muted p-6">
@@ -155,7 +136,6 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
           </div>
         )}
 
-        {/* Mapping Step */}
         {step === 'mapping' && (
           <ScrollArea className="max-h-[400px] pr-4">
             <div className="space-y-4">
@@ -181,11 +161,11 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
                           value={fieldMapping[header] || 'ignore'}
                           onValueChange={(value) => handleMappingChange(header, value)}
                         >
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger className="w-[200px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="ignore">Ignorar</SelectItem>
+                            <SelectItem value="ignore">— Ignorar —</SelectItem>
                             {CONTACT_FIELDS.map((field) => (
                               <SelectItem key={field.key} value={field.key}>
                                 {field.label} {field.required && '*'}
@@ -212,7 +192,6 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
           </ScrollArea>
         )}
 
-        {/* Preview Step */}
         {step === 'preview' && (
           <ScrollArea className="max-h-[400px]">
             <Table>
@@ -236,7 +215,7 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
                       )?.[0];
                       return (
                         <TableCell key={field.key}>
-                          {csvField ? row[csvField] : '-'}
+                          {csvField ? row[csvField] || '-' : '-'}
                         </TableCell>
                       );
                     })}
@@ -252,7 +231,6 @@ export function ImportContactsDialog({ open, onOpenChange }: ImportContactsDialo
           </ScrollArea>
         )}
 
-        {/* Result Step */}
         {step === 'result' && importResult && (
           <div className="py-6 space-y-4">
             <div className="flex items-center justify-center gap-4">
