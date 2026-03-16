@@ -246,6 +246,30 @@ export default function ApiKeys() {
                 <code>GET /tags</code>
                 <span className="text-muted-foreground">Listar tags</span>
               </div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded">
+                <code>GET /metrics/overview</code>
+                <span className="text-muted-foreground">Métricas gerais</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded">
+                <code>GET /metrics/email</code>
+                <span className="text-muted-foreground">Métricas de e-mail</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded">
+                <code>GET /metrics/leads</code>
+                <span className="text-muted-foreground">Métricas de leads</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded">
+                <code>GET /metrics/pipeline</code>
+                <span className="text-muted-foreground">Métricas de pipeline</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded">
+                <code>GET /metrics/automations</code>
+                <span className="text-muted-foreground">Métricas de automações</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted rounded">
+                <code>GET /metrics/forms</code>
+                <span className="text-muted-foreground">Métricas de formulários</span>
+              </div>
             </div>
           </div>
           <div className="space-y-2">

@@ -544,10 +544,12 @@ async function handleMetrics(supabase: any, orgId: string, subResource: string |
       return await metricsPipeline(supabase, orgId, from, to);
     case "automations":
       return await metricsAutomations(supabase, orgId, from, to);
+    case "forms":
+      return await metricsForms(supabase, orgId, from, to);
     default:
       return {
         error: "Unknown metrics endpoint",
-        available: ["overview", "email", "leads", "pipeline", "automations"],
+        available: ["overview", "email", "leads", "pipeline", "automations", "forms"],
       };
   }
 }
@@ -752,6 +754,62 @@ async function metricsAutomations(supabase: any, orgId: string, from: string, to
         name: a.name,
         is_active: a.is_active,
         total_executions: a.executions_count,
+      })),
+    },
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+async function metricsForms(supabase: any, orgId: string, from: string, to: string) {
+  const [formsRes, submissionsRes] = await Promise.all([
+    supabase
+      .from("forms")
+      .select("id, name, is_active, submissions_count, created_at")
+      .eq("organization_id", orgId),
+    supabase
+      .from("form_submissions")
+      .select("id, form_id, contact_id, created_at, forms!inner(organization_id)")
+      .eq("forms.organization_id", orgId)
+      .gte("created_at", from)
+      .lte("created_at", to)
+      .order("created_at", { ascending: false })
+      .limit(500),
+  ]);
+
+  const forms = formsRes.data || [];
+  const submissions = submissionsRes.data || [];
+
+  const totalSubmissions = submissions.length;
+  const withContact = submissions.filter((s: Record<string, unknown>) => s.contact_id !== null).length;
+
+  // Per-form breakdown
+  const byForm: Record<string, { name: string; submissions: number; conversions: number }> = {};
+  for (const f of forms) {
+    byForm[f.id as string] = { name: f.name as string, submissions: 0, conversions: 0 };
+  }
+  for (const s of submissions) {
+    const fid = s.form_id as string;
+    if (!byForm[fid]) byForm[fid] = { name: "Unknown", submissions: 0, conversions: 0 };
+    byForm[fid].submissions++;
+    if (s.contact_id) byForm[fid].conversions++;
+  }
+
+  return {
+    data: {
+      period: { from, to },
+      totals: {
+        forms: forms.length,
+        active_forms: forms.filter((f: Record<string, unknown>) => f.is_active).length,
+        submissions: totalSubmissions,
+        conversions: withContact,
+        conversion_rate: totalSubmissions ? +(withContact / totalSubmissions * 100).toFixed(1) : 0,
+      },
+      by_form: Object.entries(byForm).map(([id, v]) => ({
+        id,
+        name: v.name,
+        submissions: v.submissions,
+        conversions: v.conversions,
+        conversion_rate: v.submissions ? +(v.conversions / v.submissions * 100).toFixed(1) : 0,
       })),
     },
   };
