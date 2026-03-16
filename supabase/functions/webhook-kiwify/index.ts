@@ -309,6 +309,41 @@ Deno.serve(async (req) => {
             billingCycle: detectBillingCycle(payload),
           });
           logStep("Subscription activated for existing user");
+
+          const hasLoggedIn = !!existingUser.last_sign_in_at;
+          const alreadyEmailed = !!existingUser.user_metadata?.credentials_emailed_at;
+          if (!hasLoggedIn && !alreadyEmailed) {
+            const customerName = existingUser.user_metadata?.full_name || payload.Customer.full_name || "Usuário";
+            const temporaryPassword = generatePassword();
+
+            const { error: passwordError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+              password: temporaryPassword,
+              user_metadata: {
+                ...(existingUser.user_metadata || {}),
+                credentials_emailed_at: new Date().toISOString(),
+              },
+            });
+
+            if (passwordError) {
+              logStep("ERROR updating temporary password for existing user", passwordError.message);
+            } else {
+              const { data: organizationData } = await supabase
+                .from("organizations")
+                .select("name")
+                .eq("id", membership.organization_id)
+                .maybeSingle();
+
+              await sendWelcomeEmail(supabase, {
+                email: customerEmail,
+                name: customerName,
+                password: temporaryPassword,
+                planName: plan.name,
+                organizationName: organizationData?.name || "AG Sell",
+              });
+
+              logStep("Credentials email sent for existing user onboarding", { email: customerEmail });
+            }
+          }
         } else if (!membership && plan) {
           // Existing user without organization — create org + subscription
           logStep("Existing user without org, creating one");
@@ -622,9 +657,31 @@ function generatePassword(): string {
 async function sendWelcomeEmail(supabase: any, data: {
   email: string; name: string; password: string; planName: string; organizationName: string;
 }) {
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  let resendApiKey = Deno.env.get("RESEND_API_KEY");
+  let fromAddress = "AG Sell <noreply@agsell.com.br>";
+
   if (!resendApiKey) {
-    logStep("RESEND_API_KEY not configured, skipping welcome email");
+    const { data: activeIntegration } = await supabase
+      .from("organization_integrations")
+      .select("config")
+      .eq("integration_type", "resend")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const config = activeIntegration?.config as Record<string, string> | undefined;
+    if (config?.api_key) {
+      resendApiKey = config.api_key;
+      const fromName = config.from_name || "AG Sell";
+      const fromEmail = config.from_email || "noreply@agsell.com.br";
+      fromAddress = `${fromName} <${fromEmail}>`;
+      logStep("Using Resend API key from active integration");
+    }
+  }
+
+  if (!resendApiKey) {
+    logStep("No Resend API key available, skipping welcome email");
     return;
   }
 
@@ -636,7 +693,7 @@ async function sendWelcomeEmail(supabase: any, data: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "AG Sell <noreply@agsell.com.br>",
+        from: fromAddress,
         to: [data.email],
         subject: `Bem-vindo ao AG Sell - Suas credenciais de acesso`,
         html: `
@@ -679,10 +736,14 @@ async function sendWelcomeEmail(supabase: any, data: {
         `,
       }),
     });
+
     if (!response.ok) {
       const txt = await response.text();
       logStep("Resend error", txt);
+      return;
     }
+
+    logStep("Welcome email sent", { email: data.email });
   } catch (error) {
     logStep("Error sending email", error);
   }

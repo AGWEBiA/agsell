@@ -66,6 +66,7 @@ export default function Admin() {
         .from('organizations')
         .select(`
           *,
+          organization_plan:plans!organizations_plan_id_fkey(name),
           organization_members(count),
           subscriptions(*, plans(*))
         `);
@@ -123,9 +124,22 @@ export default function Admin() {
 
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
+  const getPrimarySubscription = (org: any) => {
+    const subscriptions = Array.isArray(org.subscriptions) ? org.subscriptions : [];
+    if (!subscriptions.length) return null;
+
+    const sorted = [...subscriptions].sort((a: any, b: any) => {
+      const aDate = new Date(a.current_period_end || a.updated_at || a.created_at || 0).getTime();
+      const bDate = new Date(b.current_period_end || b.updated_at || b.created_at || 0).getTime();
+      return bDate - aDate;
+    });
+
+    return sorted.find((sub: any) => sub.status === 'active') || sorted[0];
+  };
+
   // Calculate MRR from subscriptions
   const mrr = organizations.reduce((total, org: any) => {
-    const subscription = org.subscriptions?.[0];
+    const subscription = getPrimarySubscription(org);
     if (subscription?.status === 'active' && subscription.plans?.price_monthly) {
       return total + Number(subscription.plans.price_monthly);
     }
@@ -141,7 +155,7 @@ export default function Admin() {
       const label = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
       let accMrr = 0;
       organizations.forEach((org: any) => {
-        const sub = org.subscriptions?.[0];
+        const sub = getPrimarySubscription(org);
         if (sub?.status === 'active' && sub.plans?.price_monthly) {
           const subDate = new Date(sub.created_at);
           if (subDate <= new Date(d.getFullYear(), d.getMonth() + 1, 0)) {
@@ -286,9 +300,9 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{organizations.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  {organizations.filter((o: any) => o.subscriptions?.[0]?.status === 'active').length} ativas
-                </p>
+                  <p className="text-xs text-muted-foreground">
+                    {organizations.filter((o: any) => getPrimarySubscription(o)?.status === 'active').length} ativas
+                  </p>
               </CardContent>
             </Card>
 
@@ -408,9 +422,12 @@ export default function Admin() {
                     </TableHeader>
                     <TableBody>
                       {organizations.map((org: any) => {
-                        const subscription = org.subscriptions?.[0];
-                        const plan = subscription?.plans?.name || 'Free';
-                        const status = subscription?.status || 'inactive';
+                        const subscription = getPrimarySubscription(org);
+                        const fallbackPlanName = org.organization_plan?.name;
+                        const plan = subscription?.plans?.name || fallbackPlanName || 'Free';
+                        const normalizedPlan = String(plan).toLowerCase();
+                        const fallbackPaidPlan = normalizedPlan !== 'free' && normalizedPlan !== 'grátis' && normalizedPlan !== 'gratis';
+                        const status = subscription?.status || (fallbackPaidPlan ? 'active' : 'inactive');
                         const membersCount = org.organization_members?.[0]?.count || 0;
 
                         return (
