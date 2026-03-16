@@ -198,11 +198,34 @@ export function useImportContacts() {
       fieldMapping: Record<string, string>;
       fileName: string;
     }) => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado.');
+      }
+
+      // Resolve org id (required by RLS on import_jobs)
+      let organizationId = currentOrganization?.id ?? null;
+      if (!organizationId) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (membershipError) throw membershipError;
+        organizationId = membership?.organization_id ?? null;
+      }
+
+      if (!organizationId) {
+        throw new Error('Nenhuma organização ativa encontrada para importação.');
+      }
+
       // Create import job
       const { data: job, error: jobError } = await supabase
         .from('import_jobs')
         .insert({
-          user_id: user!.id,
+          user_id: user.id,
+          organization_id: organizationId,
           file_name: fileName,
           total_rows: rows.length,
           field_mapping: fieldMapping,
@@ -268,8 +291,8 @@ export function useImportContacts() {
           source,
           status,
           notes,
-          user_id: user!.id,
-          organization_id: currentOrganization?.id || null,
+          user_id: user.id,
+          organization_id: organizationId,
         }]).select('id').single();
 
         if (insertError) {
@@ -285,7 +308,7 @@ export function useImportContacts() {
             const { data: existing } = await supabase.from('tags')
               .select('id')
               .eq('name', tagName)
-              .eq('user_id', user!.id)
+              .eq('organization_id', organizationId)
               .maybeSingle();
 
             if (existing) {
@@ -294,8 +317,8 @@ export function useImportContacts() {
               const { data: newTag } = await supabase.from('tags').insert({
                 name: tagName,
                 color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
-                user_id: user!.id,
-                organization_id: currentOrganization?.id || null,
+                user_id: user.id,
+                organization_id: organizationId,
               }).select('id').single();
               tagId = newTag?.id || null;
             }

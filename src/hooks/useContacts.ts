@@ -41,23 +41,40 @@ export interface CreateContactData {
   company_id?: string;
 }
 
+const CONTACTS_PAGE_SIZE = 1000;
+
+async function fetchAllContacts(): Promise<Contact[]> {
+  let from = 0;
+  const allContacts: Contact[] = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('contacts')
+      .select(`
+        *,
+        company:companies(id, name)
+      `)
+      .order('created_at', { ascending: false })
+      .range(from, from + CONTACTS_PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const batch = (data || []) as Contact[];
+    allContacts.push(...batch);
+
+    if (batch.length < CONTACTS_PAGE_SIZE) break;
+    from += CONTACTS_PAGE_SIZE;
+  }
+
+  return allContacts;
+}
+
 export function useContacts() {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['contacts', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select(`
-          *,
-          company:companies(id, name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Contact[];
-    },
+    queryFn: fetchAllContacts,
     enabled: !!user,
   });
 }
