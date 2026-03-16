@@ -224,9 +224,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", apiKeyData.id);
 
-    // Parse URL path to determine resource
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split("/").filter(Boolean);
+    // Determine resource from already-parsed URL
     const resource = pathParts[1];
     const resourceId = pathParts[2];
 
@@ -269,12 +267,21 @@ Deno.serve(async (req) => {
       case "tags":
         result = await handleTags(supabase, method, orgId, resourceId, req);
         break;
+      case "metrics": {
+        if (method !== "GET") {
+          result = { error: "Method not allowed" };
+          break;
+        }
+        const subResource = pathParts[2];
+        result = await handleMetrics(supabase, orgId, subResource, req);
+        break;
+      }
       default:
         return new Response(
           JSON.stringify({
             error: "Unknown resource",
             code: "NOT_FOUND",
-            available_resources: ["contacts", "companies", "deals", "tags"],
+            available_resources: ["contacts", "companies", "deals", "tags", "metrics"],
           }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -493,6 +500,261 @@ async function handleTags(supabase: any, method: string, orgId: string, id: stri
   }
 
   return { error: "Method not allowed" };
+}
+
+// --- Metrics Handlers ---
+function parsePeriodDays(period: string | null): number {
+  switch (period) {
+    case "today": return 0;
+    case "7d": return 7;
+    case "90d": return 90;
+    case "30d": default: return 30;
+  }
+}
+
+function getDateRange(period: string | null): { from: string; to: string } {
+  const now = new Date();
+  const days = parsePeriodDays(period);
+  const from = new Date(now);
+  if (days === 0) {
+    from.setHours(0, 0, 0, 0);
+  } else {
+    from.setDate(from.getDate() - days);
+  }
+  return { from: from.toISOString(), to: now.toISOString() };
+}
+
+// deno-lint-ignore no-explicit-any
+async function handleMetrics(supabase: any, orgId: string, subResource: string | undefined, req: Request) {
+  const url = new URL(req.url);
+  const period = url.searchParams.get("period");
+  const { from, to } = getDateRange(period);
+  const tagFilter = url.searchParams.get("tag");
+  const sourceFilter = url.searchParams.get("source");
+  const statusFilter = url.searchParams.get("status");
+
+  switch (subResource) {
+    case "overview":
+      return await metricsOverview(supabase, orgId, from, to);
+    case "email":
+      return await metricsEmail(supabase, orgId, from, to);
+    case "leads":
+      return await metricsLeads(supabase, orgId, from, to, { tag: tagFilter, source: sourceFilter, status: statusFilter });
+    case "pipeline":
+      return await metricsPipeline(supabase, orgId, from, to);
+    case "automations":
+      return await metricsAutomations(supabase, orgId, from, to);
+    default:
+      return {
+        error: "Unknown metrics endpoint",
+        available: ["overview", "email", "leads", "pipeline", "automations"],
+      };
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function metricsOverview(supabase: any, orgId: string, from: string, to: string) {
+  const [contacts, deals, emails, automations] = await Promise.all([
+    supabase.from("contacts").select("id", { count: "exact", head: true }).eq("organization_id", orgId).gte("created_at", from).lte("created_at", to),
+    supabase.from("deals").select("id, value, status", { count: "exact" }).eq("organization_id", orgId).gte("created_at", from).lte("created_at", to),
+    supabase.from("email_campaigns").select("sent_count, open_count, click_count").eq("organization_id", orgId).gte("created_at", from).lte("created_at", to),
+    supabase.from("automation_executions").select("id, status", { count: "exact" }).gte("created_at", from).lte("created_at", to),
+  ]);
+
+  const emailData = emails.data || [];
+  const totalSent = emailData.reduce((s: number, e: { sent_count: number | null }) => s + (e.sent_count || 0), 0);
+  const totalOpens = emailData.reduce((s: number, e: { open_count: number | null }) => s + (e.open_count || 0), 0);
+  const totalClicks = emailData.reduce((s: number, e: { click_count: number | null }) => s + (e.click_count || 0), 0);
+
+  const dealsData = deals.data || [];
+  const totalDealValue = dealsData.reduce((s: number, d: { value: number | null }) => s + (d.value || 0), 0);
+  const wonDeals = dealsData.filter((d: { status: string | null }) => d.status === "won").length;
+
+  return {
+    data: {
+      period: { from, to },
+      contacts: { new: contacts.count || 0 },
+      deals: { total: deals.count || 0, won: wonDeals, total_value: totalDealValue },
+      email: { sent: totalSent, opens: totalOpens, clicks: totalClicks, open_rate: totalSent ? +(totalOpens / totalSent * 100).toFixed(1) : 0 },
+      automations: { executions: automations.count || 0 },
+    },
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+async function metricsEmail(supabase: any, orgId: string, from: string, to: string) {
+  const { data: campaigns } = await supabase
+    .from("email_campaigns")
+    .select("id, name, status, sent_count, open_count, click_count, sent_at, created_at")
+    .eq("organization_id", orgId)
+    .gte("created_at", from)
+    .lte("created_at", to)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const list = campaigns || [];
+  const totalSent = list.reduce((s: number, e: { sent_count: number | null }) => s + (e.sent_count || 0), 0);
+  const totalOpens = list.reduce((s: number, e: { open_count: number | null }) => s + (e.open_count || 0), 0);
+  const totalClicks = list.reduce((s: number, e: { click_count: number | null }) => s + (e.click_count || 0), 0);
+
+  return {
+    data: {
+      period: { from, to },
+      totals: {
+        campaigns: list.length,
+        sent: totalSent,
+        opens: totalOpens,
+        clicks: totalClicks,
+        open_rate: totalSent ? +(totalOpens / totalSent * 100).toFixed(1) : 0,
+        click_rate: totalSent ? +(totalClicks / totalSent * 100).toFixed(1) : 0,
+      },
+      campaigns: list.map((c: Record<string, unknown>) => ({
+        id: c.id, name: c.name, status: c.status,
+        sent: c.sent_count, opens: c.open_count, clicks: c.click_count,
+        sent_at: c.sent_at,
+      })),
+    },
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+async function metricsLeads(supabase: any, orgId: string, from: string, to: string, filters: { tag: string | null; source: string | null; status: string | null }) {
+  let query = supabase
+    .from("contacts")
+    .select("id, first_name, last_name, email, source, status, lead_score, created_at, contact_tags(tag_id, tags(name))", { count: "exact" })
+    .eq("organization_id", orgId)
+    .gte("created_at", from)
+    .lte("created_at", to)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (filters.source) query = query.eq("source", filters.source);
+  if (filters.status) query = query.eq("status", filters.status);
+
+  const { data: contacts, count } = await query;
+  let filteredContacts = contacts || [];
+
+  // Filter by tag name if provided
+  if (filters.tag) {
+    filteredContacts = filteredContacts.filter((c: Record<string, unknown>) => {
+      const tags = c.contact_tags as Array<{ tags: { name: string } | null }> | null;
+      return tags?.some(ct => ct.tags?.name?.toLowerCase() === filters.tag!.toLowerCase());
+    });
+  }
+
+  // Aggregate by source
+  const bySource: Record<string, number> = {};
+  const byStatus: Record<string, number> = {};
+  for (const c of filteredContacts) {
+    const src = (c as Record<string, string>).source || "unknown";
+    const st = (c as Record<string, string>).status || "unknown";
+    bySource[src] = (bySource[src] || 0) + 1;
+    byStatus[st] = (byStatus[st] || 0) + 1;
+  }
+
+  return {
+    data: {
+      period: { from, to },
+      total: count || 0,
+      filtered: filteredContacts.length,
+      by_source: bySource,
+      by_status: byStatus,
+      leads: filteredContacts.slice(0, 50).map((c: Record<string, unknown>) => ({
+        id: c.id, name: `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+        email: c.email, source: c.source, status: c.status,
+        lead_score: c.lead_score, created_at: c.created_at,
+      })),
+    },
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+async function metricsPipeline(supabase: any, orgId: string, from: string, to: string) {
+  const { data: deals } = await supabase
+    .from("deals")
+    .select("id, title, value, status, probability, stage_id, pipeline_stages(name), created_at")
+    .eq("organization_id", orgId)
+    .gte("created_at", from)
+    .lte("created_at", to)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  const list = deals || [];
+  const totalValue = list.reduce((s: number, d: { value: number | null }) => s + (d.value || 0), 0);
+  const wonDeals = list.filter((d: { status: string | null }) => d.status === "won");
+  const wonValue = wonDeals.reduce((s: number, d: { value: number | null }) => s + (d.value || 0), 0);
+
+  // Group by stage
+  const byStage: Record<string, { count: number; value: number }> = {};
+  for (const d of list) {
+    const stageName = (d as Record<string, unknown>).pipeline_stages
+      ? ((d as Record<string, unknown>).pipeline_stages as { name: string }).name
+      : "Sem etapa";
+    if (!byStage[stageName]) byStage[stageName] = { count: 0, value: 0 };
+    byStage[stageName].count++;
+    byStage[stageName].value += (d as { value: number | null }).value || 0;
+  }
+
+  return {
+    data: {
+      period: { from, to },
+      totals: {
+        deals: list.length,
+        total_value: totalValue,
+        won: wonDeals.length,
+        won_value: wonValue,
+        win_rate: list.length ? +(wonDeals.length / list.length * 100).toFixed(1) : 0,
+      },
+      by_stage: byStage,
+    },
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+async function metricsAutomations(supabase: any, orgId: string, from: string, to: string) {
+  // Get automations for this org
+  const { data: automations } = await supabase
+    .from("automations")
+    .select("id, name, is_active, executions_count")
+    .eq("organization_id", orgId);
+
+  const automationIds = (automations || []).map((a: { id: string }) => a.id);
+
+  let executions: Record<string, unknown>[] = [];
+  if (automationIds.length > 0) {
+    const { data } = await supabase
+      .from("automation_executions")
+      .select("id, automation_id, status, trigger_event, created_at")
+      .in("automation_id", automationIds)
+      .gte("created_at", from)
+      .lte("created_at", to)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    executions = data || [];
+  }
+
+  const completed = executions.filter((e: Record<string, unknown>) => e.status === "completed").length;
+  const failed = executions.filter((e: Record<string, unknown>) => e.status === "failed").length;
+
+  return {
+    data: {
+      period: { from, to },
+      totals: {
+        automations: (automations || []).length,
+        active: (automations || []).filter((a: { is_active: boolean | null }) => a.is_active).length,
+        executions: executions.length,
+        completed,
+        failed,
+        success_rate: executions.length ? +(completed / executions.length * 100).toFixed(1) : 0,
+      },
+      automations: (automations || []).map((a: Record<string, unknown>) => ({
+        id: a.id,
+        name: a.name,
+        is_active: a.is_active,
+        total_executions: a.executions_count,
+      })),
+    },
+  };
 }
 
 // --- Public Form Submission (no API key required) ---
