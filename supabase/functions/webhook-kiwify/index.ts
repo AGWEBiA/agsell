@@ -282,6 +282,26 @@ Deno.serve(async (req) => {
 
     // --- Process based on event type ---
     if ((payload.order_status === "paid" || payload.order_status === "completed") && customerEmail) {
+      // Idempotency: check if this order was already processed successfully
+      const { data: alreadyProcessed } = await supabase
+        .from("webhook_events")
+        .select("id")
+        .eq("source", "kiwify")
+        .neq("id", webhookEvent.id)
+        .eq("processed", true)
+        .contains("payload", { order_id: payload.order_id })
+        .limit(1)
+        .maybeSingle();
+
+      if (alreadyProcessed) {
+        logStep("SKIPPED: order already processed (idempotency)", { orderId: payload.order_id });
+        await supabase.from("webhook_events").update({ processed: true, processed_at: new Date().toISOString() }).eq("id", webhookEvent.id);
+        return new Response(
+          JSON.stringify({ success: true, event_id: webhookEvent.id, skipped: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       logStep("Processing approved purchase");
 
       // Find existing user by email
