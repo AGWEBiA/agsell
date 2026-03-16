@@ -376,6 +376,7 @@ Deno.serve(async (req) => {
             logStep("New account created and subscription activated", { userId, orgId });
           }
         }
+      }
 
       // Create/update contact
       if (plan) {
