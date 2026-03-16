@@ -112,8 +112,15 @@ export function PaymentGatewayConfig() {
       let webhookOk = false;
       try {
         const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-kiwify`;
-        const res = await fetch(webhookUrl, { method: 'OPTIONS' });
-        webhookOk = res.status === 200 || res.status === 204;
+        const res = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({}),
+        });
+        webhookOk = res.ok;
         details.push(webhookOk ? 'Webhook endpoint: ativo' : 'Webhook endpoint: erro');
       } catch {
         details.push('Webhook endpoint: inacessível');
