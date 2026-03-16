@@ -298,7 +298,7 @@ Deno.serve(async (req) => {
           .select("organization_id")
           .eq("user_id", existingUser.id)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (membership && plan) {
           await activateSubscription(supabase, {
@@ -309,6 +309,35 @@ Deno.serve(async (req) => {
             billingCycle: detectBillingCycle(payload),
           });
           logStep("Subscription activated for existing user");
+        } else if (!membership && plan) {
+          // Existing user without organization — create org + subscription
+          logStep("Existing user without org, creating one");
+          const customerName = existingUser.user_metadata?.full_name || payload.Customer.full_name || "Usuário";
+          const orgName = `Org de ${customerName}`;
+          const slug = orgName.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+
+          const { data: newOrg } = await supabase
+            .from('organizations')
+            .insert({ name: orgName, slug: `${slug}-${Date.now()}` })
+            .select('id')
+            .single();
+
+          if (newOrg?.id) {
+            await supabase.from('organization_members').insert({
+              organization_id: newOrg.id, user_id: existingUser.id, role: 'owner',
+            });
+            await activateSubscription(supabase, {
+              organizationId: newOrg.id,
+              planId: plan.id,
+              kiwifyOrderId: payload.order_id,
+              kiwifySubscriptionId: payload.Subscription?.id,
+              billingCycle: detectBillingCycle(payload),
+            });
+            logStep("Org + subscription created for existing user", { orgId: newOrg.id });
+          }
         }
       } else if (plan) {
         // New user — create account + org + subscription
