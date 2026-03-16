@@ -356,26 +356,26 @@ Deno.serve(async (req) => {
               organization_id: orgId, user_id: userId, role: 'owner',
             });
 
-          await activateSubscription(supabase, {
-            organizationId: orgId,
-            planId: plan.id,
-            kiwifyOrderId: payload.order_id,
-            kiwifySubscriptionId: payload.Subscription?.id,
-            billingCycle: detectBillingCycle(payload),
-          });
+            await activateSubscription(supabase, {
+              organizationId: orgId,
+              planId: plan.id,
+              kiwifyOrderId: payload.order_id,
+              kiwifySubscriptionId: payload.Subscription?.id,
+              billingCycle: detectBillingCycle(payload),
+            });
 
-          // Send welcome email
-          await sendWelcomeEmail(supabase, {
-            email: customerEmail,
-            name: customerName,
-            password,
-            planName: plan.name,
-            organizationName: orgName,
-          });
+            // Send welcome email
+            await sendWelcomeEmail(supabase, {
+              email: customerEmail,
+              name: customerName,
+              password,
+              planName: plan.name,
+              organizationName: orgName,
+            });
 
-          logStep("New account created and subscription activated", { userId, orgId });
+            logStep("New account created and subscription activated", { userId, orgId });
+          }
         }
-      }
 
       // Create/update contact
       if (plan) {
