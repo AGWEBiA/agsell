@@ -696,6 +696,18 @@ function PlansSection() {
   const [formData, setFormData] = useState({ name: '', email: '', organizationName: '', couponCode: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCouponField, setShowCouponField] = useState(false);
+  const [defaultGateway, setDefaultGateway] = useState<string>('stripe');
+
+  useEffect(() => {
+    const fetchGateway = async () => {
+      const { data } = await supabase.from('platform_settings').select('value').eq('key', 'payment_gateway').maybeSingle();
+      if (data?.value) {
+        const settings = data.value as Record<string, unknown>;
+        setDefaultGateway((settings.default_gateway as string) || 'stripe');
+      }
+    };
+    fetchGateway();
+  }, []);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -872,7 +884,7 @@ function PlansSection() {
                     </div>
                   </>
                 )}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Shield className="h-4 w-4" />{isFree ? 'Seus dados estão protegidos' : 'Pagamento seguro via Stripe'}</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Shield className="h-4 w-4" />{isFree ? 'Seus dados estão protegidos' : `Pagamento seguro via ${defaultGateway === 'kiwify' ? 'Kiwify' : 'Stripe'}`}</div>
                 <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={() => setShowCheckout(false)}>Cancelar</Button>
                   <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{isFree ? 'Criar Conta' : 'Continuar para Pagamento'}</Button>
