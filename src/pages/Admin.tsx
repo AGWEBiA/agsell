@@ -124,9 +124,22 @@ export default function Admin() {
 
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
+  const getPrimarySubscription = (org: any) => {
+    const subscriptions = Array.isArray(org.subscriptions) ? org.subscriptions : [];
+    if (!subscriptions.length) return null;
+
+    const sorted = [...subscriptions].sort((a: any, b: any) => {
+      const aDate = new Date(a.current_period_end || a.updated_at || a.created_at || 0).getTime();
+      const bDate = new Date(b.current_period_end || b.updated_at || b.created_at || 0).getTime();
+      return bDate - aDate;
+    });
+
+    return sorted.find((sub: any) => sub.status === 'active') || sorted[0];
+  };
+
   // Calculate MRR from subscriptions
   const mrr = organizations.reduce((total, org: any) => {
-    const subscription = org.subscriptions?.[0];
+    const subscription = getPrimarySubscription(org);
     if (subscription?.status === 'active' && subscription.plans?.price_monthly) {
       return total + Number(subscription.plans.price_monthly);
     }
