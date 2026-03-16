@@ -773,7 +773,7 @@ async function sendWelcomeEmail(supabase: any, data: {
                   <div class="credential-item"><div class="label">Senha Temporária</div><div class="value" style="font-family: monospace;">${data.password}</div></div>
                 </div>
                 <p><strong>⚠️ Importante:</strong> Altere sua senha após o primeiro acesso.</p>
-                <center><a href="https://site.agsell.com.br/login" class="button">Acessar AG Sell</a></center>
+                <center><a href="https://agsell.lovable.app/login" class="button">Acessar AG Sell</a></center>
               </div>
             </div>
           </body>

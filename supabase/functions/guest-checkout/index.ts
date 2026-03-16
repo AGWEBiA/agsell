@@ -480,7 +480,7 @@ async function sendWelcomeEmail(supabase: any, data: {
                 </div>
                 <p><strong>⚠️ Importante:</strong> Recomendamos que você altere sua senha após o primeiro acesso.</p>
                 <center>
-                  <a href="https://site.agsell.com.br/login" class="button">Acessar AG Sell</a>
+                  <a href="https://agsell.lovable.app/login" class="button">Acessar AG Sell</a>
                 </center>
                 <div class="footer">
                   <p>Se você não solicitou esta conta, por favor ignore este e-mail.</p>
