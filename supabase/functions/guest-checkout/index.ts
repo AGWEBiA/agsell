@@ -348,16 +348,23 @@ async function createAccountDirectly(supabase: any, params: {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-  const { data: orgId } = await supabase.rpc('create_organization_with_owner', {
-    org_name: organizationName,
-    org_slug: `${slug}-${Date.now()}`,
-  });
+  // Create org directly instead of using RPC (auth.uid() is null in service context)
+  const { data: newOrg, error: orgInsertError } = await supabase
+    .from('organizations')
+    .insert({ name: organizationName, slug: `${slug}-${Date.now()}`, plan_id: planId })
+    .select('id')
+    .single();
 
-  await supabase.from('organization_members').delete().eq('organization_id', orgId);
+  if (orgInsertError || !newOrg?.id) {
+    console.error("[GUEST-CHECKOUT] Error creating organization:", orgInsertError?.message);
+    return { error: "Erro ao criar organização" };
+  }
+
+  const orgId = newOrg.id;
+
   await supabase.from('organization_members').insert({
     organization_id: orgId, user_id: userId, role: 'owner',
   });
-  await supabase.from('organizations').update({ plan_id: planId }).eq('id', orgId);
 
   const periodDays = isFree ? 365 : (billingCycle === 'yearly' ? 365 : 30);
   await supabase.from('subscriptions').insert({
@@ -369,7 +376,7 @@ async function createAccountDirectly(supabase: any, params: {
     current_period_end: new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000).toISOString(),
   });
 
-  await sendWelcomeEmail({ email, name, password, planName, organizationName });
+  await sendWelcomeEmail(supabase, { email, name, password, planName, organizationName });
   return { success: true, message: "Account created" };
 }
 
@@ -382,12 +389,36 @@ function generatePassword(): string {
   return password;
 }
 
-async function sendWelcomeEmail(data: {
+// deno-lint-ignore no-explicit-any
+async function sendWelcomeEmail(supabase: any, data: {
   email: string; name: string; password: string; planName: string; organizationName: string;
 }) {
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  let resendApiKey = Deno.env.get("RESEND_API_KEY");
+  let fromAddress = "AG Sell <noreply@agsell.com.br>";
+
   if (!resendApiKey) {
-    console.log("RESEND_API_KEY not configured, skipping email");
+    // Fallback: get API key from active Resend integration in DB
+    const { data: activeIntegration } = await supabase
+      .from("organization_integrations")
+      .select("config")
+      .eq("integration_type", "resend")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const config = activeIntegration?.config as Record<string, string> | undefined;
+    if (config?.api_key) {
+      resendApiKey = config.api_key;
+      const fromName = config.from_name || "AG Sell";
+      const fromEmail = config.from_email || "noreply@agsell.com.br";
+      fromAddress = `${fromName} <${fromEmail}>`;
+      console.log("[GUEST-CHECKOUT] Using Resend API key from active integration");
+    }
+  }
+
+  if (!resendApiKey) {
+    console.log("[GUEST-CHECKOUT] No Resend API key available, skipping welcome email");
     return;
   }
 
@@ -399,7 +430,7 @@ async function sendWelcomeEmail(data: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "AG Sell <noreply@agsell.com.br>",
+        from: fromAddress,
         to: [data.email],
         subject: `Bem-vindo ao AG Sell - Suas credenciais de acesso`,
         html: `
@@ -465,9 +496,11 @@ async function sendWelcomeEmail(data: {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error("Resend API error:", errorData);
+      console.error("[GUEST-CHECKOUT] Resend API error:", errorData);
+    } else {
+      console.log("[GUEST-CHECKOUT] Welcome email sent to", data.email);
     }
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("[GUEST-CHECKOUT] Error sending email:", error);
   }
 }

@@ -282,6 +282,26 @@ Deno.serve(async (req) => {
 
     // --- Process based on event type ---
     if ((payload.order_status === "paid" || payload.order_status === "completed") && customerEmail) {
+      // Idempotency: check if this order was already processed successfully
+      const { data: alreadyProcessed } = await supabase
+        .from("webhook_events")
+        .select("id")
+        .eq("source", "kiwify")
+        .neq("id", webhookEvent.id)
+        .eq("processed", true)
+        .contains("payload", { order_id: payload.order_id })
+        .limit(1)
+        .maybeSingle();
+
+      if (alreadyProcessed) {
+        logStep("SKIPPED: order already processed (idempotency)", { orderId: payload.order_id });
+        await supabase.from("webhook_events").update({ processed: true, processed_at: new Date().toISOString() }).eq("id", webhookEvent.id);
+        return new Response(
+          JSON.stringify({ success: true, event_id: webhookEvent.id, skipped: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       logStep("Processing approved purchase");
 
       // Find existing user by email
@@ -345,7 +365,7 @@ Deno.serve(async (req) => {
             }
           }
         } else if (!membership && plan) {
-          // Existing user without organization — create org + subscription
+          // Existing user without organization — create org + subscription + send email
           logStep("Existing user without org, creating one");
           const customerName = existingUser.user_metadata?.full_name || payload.Customer.full_name || "Usuário";
           const orgName = `Org de ${customerName}`;
@@ -356,7 +376,7 @@ Deno.serve(async (req) => {
 
           const { data: newOrg } = await supabase
             .from('organizations')
-            .insert({ name: orgName, slug: `${slug}-${Date.now()}` })
+            .insert({ name: orgName, slug: `${slug}-${Date.now()}`, plan_id: plan.id })
             .select('id')
             .single();
 
@@ -371,6 +391,31 @@ Deno.serve(async (req) => {
               kiwifySubscriptionId: payload.Subscription?.id,
               billingCycle: detectBillingCycle(payload),
             });
+
+            // Send credentials email for existing user without org
+            const hasLoggedIn = !!existingUser.last_sign_in_at;
+            const alreadyEmailed = !!existingUser.user_metadata?.credentials_emailed_at;
+            if (!hasLoggedIn && !alreadyEmailed) {
+              const temporaryPassword = generatePassword();
+              const { error: pwError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+                password: temporaryPassword,
+                user_metadata: {
+                  ...(existingUser.user_metadata || {}),
+                  credentials_emailed_at: new Date().toISOString(),
+                },
+              });
+              if (!pwError) {
+                await sendWelcomeEmail(supabase, {
+                  email: customerEmail,
+                  name: customerName,
+                  password: temporaryPassword,
+                  planName: plan.name,
+                  organizationName: orgName,
+                });
+                logStep("Credentials email sent for existing user (new org)", { email: customerEmail });
+              }
+            }
+
             logStep("Org + subscription created for existing user", { orgId: newOrg.id });
           }
         }
@@ -407,7 +452,7 @@ Deno.serve(async (req) => {
           // Create organization directly (RPC uses auth.uid() which is null in service context)
           const { data: newOrg, error: orgError } = await supabase
             .from('organizations')
-            .insert({ name: orgName, slug: `${slug}-${Date.now()}` })
+            .insert({ name: orgName, slug: `${slug}-${Date.now()}`, plan_id: plan.id })
             .select('id')
             .single();
 

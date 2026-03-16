@@ -43,6 +43,8 @@ export function useSubscriptionStatus() {
         .from('subscriptions')
         .select('status, current_period_end, cancel_at_period_end')
         .eq('organization_id', currentOrganization.id)
+        .order('current_period_end', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (!subscription) {
