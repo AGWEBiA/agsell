@@ -365,7 +365,7 @@ Deno.serve(async (req) => {
             }
           }
         } else if (!membership && plan) {
-          // Existing user without organization — create org + subscription
+          // Existing user without organization — create org + subscription + send email
           logStep("Existing user without org, creating one");
           const customerName = existingUser.user_metadata?.full_name || payload.Customer.full_name || "Usuário";
           const orgName = `Org de ${customerName}`;
@@ -376,7 +376,7 @@ Deno.serve(async (req) => {
 
           const { data: newOrg } = await supabase
             .from('organizations')
-            .insert({ name: orgName, slug: `${slug}-${Date.now()}` })
+            .insert({ name: orgName, slug: `${slug}-${Date.now()}`, plan_id: plan.id })
             .select('id')
             .single();
 
@@ -391,6 +391,31 @@ Deno.serve(async (req) => {
               kiwifySubscriptionId: payload.Subscription?.id,
               billingCycle: detectBillingCycle(payload),
             });
+
+            // Send credentials email for existing user without org
+            const hasLoggedIn = !!existingUser.last_sign_in_at;
+            const alreadyEmailed = !!existingUser.user_metadata?.credentials_emailed_at;
+            if (!hasLoggedIn && !alreadyEmailed) {
+              const temporaryPassword = generatePassword();
+              const { error: pwError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+                password: temporaryPassword,
+                user_metadata: {
+                  ...(existingUser.user_metadata || {}),
+                  credentials_emailed_at: new Date().toISOString(),
+                },
+              });
+              if (!pwError) {
+                await sendWelcomeEmail(supabase, {
+                  email: customerEmail,
+                  name: customerName,
+                  password: temporaryPassword,
+                  planName: plan.name,
+                  organizationName: orgName,
+                });
+                logStep("Credentials email sent for existing user (new org)", { email: customerEmail });
+              }
+            }
+
             logStep("Org + subscription created for existing user", { orgId: newOrg.id });
           }
         }
