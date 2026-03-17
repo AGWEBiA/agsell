@@ -478,6 +478,9 @@ export default function Contacts() {
       {/* Import Dialog */}
       <ImportContactsDialog open={isImportOpen} onOpenChange={setIsImportOpen} />
 
+      {/* Import Jobs History */}
+      {!isImportOpen && <ImportJobsList />}
+
       {/* View Contact Detail Dialog */}
       <Dialog open={!!viewContact} onOpenChange={() => setViewContact(null)}>
         <DialogContent className="max-w-lg">
