@@ -63,7 +63,7 @@ export function useGroupRotator() {
   });
 
   const updateCampaign = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; is_active?: boolean }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; slug?: string; is_active?: boolean; click_limit?: number; tags?: string[] }) => {
       const { data, error } = await supabase
         .from('group_rotator_campaigns' as any)
         .update(updates as any)
