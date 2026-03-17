@@ -2115,6 +2115,148 @@ export type Database = {
           },
         ]
       }
+      group_rotator_campaigns: {
+        Row: {
+          created_at: string
+          current_index: number
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          slug: string
+          strategy: string
+          total_clicks: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_index?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          slug: string
+          strategy?: string
+          total_clicks?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_index?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          slug?: string
+          strategy?: string
+          total_clicks?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_rotator_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_rotator_clicks: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          entry_id: string
+          id: string
+          ip_hash: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          entry_id: string
+          id?: string
+          ip_hash?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          entry_id?: string
+          id?: string
+          ip_hash?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_rotator_clicks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "group_rotator_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_rotator_clicks_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "group_rotator_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_rotator_entries: {
+        Row: {
+          campaign_id: string
+          click_count: number
+          created_at: string
+          id: string
+          invite_link: string
+          is_paused: boolean
+          max_capacity: number | null
+          max_clicks: number | null
+          member_count: number
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          click_count?: number
+          created_at?: string
+          id?: string
+          invite_link: string
+          is_paused?: boolean
+          max_capacity?: number | null
+          max_clicks?: number | null
+          member_count?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          click_count?: number
+          created_at?: string
+          id?: string
+          invite_link?: string
+          is_paused?: boolean
+          max_capacity?: number | null
+          max_clicks?: number | null
+          member_count?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_rotator_entries_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "group_rotator_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       growth_tools: {
         Row: {
           channel: string
