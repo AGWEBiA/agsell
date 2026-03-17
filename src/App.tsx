@@ -12,6 +12,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeatureRequiredPage } from "@/components/permissions/FeatureRequiredPage";
+import { RuntimeProtection } from "@/components/security/RuntimeProtection";
 
 // Auth Pages
 import Index from "./pages/Index";
@@ -106,6 +107,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <RuntimeProtection />
               <BrowserRouter>
                 <GlobalSearch />
                 <Routes>
