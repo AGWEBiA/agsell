@@ -162,7 +162,13 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("evolution-qrcode error:", error);
     const message = error instanceof Error ? error.message : "Erro interno";
-    return jsonResponse({ success: false, error: message }, 500);
+    const isTimeout = message.includes("aborted") || message.includes("AbortError");
+    return jsonResponse({
+      success: false,
+      error: isTimeout
+        ? "A Evolution API não respondeu a tempo (30s). Verifique se a URL está acessível via HTTPS na porta 443."
+        : message,
+    }, isTimeout ? 504 : 500);
   }
 });
 
