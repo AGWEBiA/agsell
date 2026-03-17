@@ -26,6 +26,7 @@ interface Props {
 export function GroupRotatorEntries({ campaignId, onBack }: Props) {
   const { campaigns, createEntry, updateEntry, deleteEntry, fetchEntries, updateCampaign } = useGroupRotator();
   const { data: tags = [] } = useTags();
+  const createTag = useCreateTag();
   const campaign = campaigns.find((c: any) => c.id === campaignId);
 
   const [entries, setEntries] = useState<any[]>([]);
@@ -48,6 +49,8 @@ export function GroupRotatorEntries({ campaignId, onBack }: Props) {
   const [clickLimit, setClickLimit] = useState('1000');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState('');
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
   useEffect(() => {
     if (campaign) {
