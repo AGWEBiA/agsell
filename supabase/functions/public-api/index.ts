@@ -849,11 +849,27 @@ async function handleFormSubmissions(supabase: any, method: string, orgId: strin
   }
 
   // GET /forms/:id/submissions
+  // Supports: ?field=profissao&value=medico (single filter)
+  //           ?filter.profissao=medico&filter.cidade=SP (multiple filters)
+  //           ?fields=nome,profissao,email (select specific data fields)
   if (subResource === "submissions") {
     const url = new URL(req.url);
     const { limit, cursor, offset } = parsePaginationParams(url);
     const fieldFilter = url.searchParams.get("field");
     const valueFilter = url.searchParams.get("value");
+    const selectFields = url.searchParams.get("fields"); // comma-separated data field names
+
+    // Collect multiple filters: ?filter.profissao=medico&filter.cidade=SP
+    const multiFilters: Record<string, string> = {};
+    url.searchParams.forEach((val, key) => {
+      if (key.startsWith("filter.")) {
+        multiFilters[key.substring(7)] = val;
+      }
+    });
+    // Legacy single filter
+    if (fieldFilter && valueFilter) {
+      multiFilters[fieldFilter] = valueFilter;
+    }
 
     // Verify form belongs to org
     const { data: form, error: fErr } = await supabase
@@ -879,13 +895,15 @@ async function handleFormSubmissions(supabase: any, method: string, orgId: strin
 
     let items = submissions || [];
 
-    // Filter by specific field value if requested
-    if (fieldFilter && valueFilter) {
+    // Apply all field filters
+    if (Object.keys(multiFilters).length > 0) {
       items = items.filter((s: Record<string, unknown>) => {
         const d = s.data as Record<string, unknown>;
         if (!d) return false;
-        const val = String(d[fieldFilter] || "").toLowerCase();
-        return val.includes(valueFilter.toLowerCase());
+        return Object.entries(multiFilters).every(([fk, fv]) => {
+          const val = String(d[fk] || "").toLowerCase();
+          return val.includes(fv.toLowerCase());
+        });
       });
     }
 
@@ -893,9 +911,22 @@ async function handleFormSubmissions(supabase: any, method: string, orgId: strin
     const finalItems = hasMore ? items.slice(0, limit) : items;
     const nextCursor = hasMore && finalItems.length > 0 ? finalItems[finalItems.length - 1].created_at : null;
 
+    // Project specific fields if requested
+    const projectedItems = selectFields
+      ? finalItems.map((s: Record<string, unknown>) => {
+          const d = s.data as Record<string, unknown> || {};
+          const selectedKeys = selectFields.split(",").map((k: string) => k.trim());
+          const projected: Record<string, unknown> = {};
+          for (const k of selectedKeys) {
+            if (k in d) projected[k] = d[k];
+          }
+          return { id: s.id, form_id: s.form_id, contact_id: s.contact_id, created_at: s.created_at, data: projected };
+        })
+      : finalItems;
+
     return {
-      data: finalItems,
-      meta: { total: count, limit, has_more: hasMore, next_cursor: nextCursor },
+      data: projectedItems,
+      meta: { total: count, limit, has_more: hasMore, next_cursor: nextCursor, filters_applied: Object.keys(multiFilters).length > 0 ? multiFilters : undefined, fields_selected: selectFields || undefined },
     };
   }
 
