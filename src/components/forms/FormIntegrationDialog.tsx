@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Copy, Code, Globe, Webhook, ExternalLink, Paintbrush, Check } from 'lucide-react';
+import { Copy, Code, Globe, Webhook, ExternalLink, Paintbrush, Check, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { HelpTooltip } from '@/components/ui/help-tooltip';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   open: boolean;
