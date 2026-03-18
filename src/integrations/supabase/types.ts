@@ -6488,9 +6488,52 @@ export type Database = {
         Args: { _client_org_id: string; _user_id: string }
         Returns: string
       }
+      get_form_by_id: {
+        Args: { _form_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          fields: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string | null
+          settings: Json | null
+          submissions_count: number | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "forms"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_org_role: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
+      }
+      get_rotator_campaign_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          current_index: number
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          strategy: string
+          total_clicks: number
+        }[]
+      }
+      get_rotator_entries_for_campaign: {
+        Args: { _campaign_id: string }
+        Returns: {
+          entry_name: string
+          id: string
+          invite_link: string
+          sort_order: number
+        }[]
       }
       get_ticket_by_protocol: {
         Args: { _protocol: string }
@@ -6528,6 +6571,10 @@ export type Database = {
       }
       increment_automation_executions: {
         Args: { automation_id: string }
+        Returns: undefined
+      }
+      increment_rotator_entry_clicks: {
+        Args: { _entry_id: string }
         Returns: undefined
       }
       is_agency_of: {

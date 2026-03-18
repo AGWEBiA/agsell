@@ -48,10 +48,7 @@ export default function FormView() {
     queryFn: async () => {
       if (!formId) throw new Error('Form ID missing');
       const { data, error } = await supabase
-        .from('forms')
-        .select('*')
-        .eq('id', formId)
-        .eq('is_active', true)
+        .rpc('get_form_by_id', { _form_id: formId })
         .single();
       if (error) throw error;
       return data;

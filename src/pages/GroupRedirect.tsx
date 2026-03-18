@@ -14,13 +14,7 @@ export default function GroupRedirect() {
 
     const redirect = async () => {
       try {
-        const { data, error: fnErr } = await supabase.functions.invoke('group-rotator', {
-          body: null,
-          headers: { 'Content-Type': 'application/json' },
-          method: 'GET',
-        });
-
-        // Since we can't pass path params via invoke easily, use fetch directly
+        // Use fetch directly to pass slug as path param
         const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/group-rotator/${slug}`, {
           headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         });
