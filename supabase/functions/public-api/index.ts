@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
           JSON.stringify({
             error: "Unknown resource",
             code: "NOT_FOUND",
-            available_resources: ["contacts", "companies", "deals", "tags", "metrics"],
+            available_resources: ["contacts", "companies", "deals", "tags", "forms", "metrics"],
           }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
