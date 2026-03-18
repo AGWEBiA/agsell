@@ -6488,9 +6488,43 @@ export type Database = {
         Args: { _client_org_id: string; _user_id: string }
         Returns: string
       }
+      get_form_by_id: {
+        Args: { _form_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          fields: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string | null
+          settings: Json | null
+          submissions_count: number | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "forms"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_org_role: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
+      }
+      get_rotator_campaign_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          current_index: number
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          strategy: string
+          total_clicks: number
+        }[]
       }
       get_rotator_entries_for_campaign: {
         Args: { _campaign_id: string }
