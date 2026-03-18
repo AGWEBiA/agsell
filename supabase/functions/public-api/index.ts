@@ -975,6 +975,42 @@ async function handlePublicFormSubmit(supabase: any, formId: string, req: Reques
       }
     } catch {}
 
+    // Dispatch outbound webhook if configured
+    try {
+      const { data: formWithWebhook } = await supabase
+        .from("forms")
+        .select("webhook_url, webhook_headers, name")
+        .eq("id", formId)
+        .single();
+
+      if (formWithWebhook?.webhook_url) {
+        const webhookPayload = {
+          event: "form_submission",
+          form_id: formId,
+          form_name: formWithWebhook.name,
+          submission_id: submission.id,
+          contact_id: submission.contact_id || null,
+          data: body,
+          submitted_at: new Date().toISOString(),
+        };
+
+        const webhookHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
+          "User-Agent": "AGSell-Webhook/1.0",
+          ...(formWithWebhook.webhook_headers || {}),
+        };
+
+        // Fire-and-forget — don't block the response
+        fetch(formWithWebhook.webhook_url, {
+          method: "POST",
+          headers: webhookHeaders,
+          body: JSON.stringify(webhookPayload),
+        }).catch((err) => console.error("Webhook dispatch failed:", err));
+      }
+    } catch (webhookErr) {
+      console.error("Webhook lookup error:", webhookErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true, submission_id: submission.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
