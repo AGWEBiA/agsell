@@ -238,8 +238,11 @@ Content-Type: application/json
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="embed" className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
+        <Tabs defaultValue="webhook-out" className="w-full">
+          <TabsList className="grid grid-cols-6 w-full">
+            <TabsTrigger value="webhook-out" className="text-xs">
+              <Send className="h-3.5 w-3.5 mr-1" />Webhook
+            </TabsTrigger>
             <TabsTrigger value="embed" className="text-xs">
               <Code className="h-3.5 w-3.5 mr-1" />Embed
             </TabsTrigger>
@@ -256,6 +259,74 @@ Content-Type: application/json
               <Paintbrush className="h-3.5 w-3.5 mr-1" />Estilo
             </TabsTrigger>
           </TabsList>
+
+          {/* WEBHOOK DE SAÍDA */}
+          <TabsContent value="webhook-out" className="space-y-4 mt-4">
+            <div>
+              <h3 className="font-semibold text-sm mb-1">Webhook de Saída</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Configure uma URL para receber os dados de cada submissão automaticamente via POST. Ideal para integrar com ferramentas externas, n8n, Make, Zapier, ou seu próprio sistema.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  URL do Webhook
+                  <HelpTooltip content="A cada submissão, enviaremos um POST com os dados do formulário para esta URL." />
+                </Label>
+                <Input
+                  placeholder="https://seu-sistema.com/webhook/forms"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1">
+                  Headers customizados (JSON, opcional)
+                  <HelpTooltip content="Headers HTTP adicionais enviados junto ao webhook. Ex: {&quot;Authorization&quot;: &quot;Bearer xxx&quot;}" />
+                </Label>
+                <Textarea
+                  placeholder='{"Authorization": "Bearer seu_token"}'
+                  value={webhookHeaders}
+                  onChange={(e) => setWebhookHeaders(e.target.value)}
+                  rows={3}
+                  className="font-mono text-xs"
+                />
+              </div>
+
+              <Button onClick={handleSaveWebhook} disabled={savingWebhook} className="w-full">
+                {savingWebhook ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                {savingWebhook ? 'Salvando...' : 'Salvar Webhook'}
+              </Button>
+            </div>
+
+            <Separator />
+
+            <div className="p-3 rounded-lg bg-muted/50 border">
+              <h4 className="font-medium text-sm mb-2">Payload enviado</h4>
+              <pre className="text-xs font-mono whitespace-pre-wrap">{`{
+  "event": "form_submission",
+  "form_id": "${formId}",
+  "form_name": "${formName}",
+  "submission_id": "uuid",
+  "contact_id": "uuid | null",
+  "data": {
+    "nome": "João Silva",
+    "email": "joao@email.com",
+    "telefone": "(11) 99999-9999"
+  },
+  "submitted_at": "2026-03-18T12:00:00Z"
+}`}</pre>
+            </div>
+
+            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                💡 <strong>API Pública:</strong> Ferramentas externas também podem consultar as submissões via API usando <code>GET /forms/{'{id}'}/submissions</code> com uma API Key. Veja a aba "API".
+              </p>
+            </div>
+          </TabsContent>
 
           {/* EMBED (iframe) */}
           <TabsContent value="embed" className="space-y-4 mt-4">
