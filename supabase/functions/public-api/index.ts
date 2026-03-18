@@ -267,6 +267,12 @@ Deno.serve(async (req) => {
       case "tags":
         result = await handleTags(supabase, method, orgId, resourceId, req);
         break;
+      case "forms": {
+        // /forms or /forms/:id/submissions
+        const formSubResource = pathParts[3]; // "submissions" or undefined
+        result = await handleFormSubmissions(supabase, method, orgId, resourceId, formSubResource, req);
+        break;
+      }
       case "metrics": {
         if (method !== "GET") {
           result = { error: "Method not allowed" };
