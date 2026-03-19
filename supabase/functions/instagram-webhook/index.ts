@@ -53,26 +53,48 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Process messaging events (DMs)
+      // Process messaging events (DMs, story replies, referrals, ads)
       const messagingEvents = entry.messaging || [];
       for (const event of messagingEvents) {
+        // Referral (Ref URL or Ads click-to-DM)
+        if (event.referral) {
+          const refEventType = event.referral.source === "ADS" ? "ads_click" : "ref_url_click";
+          await processEvent(supabase, igAccount, refEventType, {
+            sender_id: event.sender?.id,
+            ref: event.referral.ref,
+            source: event.referral.source,
+            type: event.referral.type,
+            ad_id: event.referral.ad_id,
+            timestamp: event.timestamp,
+          });
+        }
+
         if (event.message) {
           const eventData = {
             sender_id: event.sender?.id,
             message_text: event.message?.text,
             message_id: event.message?.mid,
             timestamp: event.timestamp,
+            is_story_reply: !!event.message?.reply_to?.story,
+            story_id: event.message?.reply_to?.story?.id,
+            is_share: !!event.message?.attachments?.some((a: any) => a.type === "share"),
           };
 
           // Route DM to SAC Inbox
           await routeDmToInbox(supabase, igAccount, eventData);
 
-          // Process automations
+          // Determine specific event type
+          if (eventData.is_story_reply) {
+            await processEvent(supabase, igAccount, "story_reply_received", eventData);
+          } else if (eventData.is_share) {
+            await processEvent(supabase, igAccount, "share_dm_received", eventData);
+          }
+          // Always fire dm_received too
           await processEvent(supabase, igAccount, "dm_received", eventData);
         }
       }
 
-      // Process changes (comments, mentions)
+      // Process changes (comments, mentions, story_insights)
       const changes = entry.changes || [];
       for (const change of changes) {
         if (change.field === "comments") {
@@ -88,6 +110,12 @@ Deno.serve(async (req) => {
           await processEvent(supabase, igAccount, "mention_received", {
             media_id: change.value?.media_id,
             comment_id: change.value?.comment_id,
+            from_username: change.value?.username,
+          });
+        }
+        if (change.field === "story_insights") {
+          await processEvent(supabase, igAccount, "story_reply_received", {
+            story_id: change.value?.media_id,
           });
         }
       }
@@ -199,6 +227,51 @@ async function processEvent(
     .eq("is_active", true);
 
   if (!automations?.length) return;
+
+  // Also check main flow builder automations for Instagram triggers
+  const eventToTriggerMap: Record<string, string[]> = {
+    dm_received: ['instagram_dm'],
+    comment_received: ['instagram_comment', 'instagram_specific_post'],
+    story_reply_received: ['instagram_story_reply', 'instagram_story_specific'],
+    mention_received: ['instagram_mention'],
+    share_dm_received: ['instagram_share_dm'],
+    ref_url_click: ['instagram_ref_url'],
+    ads_click: ['instagram_ads'],
+  };
+
+  const matchingTriggerTypes = eventToTriggerMap[eventType] || [];
+
+  // Fetch flow builder automations with matching Instagram triggers
+  if (matchingTriggerTypes.length > 0) {
+    const { data: flowAutomations } = await supabase
+      .from("automations")
+      .select("id, trigger_type, trigger_config, actions")
+      .eq("organization_id", igAccount.organization_id)
+      .eq("is_active", true)
+      .in("trigger_type", matchingTriggerTypes);
+
+    if (flowAutomations?.length) {
+      for (const fa of flowAutomations) {
+        const triggerConfig = fa.trigger_config as Record<string, unknown> | null;
+        const keyword = (triggerConfig?.keyword as string) || "";
+        const messageText = (eventData.message_text || eventData.comment_text || "") as string;
+
+        if (keyword && !messageText.toLowerCase().includes(keyword.toLowerCase())) continue;
+
+        // Log execution
+        await supabase.from("automation_contact_timeline").insert({
+          automation_id: fa.id,
+          organization_id: igAccount.organization_id,
+          action_type: eventType,
+          status: "triggered",
+          details: eventData,
+        });
+
+        // Increment execution count
+        await supabase.rpc("increment_automation_executions", { automation_id: fa.id });
+      }
+    }
+  }
 
   for (const automation of automations) {
     const triggerConfig = automation.trigger_config as Record<string, unknown> | null;

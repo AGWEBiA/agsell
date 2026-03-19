@@ -4,7 +4,7 @@ import {
   Tag, Star, Bell, Clock, CheckSquare, GitBranch,
   Timer, Flame, MailCheck, Filter, Smartphone,
   Globe, MousePointer, LogOut, List, LayoutTemplate,
-  Package, Code,
+  Package, Code, AtSign, Share2, Link, Megaphone,
 } from 'lucide-react';
 
 export interface FlowNode {
@@ -25,6 +25,10 @@ export const triggerOptions = [
   { id: 'instagram_story_reply', label: 'Resposta ao Story', icon: Eye, channel: 'instagram', color: 'from-pink-400 to-orange-400', description: 'Quando alguém responde ou reage ao seu story' },
   { id: 'instagram_story_specific', label: 'Story Específico', icon: Eye, channel: 'instagram', color: 'from-orange-400 to-pink-500', description: 'Gatilho para um story específico (por URL ou ID)' },
   { id: 'instagram_new_follower', label: 'Novo Seguidor', icon: UserPlus, channel: 'instagram', color: 'from-purple-400 to-pink-400', description: 'Quando alguém começa a seguir você' },
+  { id: 'instagram_mention', label: 'Menção ao Perfil', icon: AtSign, channel: 'instagram', color: 'from-fuchsia-500 to-pink-500', description: 'Quando alguém menciona seu perfil nos stories' },
+  { id: 'instagram_share_dm', label: 'Compartilhar por DM', icon: Share2, channel: 'instagram', color: 'from-rose-400 to-purple-500', description: 'Quando alguém compartilha seu conteúdo via DM' },
+  { id: 'instagram_ref_url', label: 'Ref URL Instagram', icon: Link, channel: 'instagram', color: 'from-violet-500 to-indigo-500', description: 'Quando alguém clica em um link de referência para conversa' },
+  { id: 'instagram_ads', label: 'Anúncios Instagram', icon: Megaphone, channel: 'instagram', color: 'from-orange-500 to-red-500', description: 'Quando alguém interage com um anúncio Click-to-DM' },
   { id: 'whatsapp_received', label: 'Mensagem WhatsApp', icon: MessageSquare, channel: 'whatsapp', color: 'from-green-500 to-emerald-500', description: 'Quando receber uma mensagem no WhatsApp' },
   { id: 'whatsapp_keyword', label: 'Palavra-chave WhatsApp', icon: Sparkles, channel: 'whatsapp', color: 'from-emerald-500 to-teal-500', description: 'Quando mensagem contém palavra-chave' },
   { id: 'whatsapp_automation', label: 'Automação WhatsApp', icon: Zap, channel: 'whatsapp', color: 'from-teal-500 to-green-500', description: 'Quando uma automação WhatsApp específica é acionada' },
@@ -122,6 +126,10 @@ export const triggerTypeMap: Record<string, string> = {
   instagram_story_reply: 'instagram_comment',
   instagram_story_specific: 'instagram_comment',
   instagram_new_follower: 'contact_created',
+  instagram_mention: 'instagram_comment',
+  instagram_share_dm: 'instagram_dm',
+  instagram_ref_url: 'instagram_dm',
+  instagram_ads: 'instagram_dm',
   whatsapp_received: 'whatsapp_received',
   whatsapp_keyword: 'whatsapp_received',
   whatsapp_automation: 'whatsapp_received',
