@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Globe,
+  Loader2,
   Lock,
   Monitor,
   Plus,
@@ -64,6 +65,7 @@ export function WhatsAppProviderSetup() {
   const [activeTab, setActiveTab] = useState<'plataforma' | 'propria' | 'oficial'>('plataforma');
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { status: 'connected' | 'disconnected' | 'error'; message: string }>>({});
 
   // Plataforma (global Evolution) form
   const [platformInstanceName, setPlatformInstanceName] = useState('');
@@ -322,16 +324,23 @@ export function WhatsAppProviderSetup() {
 
   const handleTestEvolution = async (instance: WhatsAppInstance) => {
     setIsTesting(instance.id);
+    setTestResults(prev => ({ ...prev, [instance.id]: undefined as any }));
     try {
-      const { data } = await supabase.functions.invoke('evolution-qrcode', {
+      const { data, error } = await supabase.functions.invoke('evolution-qrcode', {
         body: { instance_name: instance.config.instance_name, organization_id: instance.organization_id || '', action: 'status' },
       });
+      if (error) throw error;
       if (data?.data?.instance?.state === 'open') {
+        setTestResults(prev => ({ ...prev, [instance.id]: { status: 'connected', message: 'WhatsApp conectado e funcionando!' } }));
         toast.success('Conexão ativa! WhatsApp conectado.');
       } else {
-        toast.warning(`Status: ${data?.data?.instance?.state || 'desconectado'}`);
+        const state = data?.data?.instance?.state || data?.error || 'desconectado';
+        setTestResults(prev => ({ ...prev, [instance.id]: { status: 'disconnected', message: `Status: ${state}. Reconecte via QR Code.` } }));
+        toast.warning(`Status: ${state}`);
       }
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      setTestResults(prev => ({ ...prev, [instance.id]: { status: 'error', message: msg } }));
       toast.error('Não foi possível verificar o status.');
     } finally {
       setIsTesting(null);
@@ -340,18 +349,23 @@ export function WhatsAppProviderSetup() {
 
   const handleTestBusiness = async (instance: WhatsAppInstance) => {
     setIsTesting(instance.id);
+    setTestResults(prev => ({ ...prev, [instance.id]: undefined as any }));
     try {
       const response = await fetch(`https://graph.facebook.com/v18.0/${instance.config.phone_number_id}`, {
         headers: { Authorization: `Bearer ${instance.config.access_token}` },
       });
       if (response.ok) {
         const data = await response.json();
+        setTestResults(prev => ({ ...prev, [instance.id]: { status: 'connected', message: `Conectado! Número: ${data.display_phone_number || instance.config.phone_number_id}` } }));
         toast.success(`Conectado! Número: ${data.display_phone_number || instance.config.phone_number_id}`);
       } else {
         const error = await response.json();
-        toast.error(`Erro: ${error.error?.message || 'Token inválido'}`);
+        const msg = error.error?.message || 'Token inválido ou expirado';
+        setTestResults(prev => ({ ...prev, [instance.id]: { status: 'error', message: msg } }));
+        toast.error(`Erro: ${msg}`);
       }
     } catch {
+      setTestResults(prev => ({ ...prev, [instance.id]: { status: 'error', message: 'Não foi possível conectar à API da Meta.' } }));
       toast.error('Não foi possível conectar.');
     } finally {
       setIsTesting(null);
@@ -360,6 +374,7 @@ export function WhatsAppProviderSetup() {
 
   const renderInstanceCard = (instance: WhatsAppInstance) => {
     const isEvolution = instance.integration_type === 'evolution_api';
+    const testResult = testResults[instance.id];
     return (
       <Card key={instance.id} className={`${instance.is_default ? 'ring-2 ring-primary/30' : ''}`}>
         <CardContent className="p-4">
@@ -382,14 +397,55 @@ export function WhatsAppProviderSetup() {
               <Switch checked={instance.is_active} onCheckedChange={(checked) => toggleInstance.mutate({ id: instance.id, isActive: checked })} />
             </div>
           </div>
+
+          {/* Test result banner */}
+          {testResult && (
+            <div className={`mt-3 p-2.5 rounded-md text-xs flex items-center gap-2 ${
+              testResult.status === 'connected'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                : testResult.status === 'disconnected'
+                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                : 'bg-destructive/10 text-destructive border border-destructive/20'
+            }`}>
+              {testResult.status === 'connected' ? (
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              ) : testResult.status === 'disconnected' ? (
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              )}
+              <span className="flex-1">{testResult.message}</span>
+              {testResult.status !== 'connected' && isEvolution && (
+                <Button variant="ghost" size="sm" className="h-6 text-xs px-2 shrink-0" onClick={() => handleConnectQR(instance)}>
+                  <RefreshCw className="h-3 w-3 mr-1" /> Reconectar
+                </Button>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
             <Badge variant={instance.is_active ? 'default' : 'secondary'} className="text-[10px]">
               {instance.is_active ? '● Ativo' : 'Inativo'}
             </Badge>
             <div className="flex gap-1">
+              {/* Test Connection button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+                disabled={isTesting === instance.id}
+                onClick={() => isEvolution ? handleTestEvolution(instance) : handleTestBusiness(instance)}
+              >
+                {isTesting === instance.id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Zap className="h-3 w-3" />
+                )}
+                Testar
+              </Button>
               {isEvolution && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleConnectQR(instance)}>
-                  <QrCode className="h-3.5 w-3.5" />
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => handleConnectQR(instance)}>
+                  <QrCode className="h-3 w-3" /> QR
                 </Button>
               )}
               {!instance.is_default && instance.is_active && (
@@ -397,10 +453,6 @@ export function WhatsAppProviderSetup() {
                   <Star className="h-3.5 w-3.5" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isTesting === instance.id}
-                onClick={() => isEvolution ? handleTestEvolution(instance) : handleTestBusiness(instance)}>
-                {isTesting === instance.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-              </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm('Remover instância?')) deleteInstance.mutate(instance.id); }}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -413,7 +465,7 @@ export function WhatsAppProviderSetup() {
 
   return (
     <>
-      <Card className="max-w-2xl">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-green-600" />
@@ -480,30 +532,43 @@ export function WhatsAppProviderSetup() {
 
               {/* New connection */}
               {isEvolutionGlobalConfigured && (
-                <div className="text-center space-y-4 py-4">
-                  <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-muted">
-                    <QrCode className="h-10 w-10 text-muted-foreground" />
+                <>
+                  {platformInstances.length > 0 && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <Separator className="flex-1" />
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                        <Plus className="h-3 w-3" /> Nova instância
+                      </span>
+                      <Separator className="flex-1" />
+                    </div>
+                  )}
+                  <div className="text-center space-y-4 py-4">
+                    {platformInstances.length === 0 && (
+                      <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-muted">
+                        <QrCode className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-semibold">{platformInstances.length === 0 ? 'Conecte seu WhatsApp' : 'Adicionar outro número'}</h3>
+                      <p className="text-sm text-muted-foreground">O sistema criará uma instância e exibirá o QR Code automaticamente.</p>
+                    </div>
+                    <div className="max-w-xs mx-auto space-y-3">
+                      <Input
+                        placeholder="Nome da instância"
+                        value={platformInstanceName}
+                        onChange={e => setPlatformInstanceName(e.target.value)}
+                      />
+                      <Button
+                        className="w-full"
+                        onClick={handleSavePlatform}
+                        disabled={isSaving || !platformInstanceName.trim()}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {isSaving ? 'Criando...' : 'Gerar QR Code'}
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">Conecte seu WhatsApp</h3>
-                    <p className="text-sm text-muted-foreground">O sistema criará uma instância e exibirá o QR Code automaticamente.</p>
-                  </div>
-                  <div className="max-w-xs mx-auto space-y-3">
-                    <Input
-                      placeholder="Nome da instância"
-                      value={platformInstanceName}
-                      onChange={e => setPlatformInstanceName(e.target.value)}
-                    />
-                    <Button
-                      className="w-full"
-                      onClick={handleSavePlatform}
-                      disabled={isSaving || !platformInstanceName.trim()}
-                    >
-                      <QrCode className="h-4 w-4 mr-2" />
-                      {isSaving ? 'Criando...' : 'Gerar QR Code'}
-                    </Button>
-                  </div>
-                </div>
+                </>
               )}
             </TabsContent>
 
