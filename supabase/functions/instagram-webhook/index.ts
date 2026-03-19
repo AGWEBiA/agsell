@@ -228,6 +228,51 @@ async function processEvent(
 
   if (!automations?.length) return;
 
+  // Also check main flow builder automations for Instagram triggers
+  const eventToTriggerMap: Record<string, string[]> = {
+    dm_received: ['instagram_dm'],
+    comment_received: ['instagram_comment', 'instagram_specific_post'],
+    story_reply_received: ['instagram_story_reply', 'instagram_story_specific'],
+    mention_received: ['instagram_mention'],
+    share_dm_received: ['instagram_share_dm'],
+    ref_url_click: ['instagram_ref_url'],
+    ads_click: ['instagram_ads'],
+  };
+
+  const matchingTriggerTypes = eventToTriggerMap[eventType] || [];
+
+  // Fetch flow builder automations with matching Instagram triggers
+  if (matchingTriggerTypes.length > 0) {
+    const { data: flowAutomations } = await supabase
+      .from("automations")
+      .select("id, trigger_type, trigger_config, actions")
+      .eq("organization_id", igAccount.organization_id)
+      .eq("is_active", true)
+      .in("trigger_type", matchingTriggerTypes);
+
+    if (flowAutomations?.length) {
+      for (const fa of flowAutomations) {
+        const triggerConfig = fa.trigger_config as Record<string, unknown> | null;
+        const keyword = (triggerConfig?.keyword as string) || "";
+        const messageText = (eventData.message_text || eventData.comment_text || "") as string;
+
+        if (keyword && !messageText.toLowerCase().includes(keyword.toLowerCase())) continue;
+
+        // Log execution
+        await supabase.from("automation_contact_timeline").insert({
+          automation_id: fa.id,
+          organization_id: igAccount.organization_id,
+          action_type: eventType,
+          status: "triggered",
+          details: eventData,
+        });
+
+        // Increment execution count
+        await supabase.rpc("increment_automation_executions", { automation_id: fa.id });
+      }
+    }
+  }
+
   for (const automation of automations) {
     const triggerConfig = automation.trigger_config as Record<string, unknown> | null;
     const automationType = triggerConfig?.event_type;
