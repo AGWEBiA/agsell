@@ -69,6 +69,9 @@ export const nodeCategories = [
     nodes: [
       { id: 'send_instagram_dm', label: 'DM Instagram', icon: Instagram, color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' },
       { id: 'send_instagram_comment_reply', label: 'Responder Comentário', icon: MessageCircle, color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+      { id: 'send_instagram_story_reply', label: 'Responder Story', icon: Eye, color: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300' },
+      { id: 'instagram_like_comment', label: 'Curtir Comentário', icon: Heart, color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
+      { id: 'instagram_follow_back', label: 'Seguir de Volta', icon: UserPlus, color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
     ],
   },
   {
