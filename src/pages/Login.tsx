@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { Logo } from '@/components/ui/Logo';
+import logoFull from '@/assets/agsell-logo-full.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
