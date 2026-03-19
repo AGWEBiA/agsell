@@ -8,7 +8,7 @@ import { Ticket, Search, Hash, Clock, CheckCircle2, AlertTriangle } from 'lucide
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import logoRed from '@/assets/logo-red.png';
+import logoRed from '@/assets/agsell-logo-red.png';
 
 const statuses: Record<string, { label: string; color: string; icon: typeof Ticket }> = {
   open: { label: 'Aberto', color: 'bg-blue-100 text-blue-800', icon: Ticket },

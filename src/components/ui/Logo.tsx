@@ -1,7 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import logoRed from '@/assets/agsell-logo-red.png';
 import logoFull from '@/assets/agsell-logo-full.png';
+import logoFullWhite from '@/assets/agsell-logo-full-white.png';
 import logoWhite from '@/assets/logo-white.png';
 import logoBlack from '@/assets/logo-black.png';
 import logoAlternativo from '@/assets/logo-alternativo.png';
@@ -39,9 +41,12 @@ export function Logo({
 }: LogoProps) {
   // When showText is true, use the full logo with integrated text
   if (showText) {
+    // Use white version in dark mode for better contrast
+    const isDark = document.documentElement.classList.contains('dark');
+    const fullSrc = isDark ? logoFullWhite : logoFull;
     return (
       <img 
-        src={logoFull} 
+        src={fullSrc} 
         alt="AG Sell" 
         className={cn(fullLogoSizeMap[size], 'object-contain', className)}
       />

@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle, AlertTriangle, XCircle, Wrench, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import logoRed from '@/assets/logo-red.png';
+import logoRed from '@/assets/agsell-logo-red.png';
 import { Link } from 'react-router-dom';
 
 const statusConfig = {
