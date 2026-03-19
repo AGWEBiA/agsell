@@ -4,7 +4,7 @@ import {
   Tag, Star, Bell, Clock, CheckSquare, GitBranch,
   Timer, Flame, MailCheck, Filter, Smartphone,
   Globe, MousePointer, LogOut, List, LayoutTemplate,
-  Package, Code,
+  Package, Code, AtSign, Share2, Link, Megaphone,
 } from 'lucide-react';
 
 export interface FlowNode {
