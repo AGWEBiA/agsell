@@ -532,30 +532,43 @@ export function WhatsAppProviderSetup() {
 
               {/* New connection */}
               {isEvolutionGlobalConfigured && (
-                <div className="text-center space-y-4 py-4">
-                  <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-muted">
-                    <QrCode className="h-10 w-10 text-muted-foreground" />
+                <>
+                  {platformInstances.length > 0 && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <Separator className="flex-1" />
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                        <Plus className="h-3 w-3" /> Nova instância
+                      </span>
+                      <Separator className="flex-1" />
+                    </div>
+                  )}
+                  <div className="text-center space-y-4 py-4">
+                    {platformInstances.length === 0 && (
+                      <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-muted">
+                        <QrCode className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-semibold">{platformInstances.length === 0 ? 'Conecte seu WhatsApp' : 'Adicionar outro número'}</h3>
+                      <p className="text-sm text-muted-foreground">O sistema criará uma instância e exibirá o QR Code automaticamente.</p>
+                    </div>
+                    <div className="max-w-xs mx-auto space-y-3">
+                      <Input
+                        placeholder="Nome da instância"
+                        value={platformInstanceName}
+                        onChange={e => setPlatformInstanceName(e.target.value)}
+                      />
+                      <Button
+                        className="w-full"
+                        onClick={handleSavePlatform}
+                        disabled={isSaving || !platformInstanceName.trim()}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {isSaving ? 'Criando...' : 'Gerar QR Code'}
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">Conecte seu WhatsApp</h3>
-                    <p className="text-sm text-muted-foreground">O sistema criará uma instância e exibirá o QR Code automaticamente.</p>
-                  </div>
-                  <div className="max-w-xs mx-auto space-y-3">
-                    <Input
-                      placeholder="Nome da instância"
-                      value={platformInstanceName}
-                      onChange={e => setPlatformInstanceName(e.target.value)}
-                    />
-                    <Button
-                      className="w-full"
-                      onClick={handleSavePlatform}
-                      disabled={isSaving || !platformInstanceName.trim()}
-                    >
-                      <QrCode className="h-4 w-4 mr-2" />
-                      {isSaving ? 'Criando...' : 'Gerar QR Code'}
-                    </Button>
-                  </div>
-                </div>
+                </>
               )}
             </TabsContent>
 
