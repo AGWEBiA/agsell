@@ -22,6 +22,8 @@ export const triggerOptions = [
   { id: 'instagram_comment', label: 'Comentário no Post', icon: Heart, channel: 'instagram', color: 'from-pink-500 to-purple-500', description: 'Quando alguém comenta em qualquer post' },
   { id: 'instagram_specific_post', label: 'Post Específico', icon: Instagram, channel: 'instagram', color: 'from-purple-500 to-pink-500', description: 'Quando alguém comenta em um post específico' },
   { id: 'instagram_dm', label: 'DM Recebida', icon: MessageCircle, channel: 'instagram', color: 'from-purple-500 to-orange-400', description: 'Quando alguém envia uma DM' },
+  { id: 'instagram_dm_keyword', label: 'Palavra-chave na DM', icon: Sparkles, channel: 'instagram', color: 'from-pink-500 to-fuchsia-500', description: 'Quando DM contém uma palavra-chave específica' },
+  { id: 'instagram_comment_keyword', label: 'Palavra-chave no Comentário', icon: Sparkles, channel: 'instagram', color: 'from-purple-500 to-fuchsia-500', description: 'Quando comentário contém uma palavra-chave específica' },
   { id: 'instagram_story_reply', label: 'Resposta ao Story', icon: Eye, channel: 'instagram', color: 'from-pink-400 to-orange-400', description: 'Quando alguém responde ou reage ao seu story' },
   { id: 'instagram_story_specific', label: 'Story Específico', icon: Eye, channel: 'instagram', color: 'from-orange-400 to-pink-500', description: 'Gatilho para um story específico (por URL ou ID)' },
   { id: 'instagram_new_follower', label: 'Novo Seguidor', icon: UserPlus, channel: 'instagram', color: 'from-purple-400 to-pink-400', description: 'Quando alguém começa a seguir você' },
