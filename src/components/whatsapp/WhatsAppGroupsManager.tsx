@@ -23,7 +23,7 @@ import {
   Users, Plus, Trash2, UserPlus, UserMinus, MessageSquare, RefreshCw, Crown, Clock,
   Search, Settings, Copy, Shield, Activity, Eye, ToggleLeft, ToggleRight, Edit, Tag, Send, X,
   Lock, Unlock, Link2, ImageIcon, Ban, UserCog, ShieldCheck, ShieldOff, Globe, MessageCircle,
-  AlertTriangle, Info,
+  AlertTriangle, Info, Download, Loader2, CheckSquare,
 } from 'lucide-react';
 import { useWhatsAppGroups, WhatsAppGroup, WhatsAppGroupEvent, WhatsAppGroupMember } from '@/hooks/useWhatsAppGroups';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
@@ -34,6 +34,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function WhatsAppGroupsManager() {
   const {
@@ -43,7 +46,12 @@ export function WhatsAppGroupsManager() {
     isCreatingGroup, isUpdatingGroup,
   } = useWhatsAppGroups();
 
+  const { currentOrganization } = useOrganization();
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importedGroups, setImportedGroups] = useState<Array<{ instance_name: string; id: string; subject: string; size: number; selected: boolean }>>([]);
   const [selectedGroup, setSelectedGroup] = useState<WhatsAppGroup | null>(null);
   const [detailTab, setDetailTab] = useState<'members' | 'events' | 'settings' | 'message' | 'admin'>('members');
   const [groupSettings, setGroupSettings] = useState({
@@ -77,6 +85,69 @@ export function WhatsAppGroupsManager() {
   const [editSyncNewLeads, setEditSyncNewLeads] = useState(false);
 
   const { instances: whatsAppInstances } = useWhatsAppInstances();
+
+  const handleFetchEvolutionGroups = async () => {
+    if (!currentOrganization?.id) return;
+    setIsImporting(true);
+    setImportedGroups([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-evolution-groups', {
+        body: { organization_id: currentOrganization.id },
+      });
+      if (error) throw error;
+      const allGroups: typeof importedGroups = [];
+      const existingIds = new Set(groups.map(g => g.external_group_id));
+      for (const inst of data.instances || []) {
+        for (const g of inst.groups || []) {
+          allGroups.push({
+            instance_name: inst.instance_name,
+            id: g.id,
+            subject: g.subject,
+            size: g.size,
+            selected: !existingIds.has(g.id),
+          });
+        }
+      }
+      setImportedGroups(allGroups);
+      setIsImportDialogOpen(true);
+      if (allGroups.length === 0) toast.info('Nenhum grupo encontrado nas instâncias conectadas.');
+    } catch (err: any) {
+      toast.error('Erro ao buscar grupos: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleImportSelected = async () => {
+    const selected = importedGroups.filter(g => g.selected);
+    if (selected.length === 0) { toast.error('Selecione ao menos um grupo'); return; }
+    const existingIds = new Set(groups.map(g => g.external_group_id));
+    let imported = 0;
+    for (const g of selected) {
+      if (existingIds.has(g.id)) continue;
+      createGroup({ name: g.subject, description: `Importado de ${g.instance_name}`, group_type: 'group' });
+      // Also update external_group_id after creation - we'll do a batch update
+      imported++;
+    }
+    // For external_group_id we need direct insert
+    if (currentOrganization?.id) {
+      for (const g of selected) {
+        if (existingIds.has(g.id)) continue;
+        await supabase.from('whatsapp_groups').insert({
+          organization_id: currentOrganization.id,
+          name: g.subject,
+          external_group_id: g.id,
+          member_count: g.size,
+          group_type: 'group',
+          settings: {} as any,
+          tags: [],
+        });
+      }
+      refetchGroups();
+    }
+    toast.success(`${selected.length} grupo(s) importado(s) com sucesso!`);
+    setIsImportDialogOpen(false);
+  };
 
   const handleCreateGroup = () => {
     createGroup(newGroup);
@@ -341,6 +412,10 @@ export function WhatsAppGroupsManager() {
             </Select>
           )}
           <Button variant="outline" size="icon" onClick={() => refetchGroups()}><RefreshCw className="h-4 w-4" /></Button>
+          <Button variant="secondary" onClick={handleFetchEvolutionGroups} disabled={isImporting}>
+            {isImporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Buscar Grupos
+          </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Novo Grupo</Button></DialogTrigger>
             <DialogContent>
@@ -1010,6 +1085,73 @@ export function WhatsAppGroupsManager() {
             </div>
             <Button onClick={handleSaveEdit} disabled={!editForm.name || isUpdatingGroup}>
               {isUpdatingGroup ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Groups Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Download className="h-5 w-5" /> Importar Grupos do WhatsApp</DialogTitle>
+            <DialogDescription>
+              Selecione os grupos que deseja importar para gerenciar. Grupos já importados estão desmarcados.
+            </DialogDescription>
+          </DialogHeader>
+          {importedGroups.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p>Nenhum grupo encontrado.</p>
+              <p className="text-xs mt-1">Verifique se suas instâncias estão conectadas.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{importedGroups.length} grupo(s) encontrado(s)</span>
+                <Button variant="outline" size="sm" onClick={() => setImportedGroups(prev => prev.map(g => ({ ...g, selected: true })))}>
+                  <CheckSquare className="h-3.5 w-3.5 mr-1" /> Selecionar Todos
+                </Button>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40px]"></TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Instância</TableHead>
+                      <TableHead>Membros</TableHead>
+                      <TableHead>JID</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importedGroups.map((group, idx) => {
+                      const alreadyImported = groups.some(g => g.external_group_id === group.id);
+                      return (
+                        <TableRow key={group.id} className={alreadyImported ? 'opacity-50' : ''}>
+                          <TableCell>
+                            <Checkbox
+                              checked={group.selected}
+                              disabled={alreadyImported}
+                              onCheckedChange={v => setImportedGroups(prev => prev.map((g, i) => i === idx ? { ...g, selected: !!v } : g))}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{group.subject}</TableCell>
+                          <TableCell><Badge variant="outline" className="text-xs">{group.instance_name}</Badge></TableCell>
+                          <TableCell>{group.size}</TableCell>
+                          <TableCell><code className="text-[10px] text-muted-foreground">{group.id.slice(0, 20)}...</code></TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleImportSelected} disabled={importedGroups.filter(g => g.selected).length === 0}>
+              <Plus className="h-4 w-4 mr-2" />Importar {importedGroups.filter(g => g.selected).length} selecionado(s)
             </Button>
           </DialogFooter>
         </DialogContent>
