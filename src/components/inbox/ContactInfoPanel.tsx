@@ -371,7 +371,6 @@ export function ContactInfoPanel({
                     variant="ghost"
                     className="w-full justify-start text-sm h-9"
                     onClick={() => {
-                      onTransfer(m.user_id);
                       onUpdateConversation({ assigned_to: m.user_id, status: 'open' });
                       setTransferOpen(false);
                       toast.success('Atendimento transferido!');
@@ -398,7 +397,6 @@ export function ContactInfoPanel({
                         // SAC agents have a user_id if linked to a member
                         const agentUserId = (a as any).user_id;
                         if (agentUserId) {
-                          onTransfer(agentUserId);
                           onUpdateConversation({ assigned_to: agentUserId, status: 'open' });
                           setTransferOpen(false);
                           toast.success(`Transferido para ${a.name}!`);

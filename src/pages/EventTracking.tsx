@@ -19,23 +19,40 @@ export default function EventTracking() {
 
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const trackingScript = `<script>
-(function(o){
-  var q=[];
-  window.agsell={track:function(e,d){q.push({e:e,d:d||{}})},identify:function(em){window._ag_email=em}};
-  var s=document.createElement('script');s.async=true;
-  s.onload=function(){
-    q.forEach(function(i){
-      fetch('https://${projectId}.supabase.co/functions/v1/track-event',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({organization_id:'${orgId}',event_name:i.e,event_data:i.d,
-          page_url:location.href,referrer:document.referrer,
-          visitor_id:localStorage._ag_vid||(localStorage._ag_vid=Math.random().toString(36).substr(2)),
-          contact_email:window._ag_email})
-      });
-    });
-  };s.src='';document.head.appendChild(s);
-  // Auto-track page views
-  window.agsell.track('page_view',{title:document.title});
+(function(){
+  var endpoint='https://${projectId}.supabase.co/functions/v1/track-event';
+  var orgId='${orgId}';
+  var vid=localStorage._ag_vid||(localStorage._ag_vid='v_'+Math.random().toString(36).substr(2,9));
+  function send(name,data){
+    fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        organization_id:orgId,
+        event_name:name,
+        event_data:data||{},
+        page_url:location.href,
+        referrer:document.referrer,
+        visitor_id:vid,
+        contact_email:window._ag_email||null
+      })
+    }).catch(function(){});
+  }
+  window.agsell={
+    track:function(e,d){send(e,d)},
+    identify:function(em){window._ag_email=em}
+  };
+  // Auto-track page view
+  send('page_view',{title:document.title,path:location.pathname});
+  // Track SPA navigation
+  var pushState=history.pushState;
+  history.pushState=function(){
+    pushState.apply(history,arguments);
+    send('page_view',{title:document.title,path:location.pathname});
+  };
+  window.addEventListener('popstate',function(){
+    send('page_view',{title:document.title,path:location.pathname});
+  });
 })();
 </script>`;
 
