@@ -325,10 +325,69 @@ Centralizar conversas de WhatsApp, E-mail e Instagram DM em uma única interface
 - Grupos (WhatsAppGroupsManager, WhatsAppGroupMessages)
 - WhatsApp Flows interativos (telas, coleta de dados, gatilhos por keyword)
 
+### Gerenciamento de Grupos (WhatsAppGroupsManager)
+
+O módulo de grupos foi redesenhado para suportar o fluxo operacional de lançamentos e automações em grupos do WhatsApp.
+
+#### Fluxo de Importação de Grupos
+1. O usuário cria o grupo no WhatsApp com qualquer número
+2. O número de automação é adicionado como **admin** do grupo
+3. O número de automação é conectado à plataforma via QR Code
+4. Na configuração do dispositivo (InstanceConfigDialog), o usuário clica em **"Importar todos os grupos"**
+5. O sistema busca todos os grupos via Evolution API (\\\`fetch-evolution-groups\\\`)
+6. Os grupos aparecem na listagem com status **desativado** por padrão
+7. O usuário ativa cada grupo, configura tags e lead tags
+
+#### Interface em Tabela
+A listagem de grupos usa formato de tabela com as seguintes colunas:
+
+| Coluna | Descrição |
+|--------|-----------|
+| Seleção (checkbox) | Para ações em lote |
+| Nome | Nome do grupo no WhatsApp |
+| Tags dos grupos | Tags de categorização do grupo |
+| Tag dos leads | Tags aplicadas automaticamente aos novos leads sincronizados |
+| Telefone de envio | Número da instância conectada (exibido para identificação) |
+| JID | Identificador único do grupo no WhatsApp (\\\`external_group_id\\\`) |
+| Status | Toggle ativo/inativo |
+| Ações | Editar, detalhes, excluir |
+
+#### Barra de Ações
+- **Editar os selecionados** — Edição em lote dos grupos selecionados
+- **Editar todos os grupos** — Aplica configuração a todos os grupos visíveis
+- **Grupos arquivados** — Toggle para exibir/ocultar grupos inativos
+- **Filtro por tag** e **busca por nome**
+
+#### Configuração do Grupo (Dialog de Edição)
+- \\\`name\\\` — Nome do grupo
+- \\\`description\\\` — Descrição
+- \\\`tags\\\` — Tags de categorização (SearchableTagSelect)
+- \\\`lead_tags\\\` — Tags aplicadas aos leads ao entrar no grupo (settings.lead_tags)
+- \\\`instance_id\\\` — Instância WhatsApp vinculada
+- \\\`sync_new_leads\\\` — Sincronizar novos leads automaticamente (boolean)
+- Ações: Importar leads, Arquivar grupo
+
+#### Dialog de Detalhes (5 abas)
+- **Membros** — Lista de participantes com role (admin/member), ações de promoção/remoção
+- **Atividades** — Histórico de eventos do grupo (entradas, saídas, mensagens)
+- **Mensagem** — Envio de mensagens com variáveis (\\\`{{grupo}}\\\`, \\\`{{data}}\\\`, \\\`{{total_membros}}\\\`), modo imediato ou agendado
+- **Config** — Configurações do grupo WhatsApp (travar, somente admins, mensagens temporárias)
+- **Admin** — Configurações administrativas
+
+#### Configuração do Dispositivo (InstanceConfigDialog)
+Ao abrir as configurações de um dispositivo conectado:
+- Exibe o **número de telefone** do dispositivo (para identificação)
+- Seção **"Gerenciamento de grupos"** com botões:
+  - **Importar todos os grupos** — Busca grupos via Evolution API e navega para aba de Grupos
+  - **Importar todos os contatos** — Importa contatos da instância
+- Configurações de webhook, instância e reconexão
+
 ### Edge Functions
-- \`send-whatsapp\` — envio de mensagens
-- \`whatsapp-webhook\` — recepção de webhooks
-- \`process-whatsapp-campaign\` — processamento assíncrono de campanhas
+- \\\`send-whatsapp\\\` — envio de mensagens
+- \\\`whatsapp-webhook\\\` — recepção de webhooks
+- \\\`process-whatsapp-campaign\\\` — processamento assíncrono de campanhas
+- \\\`fetch-evolution-groups\\\` — busca grupos e instâncias via Evolution API (retorna instance_name, phone_number, groups[])
+- \\\`create-whatsapp-group\\\` — criação de grupo via Evolution API
 
 ## 4.7 Instagram
 

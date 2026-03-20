@@ -1202,19 +1202,82 @@ Envie mensagens para múltiplos contatos de uma vez:
 
 ## Grupos do WhatsApp
 
-Gerencie seus grupos diretamente pela plataforma:
+O gerenciamento de grupos foi redesenhado para suportar operações de lançamento em grupo com controle total de tags, leads e automação.
 
-1. Acesse a aba **"Grupos"** na página do WhatsApp
-2. Visualize todos os grupos do número conectado
-3. Para cada grupo:
-   - Veja a lista de **participantes**
-   - **Envie mensagens** diretamente pelo AG Sell
-   - Acompanhe o **histórico** de mensagens
+### Como funciona o fluxo de grupos
+
+O AG Sell **não cria os grupos** — você cria o grupo normalmente no WhatsApp com qualquer número. O fluxo é:
+
+1. **Crie o grupo** no WhatsApp com qualquer número do seu celular
+2. **Adicione o número de automação** como administrador do grupo
+3. **Conecte o número de automação** na plataforma (via QR Code)
+4. **Importe os grupos** — Nas configurações do dispositivo, clique em **"Importar todos os grupos"**
+5. Os grupos aparecem na listagem **desativados** por padrão
+6. **Ative e configure** cada grupo: adicione tags, defina tags de leads e ative a sincronização
+
+### Identificando o dispositivo
+
+Ao conectar múltiplos números, a plataforma exibe o **número de telefone** de cada dispositivo na listagem e nas configurações, facilitando a identificação de qual dispositivo está associado a quais grupos.
+
+### Configurações do dispositivo
+
+Ao clicar no ícone de configurações de um dispositivo conectado, você acessa:
+
+- **Número de telefone** — Exibido para identificação
+- **Importar todos os grupos** — Busca e importa todos os grupos onde o número é admin
+- **Importar todos os contatos** — Importa contatos da instância
+- Configurações de webhook e reconexão
+
+### Listagem de grupos (formato tabela)
+
+A aba **"Grupos"** exibe todos os grupos importados em uma tabela com:
+
+| Coluna | Descrição |
+|--------|-----------|
+| **Nome** | Nome do grupo no WhatsApp |
+| **Tags dos grupos** | Tags de categorização (ex: "lançamento", "vip") |
+| **Tag dos leads** | Tags aplicadas automaticamente aos novos membros |
+| **Telefone de envio** | Número da instância conectada |
+| **JID** | Identificador único do grupo |
+| **Status** | Toggle para ativar/desativar o grupo |
+
+### Barra de ações
+
+No topo da tabela, você encontra:
+
+- **Editar os selecionados** — Edite tags e configurações de múltiplos grupos de uma vez
+- **Editar todos os grupos** — Aplique configuração em lote a todos os grupos
+- **Grupos arquivados** — Visualize grupos desativados/arquivados
+- **Filtro por tag** — Filtre grupos por tag específica
+- **Busca** — Pesquise pelo nome do grupo
+
+### Configurando um grupo
+
+Ao editar um grupo, você pode:
+
+1. Definir **Tags do grupo** — Para categorização e filtros
+2. Definir **Tags dos leads** — Tags aplicadas automaticamente quando novos membros entram
+3. Vincular **instância** de envio — Qual número usar para enviar mensagens
+4. Ativar **Sincronizar novos leads** — Importa automaticamente novos membros como contatos no CRM
+5. **Importar leads** — Importa membros atuais como contatos
+
+### Detalhes do grupo (5 abas)
+
+Ao clicar em um grupo, você abre o painel de detalhes com:
+
+- **Membros** — Lista de participantes com função (admin/membro), ações de promoção e remoção
+- **Atividades** — Histórico de eventos (entradas, saídas, mensagens)
+- **Mensagem** — Envio de mensagens com variáveis ({{grupo}}, {{data}}, {{total_membros}}), modo imediato ou agendado com data e horário
+- **Config** — Travar grupo, somente admins, mensagens temporárias
+- **Admin** — Configurações administrativas avançadas
 
 ### Mensagens para grupos
-1. Selecione o grupo desejado
-2. Digite a mensagem
-3. Envie — a mensagem aparece no grupo como se fosse enviada pelo celular
+1. Acesse a aba **"Mensagem"** no painel de detalhes do grupo
+2. Use as **variáveis** disponíveis: {{grupo}}, {{data}}, {{total_membros}}
+3. Escolha o modo de envio:
+   - **Enviar Agora** — Disparo imediato
+   - **Agendar Envio** — Selecione data e horário para envio futuro
+4. Clique em **Enviar** ou **Agendar**
 
 ## Integração com o CRM
 

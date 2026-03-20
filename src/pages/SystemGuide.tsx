@@ -120,9 +120,11 @@ const guideSections: GuideSection[] = [
     description: 'Integração completa com WhatsApp para comunicação e campanhas.',
     features: [
       { title: 'Conexão via QR Code', description: 'Conecte sua conta do WhatsApp escaneando um QR code diretamente na plataforma.' },
-      { title: 'Múltiplas instâncias', description: 'Gerencie diversas contas/números de WhatsApp simultaneamente.' },
+      { title: 'Múltiplas instâncias', description: 'Gerencie diversas contas/números de WhatsApp simultaneamente com número de telefone visível para identificação.' },
       { title: 'Envio em massa', description: 'Crie e gerencie campanhas de envio de mensagens para listas de contatos.' },
-      { title: 'Grupos', description: 'Gerencie grupos do WhatsApp e envie mensagens em grupo.' },
+      { title: 'Gerenciamento de Grupos', description: 'Importe grupos do WhatsApp via dispositivo conectado, configure tags de grupo e tags de leads, ative sincronização automática de membros e envie mensagens com agendamento.' },
+      { title: 'Configuração de Dispositivo', description: 'Importe todos os grupos e contatos de um dispositivo conectado com um clique. Visualize o número de telefone para fácil identificação.' },
+      { title: 'Ações em lote', description: 'Edite tags e configurações de múltiplos grupos simultaneamente com edição em lote.' },
       { title: 'Seletor de instância', description: 'Alterne facilmente entre diferentes instâncias conectadas.' },
     ],
   },
