@@ -186,11 +186,23 @@ export default function WhatsApp() {
   const [filterDeviceInstance, setFilterDeviceInstance] = useState<string | null>(null);
 
   const handleDeviceClick = (instance: WhatsAppInstance) => {
-    // Navigate to groups tab filtered by this device
     const instanceName = instance.config?.instance_name || instance.name;
     setFilterDeviceInstance(instanceName);
     setActiveTab('groups');
   };
+
+  // Listen for navigate-to-groups events from InstanceConfigDialog
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.instanceName) {
+        setFilterDeviceInstance(detail.instanceName);
+        setActiveTab('groups');
+      }
+    };
+    window.addEventListener('navigate-to-groups', handler);
+    return () => window.removeEventListener('navigate-to-groups', handler);
+  }, []);
 
   return (
     <div className="space-y-6 animate-fade-in">
