@@ -69,6 +69,7 @@ export default function Companies() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [newCompany, setNewCompany] = useState<CreateCompanyData>({
     name: '',
     domain: '',
