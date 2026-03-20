@@ -109,6 +109,11 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
         body: { organization_id: currentOrganization.id, instance_name: instanceFilter || undefined },
       });
       if (error) throw error;
+
+      if (data?.error) {
+        toast.warning(data.error);
+      }
+
       const allGroups: typeof importedGroups = [];
       const existingIds = new Set(groups.map(g => g.external_group_id));
 
