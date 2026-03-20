@@ -55,6 +55,7 @@ export default function Tags() {
   const { data: tags = [], isLoading } = useTags();
   const createTag = useCreateTag();
   const deleteTag = useDeleteTag();
+  const updateTag = useUpdateTag();
 
   const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(searchTerm.toLowerCase())
