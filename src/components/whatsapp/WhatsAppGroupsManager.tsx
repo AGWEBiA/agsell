@@ -414,13 +414,10 @@ export function WhatsAppGroupsManager() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tags</Label>
-                  <TagInput
-                    tags={newGroup.tags}
-                    onAdd={() => handleAddTag(newGroupTagInput, 'new')}
-                    onRemove={t => handleRemoveTag(t, 'new')}
-                    inputValue={newGroupTagInput}
-                    setInputValue={setNewGroupTagInput}
-                    placeholder="Ex: vip, clientes, leads"
+                  <SearchableTagSelect
+                    selectedTags={newGroup.tags}
+                    onTagsChange={tags => setNewGroup({ ...newGroup, tags })}
+                    placeholder="Buscar ou criar tag..."
                   />
                   <p className="text-xs text-muted-foreground">Tags permitem criar automações individuais para cada grupo</p>
                 </div>
