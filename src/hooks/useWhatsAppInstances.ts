@@ -9,10 +9,12 @@ export interface WhatsAppInstance {
   organization_id: string;
   name: string;
   integration_type: 'evolution_api' | 'whatsapp_business';
-  config: Record<string, string>;
+  config: Record<string, unknown>;
   is_active: boolean;
   is_default: boolean;
   phone_number?: string;
+  instance_name?: string;
+  status?: string;
   last_sync_at: string | null;
   created_at: string;
   updated_at: string;
@@ -21,10 +23,56 @@ export interface WhatsAppInstance {
 interface CreateInstanceData {
   name: string;
   integration_type: 'evolution_api' | 'whatsapp_business';
-  config: Record<string, string>;
+  config: Record<string, unknown>;
   phone_number?: string;
   is_default?: boolean;
 }
+
+const extractDigits = (value: string) => value.replace(/\D/g, '');
+
+const formatPhoneNumber = (value: string): string => {
+  const digits = extractDigits(value);
+  if (digits.length < 10) return '';
+
+  if (digits.startsWith('55') && digits.length >= 12) {
+    const ddd = digits.slice(2, 4);
+    const rest = digits.slice(4);
+    if (rest.length === 9) return `+55 (${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;
+    if (rest.length === 8) return `+55 (${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;
+  }
+
+  return `+${digits}`;
+};
+
+const normalizePhoneCandidate = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const cleaned = value.trim();
+  if (!cleaned) return undefined;
+
+  const digits = extractDigits(cleaned);
+  if (digits.length < 10) return undefined;
+
+  const formatted = formatPhoneNumber(cleaned);
+  return formatted || undefined;
+};
+
+const extractPhoneFromConfig = (config: Record<string, unknown>): string | undefined => {
+  const candidates = [
+    config.phone_number,
+    config.phone,
+    config.ownerJid,
+    config.owner_jid,
+    config.owner,
+    config.number,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizePhoneCandidate(candidate);
+    if (normalized) return normalized;
+  }
+
+  return undefined;
+};
 
 export function useWhatsAppInstances() {
   const { currentOrganization } = useOrganization();
@@ -45,21 +93,27 @@ export function useWhatsAppInstances() {
 
       if (error) throw error;
       
-      return (data || []).map(item => ({
-        id: item.id,
-        organization_id: item.organization_id,
-        name: item.name,
-        integration_type: item.integration_type as 'evolution_api' | 'whatsapp_business',
-        config: (item.config as Record<string, string>) || {},
-        is_active: item.is_active ?? false,
-        is_default: (item.config as Record<string, unknown>)?.is_default === true,
-        phone_number: (item.config as Record<string, string>)?.phone_number || 
-                      (item.config as Record<string, string>)?.instance_name ||
-                      (item.config as Record<string, string>)?.phone_number_id,
-        last_sync_at: item.last_sync_at,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-      })) as WhatsAppInstance[];
+      return (data || []).map(item => {
+        const config = (item.config as Record<string, unknown>) || {};
+
+        return {
+          id: item.id,
+          organization_id: item.organization_id,
+          name: item.name,
+          integration_type: item.integration_type as 'evolution_api' | 'whatsapp_business',
+          config,
+          is_active: item.is_active ?? false,
+          is_default: config?.is_default === true,
+          phone_number: extractPhoneFromConfig(config),
+          instance_name: typeof config?.instance_name === 'string' ? config.instance_name : item.name,
+          status: typeof config?.connection_status === 'string'
+            ? config.connection_status
+            : (typeof config?.status === 'string' ? config.status : undefined),
+          last_sync_at: item.last_sync_at,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        };
+      }) as WhatsAppInstance[];
     },
     enabled: !!currentOrganization?.id,
   });
@@ -77,10 +131,11 @@ export function useWhatsAppInstances() {
       if (!currentOrganization?.id) throw new Error('No organization selected');
 
       // If this is the first instance or marked as default, ensure it's the only default
+      const normalizedPhone = normalizePhoneCandidate(data.phone_number);
       const config = {
         ...data.config,
-        phone_number: data.phone_number,
         is_default: data.is_default ?? false,
+        ...(normalizedPhone ? { phone_number: normalizedPhone } : {}),
       };
 
       // If marked as default, unset other defaults first
@@ -128,12 +183,15 @@ export function useWhatsAppInstances() {
       const existingInstance = instancesQuery.data?.find(i => i.id === id);
       if (!existingInstance) throw new Error('Instance not found');
 
-      const config = {
+      const config: Record<string, unknown> = {
         ...existingInstance.config,
         ...updates.config,
-        phone_number: updates.phone_number ?? existingInstance.phone_number,
         is_default: updates.is_default ?? existingInstance.is_default,
       };
+
+      const normalizedPhone = normalizePhoneCandidate(updates.phone_number ?? config.phone_number ?? existingInstance.phone_number);
+      if (normalizedPhone) config.phone_number = normalizedPhone;
+      else delete config.phone_number;
 
       const { data, error } = await supabase
         .from('organization_integrations')

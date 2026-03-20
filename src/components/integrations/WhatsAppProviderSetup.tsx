@@ -224,7 +224,6 @@ export function WhatsAppProviderSetup() {
         name: platformInstanceName,
         integration_type: 'evolution_api',
         config: { instance_name: platformInstanceName } as Record<string, string>,
-        phone_number: platformInstanceName,
         is_default: instances.length === 0,
       });
       // Show ban warning then QR
@@ -251,7 +250,6 @@ export function WhatsAppProviderSetup() {
           own_api_url: ownApiUrl,
           own_api_key: ownApiKey,
         } as Record<string, string>,
-        phone_number: ownInstanceName,
         is_default: instances.length === 0,
       });
       setPendingQRAction({ instanceName: ownInstanceName, orgId: currentOrganization?.id || '', action: 'create' });

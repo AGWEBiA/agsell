@@ -5,6 +5,92 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type IntegrationConfig = Record<string, unknown>;
+
+type OrgInstance = {
+  id: string;
+  name: string;
+  instance_name: string;
+  config: IntegrationConfig;
+};
+
+const jsonResponse = (payload: unknown, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const normalizeInstanceName = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s_-]+/g, "");
+
+const extractInstanceName = (item: any) =>
+  item?.instance?.instanceName || item?.instanceName || item?.name || "";
+
+const extractConnectionState = (item: any) => {
+  const rawStatus = item?.connectionStatus;
+  const state =
+    typeof rawStatus === "string"
+      ? rawStatus
+      : rawStatus?.state || item?.instance?.state || item?.state || "";
+
+  return String(state).toLowerCase();
+};
+
+const formatPhone = (rawValue: string): string => {
+  const digits = rawValue.replace(/\D/g, "");
+  if (!digits) return "";
+
+  if (digits.startsWith("55") && digits.length >= 12) {
+    const ddd = digits.substring(2, 4);
+    const rest = digits.substring(4);
+    if (rest.length === 9) return `+55 (${ddd}) ${rest.substring(0, 5)}-${rest.substring(5)}`;
+    if (rest.length === 8) return `+55 (${ddd}) ${rest.substring(0, 4)}-${rest.substring(4)}`;
+  }
+
+  return `+${digits}`;
+};
+
+const extractPhoneNumber = (instance: any): string => {
+  const owner =
+    instance?.ownerJid ||
+    instance?.instance?.owner ||
+    instance?.owner ||
+    instance?.instance?.ownerJid ||
+    "";
+
+  const ownerValue = typeof owner === "string" ? owner.replace(/@.*$/, "") : "";
+  return formatPhone(ownerValue);
+};
+
+const parseGroups = (payload: unknown): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    if (Array.isArray(record.groups)) return record.groups;
+    if (Array.isArray(record.data)) return record.data;
+  }
+  return [];
+};
+
+const toOrgInstance = (row: any): OrgInstance => {
+  const config = (row?.config || {}) as IntegrationConfig;
+  const instance_name =
+    typeof config.instance_name === "string" && config.instance_name.trim()
+      ? config.instance_name.trim()
+      : row.name;
+
+  return {
+    id: row.id,
+    name: row.name,
+    instance_name,
+    config,
+  };
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -13,23 +99,32 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    const supabase = createClient(
+    const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const { organization_id, instance_name: filterInstance } = await req.json();
     if (!organization_id) {
-      return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return jsonResponse({ error: "organization_id required" }, 400);
+    }
+
+    const { data: isMember, error: memberError } = await userClient.rpc("is_org_member", {
+      _org_id: organization_id,
+      _user_id: user.id,
+    });
+
+    if (memberError || !isMember) {
+      return jsonResponse({ error: "Sem permissão para esta organização" }, 403);
     }
 
     const adminClient = createClient(
@@ -37,23 +132,60 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Try global platform_settings first
-    const { data: globalConfig } = await adminClient
+    const { data: orgIntegrationRows, error: integrationError } = await adminClient
+      .from("organization_integrations")
+      .select("id, name, config")
+      .eq("organization_id", organization_id)
+      .eq("integration_type", "evolution_api");
+
+    if (integrationError) throw integrationError;
+
+    const orgInstances = (orgIntegrationRows || []).map(toOrgInstance);
+    if (orgInstances.length === 0) {
+      return jsonResponse({
+        instances: [],
+        error: "Nenhuma instância Evolution configurada para esta conta.",
+      });
+    }
+
+    const orgInstancesByNormalizedName = new Map(
+      orgInstances.map((inst) => [normalizeInstanceName(inst.instance_name), inst])
+    );
+
+    let normalizedFilter: string | null = null;
+    if (filterInstance) {
+      normalizedFilter = normalizeInstanceName(String(filterInstance));
+      if (!orgInstancesByNormalizedName.has(normalizedFilter)) {
+        return jsonResponse({
+          instances: [],
+          error: "A instância solicitada não pertence à conta atual.",
+        });
+      }
+    }
+
+    const preferredOrgInstance = normalizedFilter
+      ? orgInstancesByNormalizedName.get(normalizedFilter) || null
+      : orgInstances[0];
+
+    const preferredConfig = (preferredOrgInstance?.config || {}) as Record<string, string>;
+
+    let baseUrl = (preferredConfig.own_api_url || preferredConfig.api_url || "").replace(/\/$/, "");
+    let apiKey = preferredConfig.own_api_key || preferredConfig.api_key || "";
+
+    if (!baseUrl || !apiKey) {
+      const { data: globalConfig } = await adminClient
       .from("platform_settings")
       .select("value")
       .eq("key", "evolution_api")
       .single();
 
-    let baseUrl = "";
-    let apiKey = "";
-
-    if (globalConfig?.value) {
-      const val = globalConfig.value as Record<string, string>;
-      baseUrl = (val.base_url || val.url || val.api_url || "").replace(/\/$/, "");
-      apiKey = val.api_key || val.apikey || "";
+      if (globalConfig?.value) {
+        const val = globalConfig.value as Record<string, string>;
+        baseUrl = (val.base_url || val.url || val.api_url || "").replace(/\/$/, "");
+        apiKey = val.api_key || val.apikey || "";
+      }
     }
 
-    // Fallback to paid_groups_config per org
     if (!baseUrl || !apiKey) {
       const { data: orgConfig } = await adminClient
         .from("paid_groups_config")
@@ -68,12 +200,12 @@ Deno.serve(async (req) => {
     }
 
     if (!baseUrl || !apiKey) {
-      return new Response(JSON.stringify({ error: "Evolution API não configurada. Configure no painel administrativo.", instances: [] }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return jsonResponse({
+        error: "Evolution API não configurada. Configure no painel administrativo.",
+        instances: [],
       });
     }
 
-    // Step 1: Fetch all instances
     let instances: any[] = [];
     try {
       const fetchUrl = `${baseUrl}/instance/fetchInstances`;
@@ -86,8 +218,10 @@ Deno.serve(async (req) => {
       if (!instancesResp.ok) {
         const errText = await instancesResp.text();
         console.error("Failed to fetch instances:", errText);
-        return new Response(JSON.stringify({ error: "Erro ao conectar com Evolution API", detail: errText, instances: [] }), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return jsonResponse({
+          error: "Erro ao conectar com Evolution API",
+          detail: errText,
+          instances: [],
         });
       }
 
@@ -96,56 +230,46 @@ Deno.serve(async (req) => {
       console.log("Total instances returned:", Array.isArray(instances) ? instances.length : "not-array");
     } catch (fetchErr) {
       console.error("Evolution API connection error:", fetchErr);
-      return new Response(JSON.stringify({ error: "Não foi possível conectar à Evolution API. Verifique se a URL está acessível via HTTPS.", instances: [] }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return jsonResponse({
+        error: "Não foi possível conectar à Evolution API. Verifique se a URL está acessível via HTTPS.",
+        instances: [],
       });
     }
 
-    // Filter connected instances (or specific instance if requested)
     const connectedInstances = Array.isArray(instances)
       ? instances.filter((i: any) => {
-          // connectionStatus can be a string "open" or an object { state: "open" }
-          const rawStatus = i?.connectionStatus;
-          const state = typeof rawStatus === "string" ? rawStatus : (rawStatus?.state || i?.instance?.state || i?.state);
-          const instanceName = i?.instance?.instanceName || i?.instanceName || i?.name;
+          const state = extractConnectionState(i);
+          const instanceName = extractInstanceName(i);
+          const normalizedName = normalizeInstanceName(instanceName);
           const isConnected = state === "open" || state === "connected";
-          console.log(`Instance "${instanceName}" state="${state}" connected=${isConnected}`);
-          if (filterInstance) return isConnected && instanceName === filterInstance;
-          return isConnected;
+          const belongsToOrg = orgInstancesByNormalizedName.has(normalizedName);
+
+          console.log(`Instance "${instanceName}" state="${state}" connected=${isConnected} belongsToOrg=${belongsToOrg}`);
+
+          if (!isConnected || !belongsToOrg) return false;
+          if (normalizedFilter) return normalizedName === normalizedFilter;
+          return true;
         })
       : [];
 
     console.log("Connected instances count:", connectedInstances.length);
 
-    // Step 2: For each connected instance, fetch groups and extract phone number
     const result: Array<{
+      instance_id: string | null;
       instance_name: string;
+      instance_label: string;
       phone_number: string;
       groups: Array<{ id: string; subject: string; size: number; creation: number }>;
     }> = [];
 
     for (const inst of connectedInstances) {
-      const instanceName = inst?.instance?.instanceName || inst?.instanceName || inst?.name;
+      const instanceName = extractInstanceName(inst);
       if (!instanceName) continue;
 
-      // Extract phone number from instance data
-      const owner = inst?.ownerJid || inst?.instance?.owner || inst?.owner || "";
-      const phoneRaw = typeof owner === "string" ? owner.replace(/@.*$/, "").replace(/\D/g, "") : "";
-      let phoneFormatted = phoneRaw;
-      if (phoneRaw.startsWith("55") && phoneRaw.length >= 12) {
-        const ddd = phoneRaw.substring(2, 4);
-        const rest = phoneRaw.substring(4);
-        if (rest.length === 9) {
-          phoneFormatted = `+55 (${ddd}) ${rest.substring(0, 5)}-${rest.substring(5)}`;
-        } else if (rest.length === 8) {
-          phoneFormatted = `+55 (${ddd}) ${rest.substring(0, 4)}-${rest.substring(4)}`;
-        }
-      } else if (phoneRaw.length > 0) {
-        phoneFormatted = `+${phoneRaw}`;
-      }
+      const orgInstance = orgInstancesByNormalizedName.get(normalizeInstanceName(instanceName));
+      const phoneFormatted = extractPhoneNumber(inst);
 
       try {
-        // Try multiple Evolution API group endpoints
         const groupUrl = `${baseUrl}/group/fetchAllGroups/${instanceName}?getParticipants=false`;
         console.log("Fetching groups from:", groupUrl);
         const groupsResp = await fetch(groupUrl, {
@@ -156,8 +280,7 @@ Deno.serve(async (req) => {
         if (!groupsResp.ok) {
           const errText = await groupsResp.text();
           console.error(`Failed to fetch groups for ${instanceName} (${groupsResp.status}):`, errText);
-          
-          // Try alternative endpoint
+
           console.log("Trying alternative endpoint: /group/fetchAll/");
           const altResp = await fetch(`${baseUrl}/group/fetchAll/${instanceName}?getParticipants=false`, {
             headers: { apikey: apiKey },
@@ -167,17 +290,30 @@ Deno.serve(async (req) => {
           if (altResp.ok) {
             const altData = await altResp.json();
             console.log("Alt endpoint returned:", JSON.stringify(altData).substring(0, 1000));
-            const groups = (Array.isArray(altData) ? altData : []).map((g: any) => ({
+            const groups = parseGroups(altData).map((g: any) => ({
               id: g.id || g.jid || g.groupJid,
               subject: g.subject || g.name || g.groupName || "Sem nome",
               size: g.size || g.participants?.length || 0,
               creation: g.creation || 0,
             }));
-            result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups });
+
+            result.push({
+              instance_id: orgInstance?.id || null,
+              instance_name: orgInstance?.instance_name || instanceName,
+              instance_label: orgInstance?.name || instanceName,
+              phone_number: phoneFormatted,
+              groups,
+            });
             continue;
           }
-          
-          result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups: [] });
+
+          result.push({
+            instance_id: orgInstance?.id || null,
+            instance_name: orgInstance?.instance_name || instanceName,
+            instance_label: orgInstance?.name || instanceName,
+            phone_number: phoneFormatted,
+            groups: [],
+          });
           continue;
         }
 
@@ -193,15 +329,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Handle both array and object responses
-        let groupsList: any[] = [];
-        if (Array.isArray(groupsData)) {
-          groupsList = groupsData;
-        } else if (groupsData?.groups && Array.isArray(groupsData.groups)) {
-          groupsList = groupsData.groups;
-        } else if (groupsData?.data && Array.isArray(groupsData.data)) {
-          groupsList = groupsData.data;
-        }
+        const groupsList = parseGroups(groupsData);
 
         console.log(`Parsed ${groupsList.length} groups for ${instanceName}`);
 
@@ -212,31 +340,28 @@ Deno.serve(async (req) => {
           creation: g.creation || 0,
         }));
 
-        result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups });
+        result.push({
+          instance_id: orgInstance?.id || null,
+          instance_name: orgInstance?.instance_name || instanceName,
+          instance_label: orgInstance?.name || instanceName,
+          phone_number: phoneFormatted,
+          groups,
+        });
       } catch (e) {
         console.error(`Error fetching groups for ${instanceName}:`, e);
-        result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups: [] });
+        result.push({
+          instance_id: orgInstance?.id || null,
+          instance_name: orgInstance?.instance_name || instanceName,
+          instance_label: orgInstance?.name || instanceName,
+          phone_number: phoneFormatted,
+          groups: [],
+        });
       }
     }
 
-    // Also update phone numbers on organization_integrations for display
-    for (const inst of result) {
-      if (inst.phone_number) {
-        await adminClient
-          .from("organization_integrations")
-          .update({ config: adminClient.rpc ? undefined : undefined }) // We'll handle this client-side
-          .eq("organization_id", organization_id);
-        // Actually let's just return the data and let the client update
-      }
-    }
-
-    return new Response(JSON.stringify({ instances: result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ instances: result });
   } catch (err) {
     console.error("fetch-evolution-groups error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno", instances: [] }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Erro interno", instances: [] });
   }
 });

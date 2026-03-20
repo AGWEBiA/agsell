@@ -52,7 +52,7 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [importedGroups, setImportedGroups] = useState<Array<{ instance_name: string; phone_number?: string; id: string; subject: string; size: number; selected: boolean }>>([]);
+  const [importedGroups, setImportedGroups] = useState<Array<{ instance_id?: string; instance_name: string; phone_number?: string; id: string; subject: string; size: number; selected: boolean }>>([]);
   const [selectedGroup, setSelectedGroup] = useState<WhatsAppGroup | null>(null);
   const [detailTab, setDetailTab] = useState<'members' | 'events' | 'settings' | 'message' | 'admin'>('members');
   const [groupSettings, setGroupSettings] = useState({
@@ -113,24 +113,29 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
       const existingIds = new Set(groups.map(g => g.external_group_id));
 
       // Update phone numbers on local instances
+      const phoneSyncPromises: Promise<unknown>[] = [];
+
       for (const inst of data.instances || []) {
         if (inst.phone_number) {
-          // Find the matching local instance and update its phone_number in config
-          const localInstance = whatsAppInstances.find(
-            i => (i.config?.instance_name || i.name) === inst.instance_name
-          );
-          if (localInstance && !localInstance.phone_number) {
-            await supabase
-              .from('organization_integrations')
-              .update({
-                config: { ...localInstance.config, phone_number: inst.phone_number } as any,
-              })
-              .eq('id', localInstance.id);
+          const localInstance = inst.instance_id
+            ? whatsAppInstances.find(i => i.id === inst.instance_id)
+            : whatsAppInstances.find(i => (i.config?.instance_name || i.name) === inst.instance_name);
+
+          if (localInstance && localInstance.phone_number !== inst.phone_number) {
+            phoneSyncPromises.push(
+              supabase
+                .from('organization_integrations')
+                .update({
+                  config: { ...localInstance.config, phone_number: inst.phone_number } as any,
+                })
+                .eq('id', localInstance.id)
+            );
           }
         }
 
         for (const g of inst.groups || []) {
           allGroups.push({
+            instance_id: inst.instance_id,
             instance_name: inst.instance_name,
             phone_number: inst.phone_number,
             id: g.id,
@@ -140,6 +145,11 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
           });
         }
       }
+
+      if (phoneSyncPromises.length > 0) {
+        await Promise.all(phoneSyncPromises);
+      }
+
       setImportedGroups(allGroups);
       setIsImportDialogOpen(true);
       if (allGroups.length === 0) toast.info('Nenhum grupo encontrado nas instâncias conectadas.');
@@ -166,7 +176,11 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
           member_count: g.size,
           group_type: 'group',
           is_active: false, // Groups come disabled by default
-          settings: { instance_name: g.instance_name } as any,
+          settings: {
+            instance_name: g.instance_name,
+            instance_id: g.instance_id || null,
+            sender_phone_number: g.phone_number || null,
+          } as any,
           tags: [],
         });
         importCount++;
@@ -1264,7 +1278,11 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
                             />
                           </TableCell>
                           <TableCell className="font-medium">{group.subject}</TableCell>
-                          <TableCell><Badge variant="outline" className="text-xs">{group.instance_name}</Badge></TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {group.phone_number ? `${group.phone_number} • ${group.instance_name}` : group.instance_name}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{group.size}</TableCell>
                           <TableCell><code className="text-[10px] text-muted-foreground">{group.id.slice(0, 20)}...</code></TableCell>
                         </TableRow>
