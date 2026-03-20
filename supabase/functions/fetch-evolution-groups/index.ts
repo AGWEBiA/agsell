@@ -72,6 +72,16 @@ const extractPhoneNumber = (instance: any): string => {
   return formatPhone(ownerValue);
 };
 
+const extractOwnerJid = (instance: any): string => {
+  const owner =
+    instance?.ownerJid ||
+    instance?.instance?.owner ||
+    instance?.owner ||
+    instance?.instance?.ownerJid ||
+    "";
+  return typeof owner === "string" ? owner : "";
+};
+
 const parseGroups = (payload: unknown): any[] => {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
