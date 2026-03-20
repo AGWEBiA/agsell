@@ -238,13 +238,14 @@ export function WhatsAppCampaignsManager({ currentInstanceId }: { currentInstanc
               <TabsContent value="settings" className="space-y-6 mt-4">
                 <div className="space-y-4">
                   {/* WhatsApp Instance Selector */}
-                  {activeInstances.length > 1 && (
-                    <WhatsAppInstanceSelector
-                      value={newCampaign.whatsapp_instance_id}
-                      onChange={(instanceId) =>
-                        setNewCampaign({ ...newCampaign, whatsapp_instance_id: instanceId })
+                  {activeInstances.length > 0 && (
+                    <WhatsAppMultiInstanceSelector
+                      selectedIds={newCampaign.whatsapp_instance_ids}
+                      onChange={(ids) =>
+                        setNewCampaign({ ...newCampaign, whatsapp_instance_ids: ids, whatsapp_instance_id: ids[0] || '' })
                       }
-                      label="Número/Provedor de Envio"
+                      label="Instâncias de Envio"
+                      currentInstanceId={currentInstanceId}
                     />
                   )}
 
