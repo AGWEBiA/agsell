@@ -93,25 +93,27 @@ export function useWhatsAppInstances() {
 
       if (error) throw error;
       
-      return (data || []).map(item => ({
-        constConfig: (item.config as Record<string, unknown>) || {},
-      })).map(({ constConfig, ...item }: any) => ({
-        id: item.id,
-        organization_id: item.organization_id,
-        name: item.name,
-        integration_type: item.integration_type as 'evolution_api' | 'whatsapp_business',
-        config: constConfig,
-        is_active: item.is_active ?? false,
-        is_default: constConfig?.is_default === true,
-        phone_number: extractPhoneFromConfig(constConfig),
-        instance_name: typeof constConfig?.instance_name === 'string' ? constConfig.instance_name : item.name,
-        status: typeof constConfig?.connection_status === 'string'
-          ? constConfig.connection_status
-          : (typeof constConfig?.status === 'string' ? constConfig.status : undefined),
-        last_sync_at: item.last_sync_at,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-      })) as WhatsAppInstance[];
+      return (data || []).map(item => {
+        const config = (item.config as Record<string, unknown>) || {};
+
+        return {
+          id: item.id,
+          organization_id: item.organization_id,
+          name: item.name,
+          integration_type: item.integration_type as 'evolution_api' | 'whatsapp_business',
+          config,
+          is_active: item.is_active ?? false,
+          is_default: config?.is_default === true,
+          phone_number: extractPhoneFromConfig(config),
+          instance_name: typeof config?.instance_name === 'string' ? config.instance_name : item.name,
+          status: typeof config?.connection_status === 'string'
+            ? config.connection_status
+            : (typeof config?.status === 'string' ? config.status : undefined),
+          last_sync_at: item.last_sync_at,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        };
+      }) as WhatsAppInstance[];
     },
     enabled: !!currentOrganization?.id,
   });
