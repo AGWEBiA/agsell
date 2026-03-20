@@ -355,8 +355,10 @@ export default function Pipeline() {
                               onDragStart={(e) => handleDragStart(e, deal.id)}
                               onDragEnd={handleDragEnd}
                               className={cn(
-                                'cursor-grab active:cursor-grabbing hover:shadow-md transition-all',
-                                draggedDealId === deal.id && 'opacity-50 scale-95'
+                                'cursor-grab active:cursor-grabbing hover:shadow-md transition-all border-2 border-transparent',
+                                draggedDealId === deal.id
+                                  ? 'opacity-40 scale-95 border-primary/30'
+                                  : 'opacity-100'
                               )}
                             >
                               <CardContent className="p-4">
