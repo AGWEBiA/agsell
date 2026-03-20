@@ -62,6 +62,7 @@ export const nodeCategories = [
     nodes: [
       { id: 'send_whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
       { id: 'send_whatsapp_group', label: 'WhatsApp Grupo', icon: Users, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+      { id: 'add_to_whatsapp_group', label: 'Adicionar ao Grupo', icon: UserPlus, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
       { id: 'send_whatsapp_oficial', label: 'WhatsApp Oficial', icon: MessageSquare, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
     ],
   },
