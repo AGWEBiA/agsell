@@ -49,6 +49,7 @@ export default function Tags() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [newTag, setNewTag] = useState<CreateTagData>({ name: '', color: '#3b82f6' });
 
   const { data: tags = [], isLoading } = useTags();
