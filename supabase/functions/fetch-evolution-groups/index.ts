@@ -76,7 +76,9 @@ Deno.serve(async (req) => {
     // Step 1: Fetch all instances
     let instances: any[] = [];
     try {
-      const instancesResp = await fetch(`${baseUrl}/instance/fetchInstances`, {
+      const fetchUrl = `${baseUrl}/instance/fetchInstances`;
+      console.log("Fetching instances from:", fetchUrl);
+      const instancesResp = await fetch(fetchUrl, {
         headers: { apikey: apiKey },
         signal: AbortSignal.timeout(15000),
       });
@@ -90,6 +92,8 @@ Deno.serve(async (req) => {
       }
 
       instances = await instancesResp.json();
+      console.log("Raw instances response:", JSON.stringify(instances).substring(0, 2000));
+      console.log("Total instances returned:", Array.isArray(instances) ? instances.length : "not-array");
     } catch (fetchErr) {
       console.error("Evolution API connection error:", fetchErr);
       return new Response(JSON.stringify({ error: "Não foi possível conectar à Evolution API. Verifique se a URL está acessível via HTTPS.", instances: [] }), {
@@ -103,10 +107,13 @@ Deno.serve(async (req) => {
           const state = i?.instance?.state || i?.state || i?.connectionStatus?.state;
           const instanceName = i?.instance?.instanceName || i?.instanceName || i?.name;
           const isConnected = state === "open" || state === "connected";
+          console.log(`Instance "${instanceName}" state="${state}" connected=${isConnected}`);
           if (filterInstance) return isConnected && instanceName === filterInstance;
           return isConnected;
         })
       : [];
+
+    console.log("Connected instances count:", connectedInstances.length);
 
     // Step 2: For each connected instance, fetch groups and extract phone number
     const result: Array<{
@@ -120,11 +127,8 @@ Deno.serve(async (req) => {
       if (!instanceName) continue;
 
       // Extract phone number from instance data
-      // Evolution API returns owner in various formats
       const owner = inst?.instance?.owner || inst?.owner || "";
-      // owner is typically "5511999998888@s.whatsapp.net" or just "5511999998888"
       const phoneRaw = typeof owner === "string" ? owner.replace(/@.*$/, "").replace(/\D/g, "") : "";
-      // Format as +55 (XX) XXXXX-XXXX for Brazilian numbers
       let phoneFormatted = phoneRaw;
       if (phoneRaw.startsWith("55") && phoneRaw.length >= 12) {
         const ddd = phoneRaw.substring(2, 4);
@@ -139,20 +143,67 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const groupsResp = await fetch(`${baseUrl}/group/fetchAllGroups/${instanceName}?getParticipants=false`, {
+        // Try multiple Evolution API group endpoints
+        const groupUrl = `${baseUrl}/group/fetchAllGroups/${instanceName}?getParticipants=false`;
+        console.log("Fetching groups from:", groupUrl);
+        const groupsResp = await fetch(groupUrl, {
           headers: { apikey: apiKey },
           signal: AbortSignal.timeout(15000),
         });
 
         if (!groupsResp.ok) {
-          console.error(`Failed to fetch groups for ${instanceName}:`, await groupsResp.text());
-          // Still include instance with phone number even if groups fail
+          const errText = await groupsResp.text();
+          console.error(`Failed to fetch groups for ${instanceName} (${groupsResp.status}):`, errText);
+          
+          // Try alternative endpoint
+          console.log("Trying alternative endpoint: /group/fetchAll/");
+          const altResp = await fetch(`${baseUrl}/group/fetchAll/${instanceName}?getParticipants=false`, {
+            headers: { apikey: apiKey },
+            signal: AbortSignal.timeout(15000),
+          });
+          
+          if (altResp.ok) {
+            const altData = await altResp.json();
+            console.log("Alt endpoint returned:", JSON.stringify(altData).substring(0, 1000));
+            const groups = (Array.isArray(altData) ? altData : []).map((g: any) => ({
+              id: g.id || g.jid || g.groupJid,
+              subject: g.subject || g.name || g.groupName || "Sem nome",
+              size: g.size || g.participants?.length || 0,
+              creation: g.creation || 0,
+            }));
+            result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups });
+            continue;
+          }
+          
           result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups: [] });
           continue;
         }
 
-        const groupsData = await groupsResp.json();
-        const groups = (Array.isArray(groupsData) ? groupsData : []).map((g: any) => ({
+        const rawText = await groupsResp.text();
+        console.log(`Groups response for ${instanceName} (first 1000 chars):`, rawText.substring(0, 1000));
+        
+        let groupsData: any;
+        try {
+          groupsData = JSON.parse(rawText);
+        } catch {
+          console.error("Failed to parse groups JSON");
+          result.push({ instance_name: instanceName, phone_number: phoneFormatted, groups: [] });
+          continue;
+        }
+
+        // Handle both array and object responses
+        let groupsList: any[] = [];
+        if (Array.isArray(groupsData)) {
+          groupsList = groupsData;
+        } else if (groupsData?.groups && Array.isArray(groupsData.groups)) {
+          groupsList = groupsData.groups;
+        } else if (groupsData?.data && Array.isArray(groupsData.data)) {
+          groupsList = groupsData.data;
+        }
+
+        console.log(`Parsed ${groupsList.length} groups for ${instanceName}`);
+
+        const groups = groupsList.map((g: any) => ({
           id: g.id || g.jid || g.groupJid,
           subject: g.subject || g.name || g.groupName || "Sem nome",
           size: g.size || g.participants?.length || 0,
