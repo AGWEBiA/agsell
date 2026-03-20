@@ -14,7 +14,11 @@ type OrgInstance = {
   config: IntegrationConfig;
 };
 
-const GROUP_FETCH_TIMEOUT_MS = 55000;
+const GROUP_FETCH_TIMEOUT_MS = 90000; // 90s for instances with many groups
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 3000;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const jsonResponse = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), {
