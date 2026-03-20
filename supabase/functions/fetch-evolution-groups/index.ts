@@ -14,7 +14,7 @@ type OrgInstance = {
   config: IntegrationConfig;
 };
 
-const GROUP_FETCH_TIMEOUT_MS = 30000;
+const GROUP_FETCH_TIMEOUT_MS = 55000;
 
 const jsonResponse = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), {
@@ -113,7 +113,6 @@ const fetchGroupsForInstance = async (
   const encodedInstance = encodeURIComponent(instanceName);
   const endpoints = [
     `${baseUrl}/group/fetchAllGroups/${encodedInstance}?getParticipants=false`,
-    `${baseUrl}/group/fetchAll/${encodedInstance}?getParticipants=false`,
   ];
 
   let lastErrorMessage = "";

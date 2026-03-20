@@ -1,0 +1,1 @@
+ALTER TABLE organization_integrations DROP CONSTRAINT IF EXISTS organization_integrations_organization_id_integration_type_key;
