@@ -978,12 +978,10 @@ export function WhatsAppGroupsManager() {
             <div className="space-y-2">
               <Label className="font-semibold">Tag do grupo</Label>
               <p className="text-xs text-muted-foreground">O campo abaixo será responsável pelas tags que serão adicionadas ao grupo do WhatsApp.</p>
-              <TagInput
-                tags={editForm.tags}
-                onAdd={() => handleAddTag(editTagInput, 'edit')}
-                onRemove={t => handleRemoveTag(t, 'edit')}
-                inputValue={editTagInput}
-                setInputValue={setEditTagInput}
+              <SearchableTagSelect
+                selectedTags={editForm.tags}
+                onTagsChange={tags => setEditForm({ ...editForm, tags })}
+                placeholder="Buscar ou criar tag..."
               />
             </div>
 
