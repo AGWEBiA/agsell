@@ -223,6 +223,54 @@ export default function Tags() {
         </div>
       )}
 
+      {/* Edit Tag Dialog */}
+      <Dialog open={!!editingTag} onOpenChange={() => setEditingTag(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tag</DialogTitle>
+            <DialogDescription>Atualize o nome e a cor da tag</DialogDescription>
+          </DialogHeader>
+          {editingTag && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Nome da Tag *</Label>
+                <Input value={editingTag.name} onChange={(e) => setEditingTag({ ...editingTag, name: e.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Cor</Label>
+                <div className="flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setEditingTag({ ...editingTag, color })}
+                      className={`h-8 w-8 rounded-full border-2 transition-all ${editingTag.color === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Preview:</span>
+                <Badge style={{ backgroundColor: `${editingTag.color}20`, color: editingTag.color || '#3b82f6', borderColor: editingTag.color || '#3b82f6' }} variant="outline">
+                  {editingTag.name || 'Tag'}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTag(null)}>Cancelar</Button>
+            <Button onClick={() => {
+              if (!editingTag) return;
+              updateTag.mutate({ id: editingTag.id, name: editingTag.name, color: editingTag.color });
+              setEditingTag(null);
+            }} disabled={updateTag.isPending || !editingTag?.name}>
+              {updateTag.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
