@@ -97,21 +97,39 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
     }
   }, [isLoadingGroups, groups.length, activeInstances.length, currentOrganization?.id]);
 
-  const handleFetchEvolutionGroups = async () => {
+  const handleFetchEvolutionGroups = async (instanceFilter?: string) => {
     if (!currentOrganization?.id) return;
     setIsImporting(true);
     setImportedGroups([]);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-evolution-groups', {
-        body: { organization_id: currentOrganization.id },
+        body: { organization_id: currentOrganization.id, instance_name: instanceFilter || undefined },
       });
       if (error) throw error;
       const allGroups: typeof importedGroups = [];
       const existingIds = new Set(groups.map(g => g.external_group_id));
+
+      // Update phone numbers on local instances
       for (const inst of data.instances || []) {
+        if (inst.phone_number) {
+          // Find the matching local instance and update its phone_number in config
+          const localInstance = whatsAppInstances.find(
+            i => (i.config?.instance_name || i.name) === inst.instance_name
+          );
+          if (localInstance && !localInstance.phone_number) {
+            await supabase
+              .from('organization_integrations')
+              .update({
+                config: { ...localInstance.config, phone_number: inst.phone_number } as any,
+              })
+              .eq('id', localInstance.id);
+          }
+        }
+
         for (const g of inst.groups || []) {
           allGroups.push({
             instance_name: inst.instance_name,
+            phone_number: inst.phone_number,
             id: g.id,
             subject: g.subject,
             size: g.size,
