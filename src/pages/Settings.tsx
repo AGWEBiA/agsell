@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { User, Bell, Shield, Download, Trash2, AlertTriangle, HelpCircle, Phone, FileText, ShieldAlert } from 'lucide-react';
+import { User, Bell, Shield, Download, Trash2, AlertTriangle, HelpCircle, Phone, FileText, ShieldAlert, Loader2 } from 'lucide-react';
 import { AuditLogPanel } from '@/components/security/AuditLogPanel';
 import { SecurityAlertsPanel } from '@/components/security/SecurityAlertsPanel';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,10 @@ export default function Settings() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ['my-profile-whatsapp', user?.id],
