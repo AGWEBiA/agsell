@@ -86,6 +86,69 @@ export function WhatsAppGroupsManager() {
 
   const { instances: whatsAppInstances } = useWhatsAppInstances();
 
+  const handleFetchEvolutionGroups = async () => {
+    if (!currentOrganization?.id) return;
+    setIsImporting(true);
+    setImportedGroups([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-evolution-groups', {
+        body: { organization_id: currentOrganization.id },
+      });
+      if (error) throw error;
+      const allGroups: typeof importedGroups = [];
+      const existingIds = new Set(groups.map(g => g.external_group_id));
+      for (const inst of data.instances || []) {
+        for (const g of inst.groups || []) {
+          allGroups.push({
+            instance_name: inst.instance_name,
+            id: g.id,
+            subject: g.subject,
+            size: g.size,
+            selected: !existingIds.has(g.id),
+          });
+        }
+      }
+      setImportedGroups(allGroups);
+      setIsImportDialogOpen(true);
+      if (allGroups.length === 0) toast.info('Nenhum grupo encontrado nas instâncias conectadas.');
+    } catch (err: any) {
+      toast.error('Erro ao buscar grupos: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleImportSelected = async () => {
+    const selected = importedGroups.filter(g => g.selected);
+    if (selected.length === 0) { toast.error('Selecione ao menos um grupo'); return; }
+    const existingIds = new Set(groups.map(g => g.external_group_id));
+    let imported = 0;
+    for (const g of selected) {
+      if (existingIds.has(g.id)) continue;
+      createGroup({ name: g.subject, description: `Importado de ${g.instance_name}`, group_type: 'group' });
+      // Also update external_group_id after creation - we'll do a batch update
+      imported++;
+    }
+    // For external_group_id we need direct insert
+    if (currentOrganization?.id) {
+      for (const g of selected) {
+        if (existingIds.has(g.id)) continue;
+        await supabase.from('whatsapp_groups').insert({
+          organization_id: currentOrganization.id,
+          name: g.subject,
+          external_group_id: g.id,
+          member_count: g.size,
+          group_type: 'group',
+          settings: {} as any,
+          tags: [],
+        });
+      }
+      refetchGroups();
+    }
+    toast.success(`${selected.length} grupo(s) importado(s) com sucesso!`);
+    setIsImportDialogOpen(false);
+  };
+
   const handleCreateGroup = () => {
     createGroup(newGroup);
     setIsCreateDialogOpen(false);
