@@ -85,9 +85,7 @@ const menuSections: MenuSection[] = [
     label: 'WhatsApp',
     icon: Smartphone,
     items: [
-      { label: 'Conexão via QR Code', icon: QrCode, path: '/whatsapp', featureRequired: 'whatsapp' },
-      { label: 'Conexão Evolution Própria', icon: Server, path: '/whatsapp', featureRequired: 'whatsapp' },
-      { label: 'Conexão API Oficial', icon: Globe, path: '/whatsapp', featureRequired: 'whatsapp' },
+      { label: 'Dispositivos', icon: Smartphone, path: '/whatsapp', featureRequired: 'whatsapp' },
       { label: 'Templates API', icon: FileText, path: '/whatsapp-templates', featureRequired: 'whatsapp' },
       { label: 'Grupos Pagos', icon: Crown, path: '/paid-groups', featureRequired: 'paid_groups' },
       { label: 'Direcionador de Grupos', icon: Route, path: '/group-rotator', featureRequired: 'whatsapp' },
