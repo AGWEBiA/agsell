@@ -38,12 +38,12 @@ export default function Settings() {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   const { data: profile } = useQuery({
-    queryKey: ['my-profile-whatsapp', user?.id],
+    queryKey: ['my-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data } = await supabase
         .from('profiles')
-        .select('whatsapp_number')
+        .select('whatsapp_number, full_name')
         .eq('user_id', user.id)
         .single();
       return data;
@@ -53,7 +53,43 @@ export default function Settings() {
 
   useEffect(() => {
     if (profile?.whatsapp_number) setWhatsappNumber(profile.whatsapp_number);
+    if (profile?.full_name) setProfileName(profile.full_name);
   }, [profile]);
+
+  const saveProfileMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('Não autenticado');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: profileName })
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      toast.success('Perfil salvo com sucesso!');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success('Senha alterada com sucesso!');
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao alterar senha.');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const saveWhatsAppMutation = useMutation({
     mutationFn: async () => {
