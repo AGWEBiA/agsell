@@ -123,9 +123,11 @@ const fetchGroupsForInstance = async (
   baseUrl: string,
   apiKey: string,
   instanceName: string,
+  adminOnly: boolean = false,
 ): Promise<any[]> => {
   const encodedInstance = encodeURIComponent(instanceName);
-  const endpoint = `${baseUrl}/group/fetchAllGroups/${encodedInstance}?getParticipants=false`;
+  const getParticipants = adminOnly ? "true" : "false";
+  const endpoint = `${baseUrl}/group/fetchAllGroups/${encodedInstance}?getParticipants=${getParticipants}`;
 
   let lastErrorMessage = "";
 
