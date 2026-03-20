@@ -97,7 +97,10 @@ export function WhatsAppCampaignsManager({ currentInstanceId }: { currentInstanc
   });
 
   const handleCreateCampaign = () => {
-    createCampaign(newCampaign);
+    createCampaign({
+      ...newCampaign,
+      whatsapp_instance_id: newCampaign.whatsapp_instance_ids[0] || newCampaign.whatsapp_instance_id,
+    });
     setIsCreateDialogOpen(false);
     setNewCampaign({
       name: '',
@@ -109,6 +112,7 @@ export function WhatsAppCampaignsManager({ currentInstanceId }: { currentInstanc
       delay_between_messages: 3000,
       daily_limit: 1000,
       whatsapp_instance_id: defaultInstance?.id || '',
+      whatsapp_instance_ids: currentInstanceId ? [currentInstanceId] : defaultInstance?.id ? [defaultInstance.id] : [],
     });
   };
 
