@@ -15,6 +15,7 @@ interface Message {
 interface RequestBody {
   messages: Message[];
   agent_id?: string;
+  model?: string;
   context?: {
     contactsCount?: number;
     dealsCount?: number;
