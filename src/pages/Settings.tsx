@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { User, Bell, Shield, Download, Trash2, AlertTriangle, HelpCircle, Phone, FileText, ShieldAlert } from 'lucide-react';
+import { User, Bell, Shield, Download, Trash2, AlertTriangle, HelpCircle, Phone, FileText, ShieldAlert, Loader2 } from 'lucide-react';
 import { AuditLogPanel } from '@/components/security/AuditLogPanel';
 import { SecurityAlertsPanel } from '@/components/security/SecurityAlertsPanel';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,14 +32,18 @@ export default function Settings() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   const { data: profile } = useQuery({
-    queryKey: ['my-profile-whatsapp', user?.id],
+    queryKey: ['my-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data } = await supabase
         .from('profiles')
-        .select('whatsapp_number')
+        .select('whatsapp_number, full_name')
         .eq('user_id', user.id)
         .single();
       return data;
@@ -49,7 +53,43 @@ export default function Settings() {
 
   useEffect(() => {
     if (profile?.whatsapp_number) setWhatsappNumber(profile.whatsapp_number);
+    if (profile?.full_name) setProfileName(profile.full_name);
   }, [profile]);
+
+  const saveProfileMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('Não autenticado');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: profileName })
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      toast.success('Perfil salvo com sucesso!');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success('Senha alterada com sucesso!');
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao alterar senha.');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const saveWhatsAppMutation = useMutation({
     mutationFn: async () => {
@@ -62,7 +102,7 @@ export default function Settings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-profile-whatsapp'] });
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
       toast.success('Número salvo com sucesso!');
     },
     onError: (e: Error) => toast.error(e.message),
@@ -179,9 +219,19 @@ export default function Settings() {
           <Card>
             <CardHeader><CardTitle>Perfil</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2"><Label>Nome</Label><Input placeholder="Seu nome" /></div>
+              <div className="grid gap-2">
+                <Label>Nome</Label>
+                <Input 
+                  placeholder="Seu nome" 
+                  value={profileName} 
+                  onChange={(e) => setProfileName(e.target.value)} 
+                />
+              </div>
               <div className="grid gap-2"><Label>Email</Label><Input type="email" placeholder="seu@email.com" value={user?.email || ''} disabled /></div>
-              <Button>Salvar</Button>
+              <Button onClick={() => saveProfileMutation.mutate()} disabled={saveProfileMutation.isPending || !profileName.trim()}>
+                {saveProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar
+              </Button>
             </CardContent>
           </Card>
           <Card>
@@ -229,9 +279,19 @@ export default function Settings() {
           <Card>
             <CardHeader><CardTitle>Alterar Senha</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2"><Label>Senha atual</Label><Input type="password" /></div>
-              <div className="grid gap-2"><Label>Nova senha</Label><Input type="password" /></div>
-              <Button>Alterar senha</Button>
+              <div className="grid gap-2">
+                <Label>Nova senha</Label>
+                <Input 
+                  type="password" 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)} 
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+              <Button onClick={handleChangePassword} disabled={passwordLoading || !newPassword}>
+                {passwordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Alterar senha
+              </Button>
             </CardContent>
           </Card>
           <SecurityAlertsPanel />

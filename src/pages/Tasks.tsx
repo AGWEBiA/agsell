@@ -33,8 +33,9 @@ import {
   Loader2,
   List,
   CalendarDays,
+  Trash2,
 } from 'lucide-react';
-import { useTasks, useCreateTask, useCompleteTask, useUncompleteTask, type CreateTaskData, type Task } from '@/hooks/useTasks';
+import { useTasks, useCreateTask, useCompleteTask, useUncompleteTask, useDeleteTask, type CreateTaskData, type Task } from '@/hooks/useTasks';
 import { useContacts } from '@/hooks/useContacts';
 import { TaskCalendar } from '@/components/tasks/TaskCalendar';
 
@@ -67,6 +68,7 @@ export default function Tasks() {
   const createTask = useCreateTask();
   const completeTask = useCompleteTask();
   const uncompleteTask = useUncompleteTask();
+  const deleteTask = useDeleteTask();
 
   const pendingTasks = tasks.filter((t) => t.status === 'pending');
   const completedTasks = tasks.filter((t) => t.status === 'completed');
@@ -153,6 +155,9 @@ export default function Tasks() {
                 )}
               </div>
             </div>
+            <Button variant="ghost" size="icon" className="shrink-0 mt-1" onClick={() => deleteTask.mutate(task.id)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
           </div>
         </CardContent>
       </Card>

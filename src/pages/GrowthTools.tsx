@@ -46,6 +46,10 @@ export default function GrowthTools() {
       const msg = tool.prefilled_message ? `&text=${encodeURIComponent(tool.prefilled_message)}` : '';
       return `https://wa.me/${tool.phone_number.replace(/\D/g, '')}${msg ? '?' + msg.slice(1) : ''}`;
     }
+    if (tool.channel === 'instagram' && tool.phone_number) {
+      // phone_number field stores the Instagram username for Instagram tools
+      return `https://ig.me/m/${tool.phone_number.replace('@', '')}`;
+    }
     return '#';
   };
 
@@ -106,8 +110,8 @@ export default function GrowthTools() {
                 </Select>
               </div>
               <div>
-                <Label>Número WhatsApp (com DDI)</Label>
-                <Input value={form.phone_number} onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))} placeholder="5511999999999" />
+                <Label>{form.channel === 'instagram' ? 'Username do Instagram' : 'Número WhatsApp (com DDI)'}</Label>
+                <Input value={form.phone_number} onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))} placeholder={form.channel === 'instagram' ? '@seuperfil' : '5511999999999'} />
               </div>
               <div>
                 <Label>Mensagem pré-preenchida</Label>

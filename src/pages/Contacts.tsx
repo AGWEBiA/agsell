@@ -196,7 +196,29 @@ export default function Contacts() {
           </Button>
         </PermissionGate>
         <PermissionGate module="contacts" action="export">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            if (contacts.length === 0) {
+              toast.error('Nenhum contato para exportar.');
+              return;
+            }
+            const headers = ['Nome', 'Sobrenome', 'Email', 'Telefone', 'WhatsApp', 'Empresa', 'Status', 'Score', 'Fonte', 'Criado em'];
+            const rows = contacts.map(c => [
+              c.first_name, c.last_name || '', c.email || '', c.phone || '', c.whatsapp || '',
+              c.company?.name || '', c.status || '', String(c.lead_score || 0), c.source || '',
+              new Date(c.created_at).toLocaleDateString('pt-BR'),
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(','))].join('\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `contatos-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success('Contatos exportados com sucesso!');
+          }}>
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
