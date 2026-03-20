@@ -717,7 +717,7 @@ export default function SystemGuide() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">5</p>
+            <p className="text-2xl font-bold text-primary">6</p>
             <p className="text-xs text-muted-foreground">Canais integrados</p>
           </CardContent>
         </Card>
