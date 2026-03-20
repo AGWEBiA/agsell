@@ -778,8 +778,8 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
             </TabsContent>
 
             {/* Send Message Tab */}
-            <TabsContent value="message" className="mt-4">
-              <div className="space-y-4">
+            <TabsContent value="message" className="mt-4 max-h-[450px] overflow-y-auto">
+              <div className="space-y-4 pb-2">
                 <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3">
