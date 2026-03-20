@@ -92,34 +92,39 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
               <span className="font-medium text-foreground">{messagesPerMinute}</span>
               <span>4000</span>
             </div>
-            <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950 p-3">
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                Ao alterar este campo, por favor, considere o <span className="font-semibold underline">limite diário de envio</span> imposto pela API Oficial do WhatsApp.
-              </p>
-            </div>
+            {instance.integration_type === 'whatsapp_business' && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950 p-3">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Ao alterar este campo, por favor, considere o <span className="font-semibold underline">limite diário de envio</span> imposto pela API Oficial do WhatsApp.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Webhook URL */}
-          <div className="space-y-2">
-            <Label>Link do Webhook (URL de retorno de chamada)</Label>
-            <div className="flex gap-2">
-              <Input value={webhookUrl} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="sm" onClick={() => copyToClipboard(webhookUrl)}>
-                <Copy className="h-4 w-4 mr-1" /> Copiar
-              </Button>
-            </div>
-          </div>
+          {/* Webhook URL & Token - only for official API */}
+          {instance.integration_type === 'whatsapp_business' && (
+            <>
+              <div className="space-y-2">
+                <Label>Link do Webhook (URL de retorno de chamada)</Label>
+                <div className="flex gap-2">
+                  <Input value={webhookUrl} readOnly className="font-mono text-xs" />
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(webhookUrl)}>
+                    <Copy className="h-4 w-4 mr-1" /> Copiar
+                  </Button>
+                </div>
+              </div>
 
-          {/* Token */}
-          <div className="space-y-2">
-            <Label>Token</Label>
-            <div className="flex gap-2">
-              <Input value={token} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="sm" onClick={() => copyToClipboard(token)}>
-                <Copy className="h-4 w-4 mr-1" /> Copiar
-              </Button>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <Label>Token</Label>
+                <div className="flex gap-2">
+                  <Input value={token} readOnly className="font-mono text-xs" />
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(token)}>
+                    <Copy className="h-4 w-4 mr-1" /> Copiar
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>

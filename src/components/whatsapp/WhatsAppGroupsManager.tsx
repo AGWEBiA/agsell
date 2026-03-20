@@ -84,17 +84,17 @@ export function WhatsAppGroupsManager() {
   const [editLeadTagInput, setEditLeadTagInput] = useState('');
   const [editInstanceId, setEditInstanceId] = useState('');
   const [editSyncNewLeads, setEditSyncNewLeads] = useState(false);
-  const [hasAutoFetched, setHasAutoFetched] = useState(false);
+  const hasAutoFetchedRef = useRef(false);
 
   const { instances: whatsAppInstances, activeInstances } = useWhatsAppInstances();
 
-  // Auto-fetch groups from Evolution API on first load if we have active instances and no groups
+  // Auto-fetch groups from Evolution API on first load only (once per session)
   useEffect(() => {
-    if (!hasAutoFetched && !isLoadingGroups && groups.length === 0 && activeInstances.length > 0 && currentOrganization?.id) {
-      setHasAutoFetched(true);
+    if (!hasAutoFetchedRef.current && !isLoadingGroups && groups.length === 0 && activeInstances.length > 0 && currentOrganization?.id) {
+      hasAutoFetchedRef.current = true;
       handleFetchEvolutionGroups();
     }
-  }, [hasAutoFetched, isLoadingGroups, groups.length, activeInstances.length, currentOrganization?.id]);
+  }, [isLoadingGroups, groups.length, activeInstances.length, currentOrganization?.id]);
 
   const handleFetchEvolutionGroups = async () => {
     if (!currentOrganization?.id) return;
