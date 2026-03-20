@@ -22,6 +22,7 @@ import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
 import Apresentacao from "./pages/Apresentacao";
+import SalesPitch from "./pages/SalesPitch";
 import PurchaseSuccess from "./pages/PurchaseSuccess";
 import SubscriptionExpired from "./pages/SubscriptionExpired";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
