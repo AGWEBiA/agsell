@@ -23,7 +23,7 @@ import {
   Users, Plus, Trash2, UserPlus, UserMinus, MessageSquare, RefreshCw, Crown, Clock,
   Search, Settings, Copy, Shield, Activity, Eye, ToggleLeft, ToggleRight, Edit, Tag, Send, X,
   Lock, Unlock, Link2, ImageIcon, Ban, UserCog, ShieldCheck, ShieldOff, Globe, MessageCircle,
-  AlertTriangle, Info, Download, Loader2, CheckSquare,
+  AlertTriangle, Info, Download, Loader2, CheckSquare, Smartphone,
 } from 'lucide-react';
 import { useWhatsAppGroups, WhatsAppGroup, WhatsAppGroupEvent, WhatsAppGroupMember } from '@/hooks/useWhatsAppGroups';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
