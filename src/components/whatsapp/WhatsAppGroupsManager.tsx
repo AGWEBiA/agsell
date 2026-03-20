@@ -759,7 +759,7 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
             </TabsContent>
 
             {/* Events Tab */}
-            <TabsContent value="events" className="mt-4">
+            <TabsContent value="events" className="mt-4 max-h-[450px] overflow-y-auto">
               {isLoadingEvents ? (
                 <div className="flex items-center justify-center py-8"><RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" /></div>
               ) : groupEvents.length === 0 ? (
