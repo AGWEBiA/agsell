@@ -685,7 +685,7 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
 
       {/* Group Detail Dialog */}
       <Dialog open={!!selectedGroup} onOpenChange={() => setSelectedGroup(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900"><Users className="h-4 w-4 text-green-600" /></div>
