@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -84,7 +85,7 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
               type="button"
               onClick={() => {
                 onOpenChange(false);
-                window.dispatchEvent(new CustomEvent('navigate-to-groups', { detail: { instanceName } }));
+                window.dispatchEvent(new CustomEvent('navigate-to-groups', { detail: { instanceName, autoFetch: true } }));
               }}
               className="flex flex-col items-start p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"
             >
@@ -93,7 +94,10 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
             </button>
             <button
               type="button"
-              onClick={() => toast.info('Importação de contatos será disponibilizada em breve.')}
+              onClick={() => {
+                onOpenChange(false);
+                window.dispatchEvent(new CustomEvent('navigate-to-contacts-import', { detail: { instanceName } }));
+              }}
               className="flex flex-col items-start p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"
             >
               <span className="font-medium text-sm">Importar contatos</span>
@@ -278,6 +282,8 @@ export default function WhatsApp() {
     }
   };
 
+  const navigate = useNavigate();
+
   // Listen for navigate-to-groups events
   React.useEffect(() => {
     const handler = (e: Event) => {
@@ -290,6 +296,15 @@ export default function WhatsApp() {
     window.addEventListener('navigate-to-groups', handler);
     return () => window.removeEventListener('navigate-to-groups', handler);
   }, []);
+
+  // Listen for navigate-to-contacts-import events
+  React.useEffect(() => {
+    const handler = () => {
+      navigate('/contacts?import=true');
+    };
+    window.addEventListener('navigate-to-contacts-import', handler);
+    return () => window.removeEventListener('navigate-to-contacts-import', handler);
+  }, [navigate]);
 
   const sacInstances = instances.filter(i => i.config?.use_for_sac === true && i.is_active);
 

@@ -100,6 +100,18 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
     }
   }, [isLoadingGroups, groups.length, activeInstances.length, currentOrganization?.id]);
 
+  // Listen for auto-fetch trigger from device config dialog
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.autoFetch && currentOrganization?.id) {
+        handleFetchEvolutionGroups(detail.instanceName || undefined);
+      }
+    };
+    window.addEventListener('navigate-to-groups', handler);
+    return () => window.removeEventListener('navigate-to-groups', handler);
+  }, [currentOrganization?.id]);
+
   const handleFetchEvolutionGroups = async (instanceFilter?: string) => {
     if (!currentOrganization?.id) return;
     setIsImporting(true);
