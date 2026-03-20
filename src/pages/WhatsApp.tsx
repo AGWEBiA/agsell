@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Smartphone, CheckCircle2, XCircle, Users, Send, Settings, Star, Server, Trash2, Power, Loader2, Copy, Gauge, Link2, KeyRound } from 'lucide-react';
+import {
+  MessageSquare, Smartphone, CheckCircle2, Users, Send, Settings, Star,
+  Server, Trash2, Power, Loader2, Copy, Gauge, Phone, Headphones, Globe, Monitor,
+} from 'lucide-react';
 import { WhatsAppProviderSetup } from '@/components/integrations/WhatsAppProviderSetup';
 import { WhatsAppGroupsManager } from '@/components/whatsapp/WhatsAppGroupsManager';
 import { useWhatsAppGroups } from '@/hooks/useWhatsAppGroups';
@@ -13,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
@@ -26,15 +30,19 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
   const { updateInstance } = useWhatsAppInstances();
   const [name, setName] = useState(instance?.name || '');
   const [messagesPerMinute, setMessagesPerMinute] = useState(
-    parseInt(instance?.config?.messages_per_minute || '2000', 10)
+    parseInt(instance?.config?.messages_per_minute as string || '2000', 10)
+  );
+  const [useForSac, setUseForSac] = useState(
+    instance?.config?.use_for_sac === true
   );
   const webhookUrl = `${window.location.origin}/api/whatsapp-webhook`;
-  const token = instance?.config?.webhook_token || instance?.id?.slice(0, 16) || '';
+  const token = (instance?.config?.webhook_token as string) || instance?.id?.slice(0, 16) || '';
 
   React.useEffect(() => {
     if (instance) {
       setName(instance.name);
-      setMessagesPerMinute(parseInt(instance.config?.messages_per_minute || '2000', 10));
+      setMessagesPerMinute(parseInt(instance.config?.messages_per_minute as string || '2000', 10));
+      setUseForSac(instance.config?.use_for_sac === true);
     }
   }, [instance]);
 
@@ -46,6 +54,7 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
       config: {
         ...instance.config,
         messages_per_minute: String(messagesPerMinute),
+        use_for_sac: useForSac,
       },
     });
     onOpenChange(false);
@@ -58,53 +67,57 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
 
   if (!instance) return null;
 
-  const phone = instance.phone_number || instance.config?.phone_number || instance.config?.instance_name || '';
-  const instanceName = instance.config?.instance_name || instance.name;
+  const phone = instance.phone_number || (instance.config?.phone_number as string) || (instance.config?.instance_name as string) || '';
+  const instanceName = (instance.config?.instance_name as string) || instance.name;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <div className="text-lg font-semibold">{phone || instanceName}</div>
-          <DialogTitle>Configurações de WhatsApp</DialogTitle>
+          <DialogTitle>Configurações do Dispositivo</DialogTitle>
         </DialogHeader>
         <div className="space-y-5 py-2 max-h-[70vh] overflow-y-auto">
-          {/* Gerenciamento de grupos */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">Gerenciamento de grupos</h4>
-            <p className="text-xs text-muted-foreground">
-              Clicando aqui, você pode configurar os seus grupos de WhatsApp, criar grupos novos, importar os leads e definir suas tags.
-            </p>
-          </div>
-
-          {/* Mais recursos - Import buttons */}
+          {/* Quick actions */}
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => {
                 onOpenChange(false);
-                // Navigate to groups tab filtered by this instance
                 window.dispatchEvent(new CustomEvent('navigate-to-groups', { detail: { instanceName } }));
               }}
               className="flex flex-col items-start p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"
             >
-              <span className="font-medium text-sm">Importar todos os grupos</span>
-              <span className="text-xs text-muted-foreground mt-1">Faça a importação de todos os grupos de WhatsApp do dispositivo.</span>
+              <span className="font-medium text-sm">Importar grupos</span>
+              <span className="text-xs text-muted-foreground mt-1">Importar grupos de WhatsApp do dispositivo.</span>
             </button>
             <button
               type="button"
               onClick={() => toast.info('Importação de contatos será disponibilizada em breve.')}
               className="flex flex-col items-start p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"
             >
-              <span className="font-medium text-sm">Importar todos os contatos</span>
-              <span className="text-xs text-muted-foreground mt-1">Importar todos os contatos deste dispositivo para a lista de leads.</span>
+              <span className="font-medium text-sm">Importar contatos</span>
+              <span className="text-xs text-muted-foreground mt-1">Importar contatos deste dispositivo.</span>
             </button>
           </div>
 
           {/* Device Name */}
           <div className="space-y-2">
             <Label>Nome do dispositivo</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Dê um nome para o seu dispositivo na plataforma" />
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome do dispositivo" />
+          </div>
+
+          {/* SAC toggle */}
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-2">
+                <Headphones className="h-4 w-4" /> Usar para Atendimento (SAC)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativo, mensagens recebidas neste dispositivo serão encaminhadas para o Inbox de atendimento.
+              </p>
+            </div>
+            <Switch checked={useForSac} onCheckedChange={setUseForSac} />
           </div>
 
           {/* Messages per minute */}
@@ -115,30 +128,20 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
             <Slider
               value={[messagesPerMinute]}
               onValueChange={([v]) => setMessagesPerMinute(v)}
-              min={12}
-              max={4000}
-              step={1}
-              className="w-full"
+              min={12} max={4000} step={1}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>12</span>
               <span className="font-medium text-foreground">{messagesPerMinute}</span>
               <span>4000</span>
             </div>
-            {instance.integration_type === 'whatsapp_business' && (
-              <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950 p-3">
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Ao alterar este campo, por favor, considere o <span className="font-semibold underline">limite diário de envio</span> imposto pela API Oficial do WhatsApp.
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Webhook URL & Token - only for official API */}
+          {/* Webhook - only official */}
           {instance.integration_type === 'whatsapp_business' && (
             <>
               <div className="space-y-2">
-                <Label>Link do Webhook (URL de retorno de chamada)</Label>
+                <Label>Webhook URL</Label>
                 <div className="flex gap-2">
                   <Input value={webhookUrl} readOnly className="font-mono text-xs" />
                   <Button variant="outline" size="sm" onClick={() => copyToClipboard(webhookUrl)}>
@@ -146,7 +149,6 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
                   </Button>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label>Token</Label>
                 <div className="flex gap-2">
@@ -170,28 +172,113 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
   );
 }
 
+// ---- Instance Selector Bar ----
+function InstanceSelectorBar({
+  instances,
+  selectedId,
+  onSelect,
+  onConfig,
+}: {
+  instances: WhatsAppInstance[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onConfig: (instance: WhatsAppInstance) => void;
+}) {
+  if (instances.length === 0) return null;
+
+  const getTypeIcon = (instance: WhatsAppInstance) => {
+    if (instance.integration_type === 'whatsapp_business') return <Globe className="h-3.5 w-3.5" />;
+    if (instance.config?.own_api_url) return <Monitor className="h-3.5 w-3.5" />;
+    return <Server className="h-3.5 w-3.5" />;
+  };
+
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      {instances.map((instance) => {
+        const isSelected = selectedId === instance.id;
+        const phone = instance.phone_number || (instance.config?.phone_number as string) || '';
+        const displayName = phone || instance.name;
+        const isConnected = instance.is_active;
+        const hasSac = instance.config?.use_for_sac === true;
+
+        return (
+          <button
+            key={instance.id}
+            onClick={() => onSelect(instance.id)}
+            className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all duration-200 shrink-0 group
+              ${isSelected
+                ? 'border-primary bg-primary/5 shadow-sm'
+                : 'border-transparent bg-muted/40 hover:bg-muted/70 hover:border-border'
+              }`}
+          >
+            {/* Status dot */}
+            <div className="relative">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors
+                ${isSelected ? 'bg-primary/12 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                {getTypeIcon(instance)}
+              </div>
+              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background
+                ${isConnected ? 'bg-emerald-500' : 'bg-muted-foreground/40'}`} />
+            </div>
+
+            <div className="text-left min-w-0">
+              <p className={`text-xs font-semibold truncate max-w-[140px] ${isSelected ? 'text-primary' : ''}`}>
+                {displayName}
+              </p>
+              <div className="flex items-center gap-1 mt-0.5">
+                {instance.is_default && <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />}
+                {hasSac && <Headphones className="h-2.5 w-2.5 text-blue-500" />}
+                <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
+                  {instance.name}
+                </span>
+              </div>
+            </div>
+
+            {/* Config gear on hover */}
+            <button
+              onClick={(e) => { e.stopPropagation(); onConfig(instance); }}
+              className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 flex items-center justify-center rounded-md hover:bg-muted shrink-0"
+              title="Configurações"
+            >
+              <Settings className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function WhatsApp() {
   const {
-    instances,
-    activeInstances,
-    defaultInstance,
-    isLoading,
-    deleteInstance,
-    toggleInstance,
-    setDefaultInstance,
+    instances, activeInstances, defaultInstance, isLoading,
+    deleteInstance, toggleInstance, setDefaultInstance,
   } = useWhatsAppInstances();
   const { groups } = useWhatsAppGroups();
   const [configInstance, setConfigInstance] = useState<WhatsAppInstance | null>(null);
   const [activeTab, setActiveTab] = useState('connection');
   const [filterDeviceInstance, setFilterDeviceInstance] = useState<string | null>(null);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
-  const handleDeviceClick = (instance: WhatsAppInstance) => {
-    const instanceName = instance.config?.instance_name || instance.name;
-    setFilterDeviceInstance(instanceName);
-    setActiveTab('groups');
+  // Auto-select default or first instance
+  React.useEffect(() => {
+    if (!selectedInstanceId && instances.length > 0) {
+      setSelectedInstanceId(defaultInstance?.id || instances[0].id);
+    }
+  }, [instances, defaultInstance, selectedInstanceId]);
+
+  const selectedInstance = instances.find(i => i.id === selectedInstanceId) || null;
+
+  const handleSelectInstance = (id: string) => {
+    setSelectedInstanceId(id);
+    const inst = instances.find(i => i.id === id);
+    if (inst) {
+      const instName = (inst.config?.instance_name as string) || inst.name;
+      setFilterDeviceInstance(instName);
+    }
   };
 
-  // Listen for navigate-to-groups events from InstanceConfigDialog
+  // Listen for navigate-to-groups events
   React.useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -204,62 +291,77 @@ export default function WhatsApp() {
     return () => window.removeEventListener('navigate-to-groups', handler);
   }, []);
 
+  const sacInstances = instances.filter(i => i.config?.use_for_sac === true && i.is_active);
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">WhatsApp</h1>
-          <p className="text-muted-foreground text-sm">Gerencie suas conexões, grupos e campanhas WhatsApp</p>
-        </div>
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">WhatsApp</h1>
+        <p className="text-muted-foreground text-sm">Gerencie conexões, grupos e campanhas</p>
       </div>
 
-      {/* Info Card */}
-      <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-        <CardContent className="pt-6">
-          <div className="flex gap-3 sm:gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-              <MessageSquare className="h-5 w-5 text-blue-600" />
+      {/* ===== INSTANCE SELECTOR BAR ===== */}
+      {instances.length > 0 && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Dispositivos ({instances.length})
+                </span>
+                <Badge variant="outline" className="text-[10px]">
+                  {activeInstances.length} conectado(s)
+                </Badge>
+              </div>
+              {sacInstances.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] gap-1">
+                  <Headphones className="h-3 w-3" />
+                  {sacInstances.length} no SAC
+                </Badge>
+              )}
             </div>
-            <div>
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100">Integração WhatsApp Completa</h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                Conecte via QR Code ou API, gerencie grupos e comunidades, e envie campanhas em massa respeitando as boas práticas do WhatsApp.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Meta Billing Notice */}
-      <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
-        <CardContent className="pt-6">
-          <div className="flex gap-3 sm:gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900">
-              <Settings className="h-5 w-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-amber-900 dark:text-amber-100">Aviso sobre cobrança de mensagens</h3>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                <strong>API Oficial (Meta Cloud API):</strong> as mensagens são cobradas diretamente pela Meta ao titular da conta. O AG Sell não cobra taxas adicionais.
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                <strong>Evolution API (QR Code):</strong> não há custos por mensagem. Você precisa apenas hospedar sua própria instância da Evolution API.
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                <strong>Nota:</strong> A API Oficial não suporta grupos — apenas mensagens individuais.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            <InstanceSelectorBar
+              instances={instances}
+              selectedId={selectedInstanceId}
+              onSelect={handleSelectInstance}
+              onConfig={setConfigInstance}
+            />
+
+            {/* Selected instance context */}
+            {selectedInstance && (
+              <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>
+                    Exibindo dados de: <strong className="text-foreground">{selectedInstance.phone_number || selectedInstance.name}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {selectedInstance.config?.use_for_sac && (
+                    <Badge variant="outline" className="text-[10px] gap-0.5">
+                      <Headphones className="h-2.5 w-2.5" /> SAC
+                    </Badge>
+                  )}
+                  <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setConfigInstance(selectedInstance)}>
+                    <Settings className="h-3 w-3 mr-1" /> Config
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
-                <Smartphone className="h-6 w-6 text-green-600" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900">
+                <Smartphone className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{isLoading ? '...' : activeInstances.length}</p>
@@ -309,106 +411,6 @@ export default function WhatsApp() {
         </Card>
       </div>
 
-      {/* Dispositivos (Instance Cards) - SellFlux style */}
-      {instances.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5" />
-                Dispositivos ({instances.length})
-              </CardTitle>
-              <CardDescription>
-                Configure seus telefones para o atendimento e para as automações de WhatsApp.
-                Você possui um total de {instances.length} dispositivo(s), com {activeInstances.length} conectado(s).
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {instances.map((instance) => {
-                  const isActive = instance.is_active;
-                  const phone = instance.phone_number || instance.config?.phone_number || '';
-                  const instanceName = instance.config?.instance_name || instance.name;
-                  const displayName = phone || instanceName;
-                  const isConnected = instance.status === 'connected' || isActive;
-                  return (
-                    <div
-                      key={instance.id}
-                      onClick={() => handleDeviceClick(instance)}
-                      className={`relative group cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
-                        isConnected
-                          ? 'border-green-500/50 bg-green-50/30 dark:bg-green-950/20'
-                          : 'border-border bg-card opacity-75 hover:opacity-100'
-                      }`}
-                    >
-                      {/* Status indicator */}
-                      <div className={`absolute top-3 right-3 h-3 w-3 rounded-full ${
-                        isConnected ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-muted-foreground/30'
-                      }`} />
-
-                      {/* Phone number - prominently displayed */}
-                      <p className="font-semibold text-sm truncate pr-6">
-                        {phone ? phone : <span className="text-muted-foreground italic">Conexão incompleta!</span>}
-                      </p>
-
-                      {/* Instance name & status */}
-                      <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {instance.name !== displayName ? instance.name + ' • ' : ''}
-                        {isConnected ? 'Conectado' : 'Inativo'}
-                      </p>
-
-                      {/* Badges */}
-                      <div className="flex flex-wrap items-center gap-1 mt-2">
-                        <Badge variant={isConnected ? 'default' : 'secondary'} className="text-[10px] h-5">
-                          {instance.integration_type === 'evolution_api' ? 'Evolution' : 'API Oficial'}
-                        </Badge>
-                        {instance.is_default && (
-                          <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
-                            <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-400" /> Padrão
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Quick actions (on hover) */}
-                      <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                          onClick={() => setConfigInstance(instance)}
-                          title="Configurações">
-                          <Settings className="h-3.5 w-3.5" />
-                        </Button>
-                        {!instance.is_default && isActive && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => setDefaultInstance.mutate(instance.id)}
-                            title="Definir como padrão">
-                            <Star className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                          onClick={() => toggleInstance.mutate({ id: instance.id, isActive: !instance.is_active })}
-                          title={isActive ? 'Desativar' : 'Ativar'}>
-                          <Power className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => { if (confirm('Remover esta instância?')) deleteInstance.mutate(instance.id); }}
-                          title="Remover">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'groups') setFilterDeviceInstance(null); }} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
@@ -432,38 +434,6 @@ export default function WhatsApp() {
 
         <TabsContent value="connection" className="space-y-6">
           <WhatsAppProviderSetup />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Como Configurar</CardTitle>
-              <CardDescription>Siga os passos para integrar o WhatsApp</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">1</div>
-                  <div>
-                    <p className="font-medium">Escolha o tipo de conexão</p>
-                    <p className="text-sm text-muted-foreground">QR Code para uso pessoal ou API Business para empresas com alto volume.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">2</div>
-                  <div>
-                    <p className="font-medium">Configure seus grupos</p>
-                    <p className="text-sm text-muted-foreground">Adicione grupos para monitorar entradas, saídas e enviar mensagens automáticas.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">3</div>
-                  <div>
-                    <p className="font-medium">Crie campanhas em massa</p>
-                    <p className="text-sm text-muted-foreground">Envie mensagens 1-a-1 respeitando os limites e boas práticas do WhatsApp.</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="groups">
