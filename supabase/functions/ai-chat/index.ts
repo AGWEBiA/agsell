@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     let systemPrompt: string;
-    let model = "google/gemini-3-flash-preview";
+    let model = requestedModel || "google/gemini-3-flash-preview";
     let temperature = 0.7;
     let maxTokens = 1024;
 
