@@ -382,13 +382,15 @@ Deno.serve(async (req) => {
           groups,
         });
       } catch (e) {
-        console.error(`Error fetching groups for ${instanceName}:`, e);
+        const errMsg = e instanceof Error ? e.message : String(e);
+        console.error(`Error fetching groups for ${instanceName}:`, errMsg);
         result.push({
           instance_id: orgInstance?.id || null,
           instance_name: orgInstance?.instance_name || instanceName,
           instance_label: orgInstance?.name || instanceName,
           phone_number: phoneFormatted,
           groups: [],
+          error: errMsg,
         });
       }
     }
