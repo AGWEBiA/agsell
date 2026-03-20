@@ -51,6 +51,7 @@ import {
 import { useWhatsAppCampaigns, WhatsAppCampaign } from '@/hooks/useWhatsAppCampaigns';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
 import { WhatsAppInstanceSelector, WhatsAppInstanceBadge } from './WhatsAppInstanceSelector';
+import { WhatsAppMultiInstanceSelector } from './WhatsAppMultiInstanceSelector';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
