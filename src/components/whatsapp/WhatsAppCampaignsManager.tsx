@@ -82,6 +82,7 @@ export function WhatsAppCampaignsManager({ currentInstanceId }: { currentInstanc
     delay_between_messages: number;
     daily_limit: number;
     whatsapp_instance_id: string;
+    whatsapp_instance_ids: string[];
   }>({
     name: '',
     description: '',
@@ -92,6 +93,7 @@ export function WhatsAppCampaignsManager({ currentInstanceId }: { currentInstanc
     delay_between_messages: 3000,
     daily_limit: 1000,
     whatsapp_instance_id: defaultInstance?.id || '',
+    whatsapp_instance_ids: currentInstanceId ? [currentInstanceId] : defaultInstance?.id ? [defaultInstance.id] : [],
   });
 
   const handleCreateCampaign = () => {
