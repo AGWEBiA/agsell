@@ -288,33 +288,39 @@ export default function WhatsApp() {
               <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {instances.map((instance) => {
                   const isActive = instance.is_active;
-                  const phone = instance.phone_number || instance.config?.instance_name || instance.name;
+                  const phone = instance.phone_number || instance.config?.phone_number || '';
+                  const instanceName = instance.config?.instance_name || instance.name;
+                  const displayName = phone || instanceName;
+                  const isConnected = instance.status === 'connected' || isActive;
                   return (
                     <div
                       key={instance.id}
-                      onClick={() => setConfigInstance(instance)}
+                      onClick={() => handleDeviceClick(instance)}
                       className={`relative group cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
-                        isActive
+                        isConnected
                           ? 'border-green-500/50 bg-green-50/30 dark:bg-green-950/20'
                           : 'border-border bg-card opacity-75 hover:opacity-100'
                       }`}
                     >
                       {/* Status indicator */}
                       <div className={`absolute top-3 right-3 h-3 w-3 rounded-full ${
-                        isActive ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-muted-foreground/30'
+                        isConnected ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-muted-foreground/30'
                       }`} />
 
-                      {/* Phone number */}
-                      <p className="font-semibold text-sm truncate pr-4">{phone}</p>
+                      {/* Phone number - prominently displayed */}
+                      <p className="font-semibold text-sm truncate pr-6">
+                        {phone ? phone : <span className="text-muted-foreground italic">Conexão incompleta!</span>}
+                      </p>
 
-                      {/* Name & status */}
+                      {/* Instance name & status */}
                       <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {instance.name} {isActive ? '• Conectado' : '• Inativo'}
+                        {instance.name !== displayName ? instance.name + ' • ' : ''}
+                        {isConnected ? 'Conectado' : 'Inativo'}
                       </p>
 
                       {/* Badges */}
                       <div className="flex flex-wrap items-center gap-1 mt-2">
-                        <Badge variant={isActive ? 'default' : 'secondary'} className="text-[10px] h-5">
+                        <Badge variant={isConnected ? 'default' : 'secondary'} className="text-[10px] h-5">
                           {instance.integration_type === 'evolution_api' ? 'Evolution' : 'API Oficial'}
                         </Badge>
                         {instance.is_default && (
@@ -326,6 +332,11 @@ export default function WhatsApp() {
 
                       {/* Quick actions (on hover) */}
                       <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={() => setConfigInstance(instance)}
+                          title="Configurações">
+                          <Settings className="h-3.5 w-3.5" />
+                        </Button>
                         {!instance.is_default && isActive && (
                           <Button variant="ghost" size="icon" className="h-7 w-7"
                             onClick={() => setDefaultInstance.mutate(instance.id)}
