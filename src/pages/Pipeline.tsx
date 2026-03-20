@@ -123,20 +123,33 @@ export default function Pipeline() {
     setDraggedDealId(dealId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', dealId);
+    // Add drag image for better visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.dataTransfer.setDragImage(e.currentTarget, 50, 20);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverStageId(stageId);
+    if (dragOverStageId !== stageId) {
+      setDragOverStageId(stageId);
+    }
   };
 
-  const handleDragLeave = () => {
-    setDragOverStageId(null);
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if leaving the stage container entirely
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    const currentTarget = e.currentTarget as HTMLElement;
+    if (!currentTarget.contains(relatedTarget)) {
+      setDragOverStageId(null);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverStageId(null);
     const dealId = e.dataTransfer.getData('text/plain');
     if (dealId) {
