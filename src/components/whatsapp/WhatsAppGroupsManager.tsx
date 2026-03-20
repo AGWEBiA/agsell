@@ -416,6 +416,21 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
 
   return (
     <div className="space-y-6">
+      {/* Device filter banner */}
+      {filterInstanceName && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <Smartphone className="h-5 w-5 text-primary" />
+          <span className="text-sm font-medium">Filtrando grupos do dispositivo: <strong>{filterInstanceName}</strong></span>
+          <Button variant="ghost" size="sm" className="ml-auto h-7" onClick={onClearFilter}>
+            <X className="h-4 w-4 mr-1" /> Limpar filtro
+          </Button>
+          <Button variant="secondary" size="sm" className="h-7" onClick={() => handleFetchEvolutionGroups(filterInstanceName)} disabled={isImporting}>
+            {isImporting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+            Buscar Grupos deste Dispositivo
+          </Button>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900"><Users className="h-5 w-5 text-green-600" /></div><div><p className="text-2xl font-bold">{groups.length}</p><p className="text-xs text-muted-foreground">Total de Grupos</p></div></div></CardContent></Card>
@@ -445,7 +460,7 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
             </Select>
           )}
           <Button variant="outline" size="icon" onClick={() => refetchGroups()}><RefreshCw className="h-4 w-4" /></Button>
-          <Button variant="secondary" onClick={handleFetchEvolutionGroups} disabled={isImporting}>
+          <Button variant="secondary" onClick={() => handleFetchEvolutionGroups()} disabled={isImporting}>
             {isImporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             Buscar Grupos
           </Button>
