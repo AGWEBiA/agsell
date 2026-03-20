@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 const MANUAL_CONTENT = `# MANUAL TÉCNICO COMPLETO — AG SELL
 ## Plataforma CRM + Automação Omnichannel + IA
 
-**Versão:** 1.0  
+**Versão:** 2.0  
 **Data:** Março 2026  
 **Classificação:** Documentação Interna — Uso Técnico e Estratégico
 
