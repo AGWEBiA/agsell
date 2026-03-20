@@ -228,6 +228,70 @@ serve(async (req) => {
             }
             break;
 
+          case 'add_to_whatsapp_group': {
+            // Add contact to WhatsApp group via Evolution API
+            if (contact_id && action.config.group_id) {
+              // Get contact's WhatsApp number
+              const { data: contactData } = await supabase
+                .from('contacts')
+                .select('whatsapp, phone')
+                .eq('id', contact_id)
+                .single();
+
+              const phoneNumber = contactData?.whatsapp || contactData?.phone;
+              if (phoneNumber) {
+                // Get group info
+                const { data: groupData } = await supabase
+                  .from('whatsapp_groups')
+                  .select('external_group_id, settings')
+                  .eq('id', action.config.group_id as string)
+                  .single();
+
+                if (groupData?.external_group_id) {
+                  // Get Evolution API config
+                  const { data: platformSettings } = await supabase
+                    .from('platform_settings')
+                    .select('value')
+                    .eq('key', 'evolution_api')
+                    .single();
+
+                  const evoConfig = platformSettings?.value as { api_url?: string; api_key?: string } | null;
+                  if (evoConfig?.api_url && evoConfig?.api_key) {
+                    const apiUrl = evoConfig.api_url.replace(/\/+$/, '');
+                    const instanceName = (action.config.instance_name as string) || 
+                      ((groupData.settings as Record<string, unknown>)?.instance_name as string) || '';
+                    
+                    // Format Brazilian number
+                    let digits = phoneNumber.replace(/\D/g, '');
+                    if (digits.length >= 10 && digits.length <= 11 && !digits.startsWith('55')) {
+                      digits = '55' + digits;
+                    }
+
+                    const addResponse = await fetch(`${apiUrl}/group/updateParticipant/${instanceName}`, {
+                      method: 'PUT',
+                      headers: { apikey: evoConfig.api_key, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        groupJid: groupData.external_group_id,
+                        action: 'add',
+                        participants: [`${digits}@s.whatsapp.net`],
+                      }),
+                    });
+                    const addResult = await addResponse.text();
+                    console.log('[AUTOMATION] Add to group result:', addResponse.status, addResult);
+                    actionResult = { success: addResponse.ok, response: addResult };
+                  } else {
+                    actionResult = { skipped: true, reason: 'Evolution API not configured' };
+                  }
+                } else {
+                  actionResult = { skipped: true, reason: 'Group has no external JID' };
+                }
+              } else {
+                actionResult = { skipped: true, reason: 'Contact has no WhatsApp number' };
+              }
+            }
+            break;
+          }
+
           default:
             actionResult = { skipped: true, reason: `Unknown action type: ${action.type}` };
         }
