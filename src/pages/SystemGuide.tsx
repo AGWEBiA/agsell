@@ -6,6 +6,7 @@ import {
   Webhook, SlidersHorizontal, Instagram, ListChecks, Search,
   BookOpen, ChevronRight, Lightbulb, Bell, Globe, Lock, Database,
   HelpCircle, Megaphone, Wrench, Workflow, Vote, SplitSquareVertical, Briefcase,
+  Link as LinkIcon, Phone,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
