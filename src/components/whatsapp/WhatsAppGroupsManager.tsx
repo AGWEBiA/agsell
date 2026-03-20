@@ -544,7 +544,7 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
         </div>
       </div>
 
-      {/* Groups Grid */}
+      {/* Groups Table - SellFlux style */}
       {isLoadingGroups ? (
         <div className="flex items-center justify-center py-12"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : filteredGroups.length === 0 ? (
@@ -557,58 +557,127 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredGroups.map((group) => (
-            <Card key={group.id} className={`hover:shadow-md transition-shadow cursor-pointer ${!group.is_active ? 'opacity-60' : ''}`} onClick={() => handleOpenDetail(group)}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${group.is_active ? 'bg-green-100 dark:bg-green-900' : 'bg-muted'}`}>
-                      <Users className={`h-5 w-5 ${group.is_active ? 'text-green-600' : 'text-muted-foreground'}`} />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{group.name}</CardTitle>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <Badge variant="outline" className="text-xs">{group.group_type === 'community' ? 'Comunidade' : 'Grupo'}</Badge>
-                        {group.is_admin && <Badge variant="secondary" className="text-xs"><Crown className="h-3 w-3 mr-1" />Admin</Badge>}
-                        {!group.is_active && <Badge variant="destructive" className="text-xs">Inativo</Badge>}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {group.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{group.description}</p>}
-                {/* Tags */}
-                {group.tags && group.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {group.tags.map(tag => (
-                      <Badge key={tag} variant="outline" className="text-[10px] gap-1 bg-primary/5">
-                        <Tag className="h-2.5 w-2.5" />{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                  <span className="flex items-center gap-1"><Users className="h-4 w-4" />{group.member_count} membros</span>
-                  {group.synced_at && (
-                    <span className="flex items-center gap-1 text-xs"><Clock className="h-3 w-3" />{formatDistanceToNow(new Date(group.synced_at), { addSuffix: true, locale: ptBR })}</span>
-                  )}
-                </div>
-                <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDetail(group)}>
-                    <Eye className="h-4 w-4 mr-2" />Detalhes
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEditGroup(group)}><Edit className="h-4 w-4" /></Button>
-                  <Button variant="outline" size="sm" onClick={() => handleToggleGroup(group)}>
-                    {group.is_active ? <ToggleRight className="h-4 w-4 text-green-600" /> : <ToggleLeft className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmGroup(group)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            {/* Action bar */}
+            <div className="flex items-center gap-2 p-3 border-b flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => {
+                const selected = filteredGroups.filter(g => selectedGroupIds.has(g.id));
+                if (selected.length === 0) { toast.error('Selecione pelo menos um grupo'); return; }
+                setEditingGroup(selected[0]);
+                handleEditGroup(selected[0]);
+              }} disabled={selectedGroupIds.size === 0}>
+                Editar os selecionados
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                filteredGroups.forEach(g => handleEditGroup(g));
+                toast.info('Use a edição individual para configurar cada grupo.');
+              }}>
+                Editar todos os grupos
+              </Button>
+              <div className="flex items-center gap-2 ml-auto">
+                <Checkbox
+                  checked={enableSelection}
+                  onCheckedChange={v => {
+                    setEnableSelection(!!v);
+                    if (!v) setSelectedGroupIds(new Set());
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">Habilitar seleção</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setShowArchived(!showArchived)}>
+                {showArchived ? 'Grupos ativos' : 'Grupos arquivados'}
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {enableSelection && <TableHead className="w-[40px]"></TableHead>}
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tags dos grupos</TableHead>
+                    <TableHead>Tag dos leads</TableHead>
+                    <TableHead>Telefone de envio</TableHead>
+                    <TableHead>JID</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredGroups
+                    .filter(g => showArchived ? !g.is_active : g.is_active || g.is_active === false)
+                    .map((group) => {
+                      const settings = (group.settings || {}) as Record<string, unknown>;
+                      const leadTags = (settings.lead_tags as string[]) || [];
+                      const instanceName = (settings.instance_name as string) || '';
+                      const matchingInst = whatsAppInstances.find(i => (i.config?.instance_name || i.name) === instanceName);
+                      const phone = matchingInst?.phone_number || matchingInst?.config?.phone_number || '';
+                      return (
+                        <TableRow key={group.id} className={`cursor-pointer hover:bg-muted/50 ${!group.is_active ? 'opacity-60' : ''}`}>
+                          {enableSelection && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedGroupIds.has(group.id)}
+                                onCheckedChange={v => {
+                                  setSelectedGroupIds(prev => {
+                                    const next = new Set(prev);
+                                    if (v) next.add(group.id); else next.delete(group.id);
+                                    return next;
+                                  });
+                                }}
+                              />
+                            </TableCell>
+                          )}
+                          <TableCell className="font-medium max-w-[200px] truncate" onClick={() => handleOpenDetail(group)}>
+                            {group.name}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {(group.tags || []).map(tag => (
+                                <Badge key={tag} variant="outline" className="text-[10px] bg-primary/5">{tag}</Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {leadTags.map(tag => (
+                                <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {phone || '—'}
+                          </TableCell>
+                          <TableCell>
+                            {group.external_group_id ? (
+                              <code className="text-[10px] text-muted-foreground">{group.external_group_id.slice(0, 18)}...</code>
+                            ) : '—'}
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={group.is_active}
+                              onCheckedChange={() => handleToggleGroup(group)}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center gap-1 justify-end">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditGroup(group)} title="Editar">
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteConfirmGroup(group)} title="Arquivar/Remover">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Group Detail Dialog */}
