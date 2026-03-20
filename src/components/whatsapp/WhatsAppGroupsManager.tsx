@@ -644,8 +644,15 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
                       const settings = (group.settings || {}) as Record<string, unknown>;
                       const leadTags = (settings.lead_tags as string[]) || [];
                       const instanceName = (settings.instance_name as string) || '';
-                      const matchingInst = whatsAppInstances.find(i => (i.config?.instance_name || i.name) === instanceName);
-                      const phone = matchingInst?.phone_number || matchingInst?.config?.phone_number || '';
+                      const instanceId = (settings.instance_id as string) || '';
+                      const savedPhone = (settings.sender_phone_number as string) || '';
+                      const matchingInst = instanceId
+                        ? whatsAppInstances.find(i => i.id === instanceId)
+                        : whatsAppInstances.find(i =>
+                            (i.config?.instance_name || i.name) === instanceName ||
+                            i.name === instanceName
+                          );
+                      const phone = savedPhone || matchingInst?.phone_number || (matchingInst?.config?.phone_number as string) || '';
                       return (
                         <TableRow key={group.id} className={`cursor-pointer hover:bg-muted/50 ${!group.is_active ? 'opacity-60' : ''}`}>
                           {enableSelection && (
