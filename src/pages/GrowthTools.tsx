@@ -110,8 +110,8 @@ export default function GrowthTools() {
                 </Select>
               </div>
               <div>
-                <Label>Número WhatsApp (com DDI)</Label>
-                <Input value={form.phone_number} onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))} placeholder="5511999999999" />
+                <Label>{form.channel === 'instagram' ? 'Username do Instagram' : 'Número WhatsApp (com DDI)'}</Label>
+                <Input value={form.phone_number} onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))} placeholder={form.channel === 'instagram' ? '@seuperfil' : '5511999999999'} />
               </div>
               <div>
                 <Label>Mensagem pré-preenchida</Label>
