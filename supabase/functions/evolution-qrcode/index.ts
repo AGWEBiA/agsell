@@ -74,61 +74,24 @@ Deno.serve(async (req) => {
 
     try {
       if (action === "create") {
-        const createRes = await fetch(`${baseUrl}/instance/create`, {
-          method: "POST",
-          headers: {
-            apikey: apiKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            instanceName,
-            qrcode: true,
-            integration: "WHATSAPP-BAILEYS",
-          }),
-          signal: controller.signal,
-        });
-
-        const createDataRaw = await createRes.text();
-        const createData = parseUnknown(createDataRaw);
-
-        if (!createRes.ok) {
-          const message = getErrorMessage(createData);
-          const alreadyExists =
-            createRes.status === 403 ||
-            createRes.status === 409 ||
-            /already|já existe|exist/i.test(message);
-
-          if (alreadyExists) {
-            await registerSyncWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
-            return await getQRCode(baseUrl, apiKey, instanceName, controller.signal);
-          }
-
-          return jsonResponse({
-            success: false,
-            error: `Erro ao criar instância: ${createRes.status}`,
-            details: createData,
-          });
-        }
-
-        await registerSyncWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
-
-        const qr = (createData as Record<string, unknown>)?.qrcode as Record<string, unknown> | undefined;
-        if (qr?.base64 || qr?.pairingCode) {
-          return jsonResponse({
-            success: true,
-            action: "qrcode",
-            qrcode: qr.base64 || null,
-            pairingCode: qr.pairingCode || null,
-            instance: (createData as Record<string, unknown>)?.instance || null,
-            instance_name: instanceName,
-          });
-        }
-
-        return await getQRCode(baseUrl, apiKey, instanceName, controller.signal);
+        return await createInstanceAndFetchQRCode(
+          baseUrl,
+          apiKey,
+          instanceName,
+          supabaseUrl,
+          controller.signal,
+        );
       }
 
       if (action === "connect" || action === "qrcode") {
-        return await getQRCode(baseUrl, apiKey, instanceName, controller.signal);
+        return await getQRCode(
+          baseUrl,
+          apiKey,
+          instanceName,
+          supabaseUrl,
+          controller.signal,
+          true,
+        );
       }
 
       if (action === "status") {
@@ -286,11 +249,87 @@ async function registerSyncWebhook(
   }
 }
 
+async function createInstanceAndFetchQRCode(
+  baseUrl: string,
+  apiKey: string,
+  instanceName: string,
+  supabaseUrl: string,
+  signal: AbortSignal,
+) {
+  const createRes = await fetch(`${baseUrl}/instance/create`, {
+    method: "POST",
+    headers: {
+      apikey: apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      instanceName,
+      qrcode: true,
+      integration: "WHATSAPP-BAILEYS",
+    }),
+    signal,
+  });
+
+  const createDataRaw = await createRes.text();
+  const createData = parseUnknown(createDataRaw);
+
+  if (!createRes.ok) {
+    const message = getErrorMessage(createData);
+    const alreadyExists =
+      createRes.status === 403 ||
+      createRes.status === 409 ||
+      /already|já existe|exist/i.test(message);
+
+    if (alreadyExists) {
+      await registerSyncWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
+      return await getQRCode(
+        baseUrl,
+        apiKey,
+        instanceName,
+        supabaseUrl,
+        signal,
+        false,
+      );
+    }
+
+    return jsonResponse({
+      success: false,
+      error: `Erro ao criar instância: ${createRes.status}`,
+      details: createData,
+    });
+  }
+
+  await registerSyncWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
+
+  const qr = (createData as Record<string, unknown>)?.qrcode as Record<string, unknown> | undefined;
+  if (qr?.base64 || qr?.pairingCode) {
+    return jsonResponse({
+      success: true,
+      action: "qrcode",
+      qrcode: qr.base64 || null,
+      pairingCode: qr.pairingCode || null,
+      instance: (createData as Record<string, unknown>)?.instance || null,
+      instance_name: instanceName,
+    });
+  }
+
+  return await getQRCode(
+    baseUrl,
+    apiKey,
+    instanceName,
+    supabaseUrl,
+    signal,
+    false,
+  );
+}
+
 async function getQRCode(
   baseUrl: string,
   apiKey: string,
   requestedInstanceName: string,
+  supabaseUrl: string,
   signal: AbortSignal,
+  allowAutoCreate = true,
 ) {
   const candidates = await resolveInstanceCandidates(baseUrl, apiKey, requestedInstanceName, signal);
 
@@ -344,6 +383,20 @@ async function getQRCode(
     if (!isInstanceNotFound(qrRes.status, qrData)) {
       break;
     }
+  }
+
+  if (
+    allowAutoCreate &&
+    lastError &&
+    isInstanceNotFound(lastError.status, lastError.details)
+  ) {
+    return await createInstanceAndFetchQRCode(
+      baseUrl,
+      apiKey,
+      requestedInstanceName,
+      supabaseUrl,
+      signal,
+    );
   }
 
   return jsonResponse({
