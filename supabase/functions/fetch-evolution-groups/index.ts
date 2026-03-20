@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabase = createClient(
@@ -22,48 +22,82 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const { organization_id } = await req.json();
     if (!organization_id) {
-      return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Use service role to read config (contains API keys)
+    // Use service role to read platform settings (contains API keys)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: config, error: configError } = await adminClient
-      .from("paid_groups_config")
-      .select("*")
-      .eq("organization_id", organization_id)
+    // Try global platform_settings first
+    const { data: globalConfig } = await adminClient
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "evolution_api")
       .single();
 
-    if (configError || !config?.evolution_api_url || !config?.evolution_api_key) {
-      return new Response(JSON.stringify({ error: "Evolution API não configurada" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let baseUrl = "";
+    let apiKey = "";
+
+    if (globalConfig?.value) {
+      const val = globalConfig.value as Record<string, string>;
+      baseUrl = (val.base_url || val.url || "").replace(/\/$/, "");
+      apiKey = val.api_key || val.apikey || "";
     }
 
-    const baseUrl = config.evolution_api_url.replace(/\/$/, "");
-    const apiKey = config.evolution_api_key;
+    // Fallback to paid_groups_config per org
+    if (!baseUrl || !apiKey) {
+      const { data: orgConfig } = await adminClient
+        .from("paid_groups_config")
+        .select("evolution_api_url, evolution_api_key")
+        .eq("organization_id", organization_id)
+        .single();
+
+      if (orgConfig) {
+        baseUrl = (orgConfig.evolution_api_url || "").replace(/\/$/, "");
+        apiKey = orgConfig.evolution_api_key || "";
+      }
+    }
+
+    if (!baseUrl || !apiKey) {
+      return new Response(JSON.stringify({ error: "Evolution API não configurada. Configure no painel administrativo.", instances: [] }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Step 1: Fetch all instances
-    const instancesResp = await fetch(`${baseUrl}/instance/fetchInstances`, {
-      headers: { apikey: apiKey },
-    });
+    let instances: any[] = [];
+    try {
+      const instancesResp = await fetch(`${baseUrl}/instance/fetchInstances`, {
+        headers: { apikey: apiKey },
+        signal: AbortSignal.timeout(15000),
+      });
 
-    if (!instancesResp.ok) {
-      const errText = await instancesResp.text();
-      console.error("Failed to fetch instances:", errText);
-      return new Response(JSON.stringify({ error: "Erro ao buscar instâncias", detail: errText }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (!instancesResp.ok) {
+        const errText = await instancesResp.text();
+        console.error("Failed to fetch instances:", errText);
+        return new Response(JSON.stringify({ error: "Erro ao conectar com Evolution API", detail: errText, instances: [] }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      instances = await instancesResp.json();
+    } catch (fetchErr) {
+      console.error("Evolution API connection error:", fetchErr);
+      return new Response(JSON.stringify({ error: "Não foi possível conectar à Evolution API. Verifique se a URL está acessível via HTTPS.", instances: [] }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const instances = await instancesResp.json();
     const connectedInstances = Array.isArray(instances)
       ? instances.filter((i: any) => {
           const state = i?.instance?.state || i?.state || i?.connectionStatus?.state;
@@ -84,6 +118,7 @@ Deno.serve(async (req) => {
       try {
         const groupsResp = await fetch(`${baseUrl}/group/fetchAllGroups/${instanceName}?getParticipants=false`, {
           headers: { apikey: apiKey },
+          signal: AbortSignal.timeout(15000),
         });
 
         if (!groupsResp.ok) {
@@ -110,6 +145,8 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("fetch-evolution-groups error:", err);
-    return new Response(JSON.stringify({ error: "Internal error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "Erro interno", instances: [] }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
