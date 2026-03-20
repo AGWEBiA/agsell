@@ -90,6 +90,8 @@ export function SearchableTagSelect({ selectedTags, onTagsChange, placeholder = 
           value={search}
           onChange={e => { setSearch(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
+          onMouseDown={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
           onKeyDown={e => {
             if (e.key === 'Enter') {
               e.preventDefault();
