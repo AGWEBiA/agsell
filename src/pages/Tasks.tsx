@@ -34,7 +34,7 @@ import {
   List,
   CalendarDays,
 } from 'lucide-react';
-import { useTasks, useCreateTask, useCompleteTask, useUncompleteTask, type CreateTaskData, type Task } from '@/hooks/useTasks';
+import { useTasks, useCreateTask, useCompleteTask, useUncompleteTask, useDeleteTask, type CreateTaskData, type Task } from '@/hooks/useTasks';
 import { useContacts } from '@/hooks/useContacts';
 import { TaskCalendar } from '@/components/tasks/TaskCalendar';
 
