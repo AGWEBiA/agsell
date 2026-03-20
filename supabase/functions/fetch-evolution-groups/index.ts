@@ -113,7 +113,6 @@ const fetchGroupsForInstance = async (
   const encodedInstance = encodeURIComponent(instanceName);
   const endpoints = [
     `${baseUrl}/group/fetchAllGroups/${encodedInstance}?getParticipants=false`,
-    `${baseUrl}/group/fetchAll/${encodedInstance}?getParticipants=false`,
   ];
 
   let lastErrorMessage = "";
