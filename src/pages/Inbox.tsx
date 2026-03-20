@@ -661,166 +661,169 @@ export default function Inbox() {
 
       {/* Nova Conversa Dialog */}
       <Dialog open={novaConversaOpen} onOpenChange={(v) => { if (!v) resetNovaConversa(); else setNovaConversaOpen(true); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Nova Conversa</DialogTitle>
             <DialogDescription>Busque um contato existente ou crie um novo para iniciar o atendimento.</DialogDescription>
           </DialogHeader>
 
-          {ncStep === 'search' ? (
-            <div className="space-y-4 py-2">
-              {/* Contact search */}
-              <div className="space-y-2">
-                <Label className="text-sm">Buscar Contato</Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    placeholder="Nome, telefone ou e-mail..."
-                    className="pl-8 h-9 text-sm"
-                    value={ncSearch}
-                    onChange={e => setNcSearch(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-                <ScrollArea className="max-h-40 border rounded-md">
-                  {ncFilteredContacts.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum contato encontrado</p>
-                  ) : (
-                    ncFilteredContacts.map(c => (
-                      <div
-                        key={c.id}
-                        className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-sm ${
-                          ncSelectedContact === c.id ? 'bg-accent' : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => setNcSelectedContact(c.id)}
-                      >
-                        <Avatar className="h-7 w-7">
-                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                            {getInitials(c.first_name, c.last_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{c.first_name} {c.last_name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{c.phone || c.email || '—'}</p>
+          <div className="flex-1 overflow-y-auto">
+            {ncStep === 'search' && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label className="text-sm">Buscar Contato</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Nome, telefone ou e-mail..."
+                      className="pl-8 h-9 text-sm"
+                      value={ncSearch}
+                      onChange={e => setNcSearch(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <ScrollArea className="max-h-40 border rounded-md">
+                    {ncFilteredContacts.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-4">Nenhum contato encontrado</p>
+                    ) : (
+                      ncFilteredContacts.map(c => (
+                        <div
+                          key={c.id}
+                          className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-sm ${
+                            ncSelectedContact === c.id ? 'bg-accent' : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setNcSelectedContact(c.id)}
+                        >
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                              {getInitials(c.first_name, c.last_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{c.first_name} {c.last_name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{c.phone || c.email || '—'}</p>
+                          </div>
+                          {ncSelectedContact === c.id && <CheckCheck className="h-4 w-4 text-primary shrink-0" />}
                         </div>
-                        {ncSelectedContact === c.id && <CheckCheck className="h-4 w-4 text-primary shrink-0" />}
+                      ))
+                    )}
+                  </ScrollArea>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Canal</Label>
+                  <Select value={ncChannel} onValueChange={setNcChannel}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="instagram">Instagram</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+                <Button variant="outline" size="default" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold" onClick={() => setNcStep('new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar novo contato
+                </Button>
+              </div>
+            )}
+
+            {ncStep === 'new' && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label className="text-sm">Nome *</Label>
+                  <Input value={ncNewName} onChange={e => setNcNewName(e.target.value)} placeholder="Nome do contato" className="h-9" autoFocus />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Email</Label>
+                  <Input type="email" value={ncNewEmail} onChange={e => setNcNewEmail(e.target.value)} placeholder="email@exemplo.com" className="h-9" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Telefone com DDD</Label>
+                  <Input value={ncNewPhone} onChange={e => setNcNewPhone(e.target.value.replace(/\D/g, ''))} placeholder="11999999999" className="h-9" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Canal</Label>
+                  <Select value={ncChannel} onValueChange={setNcChannel}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="instagram">Instagram</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="link" size="sm" className="px-0 text-xs" onClick={() => setNcStep('search')}>
+                  ← Voltar para busca
+                </Button>
+              </div>
+            )}
+
+            {ncStep === 'device' && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Dispositivos conectados</Label>
+                  <p className="text-xs text-primary">Selecione um dispositivo para iniciar a conversa</p>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input placeholder="Pesquisar nome ou número" className="pl-8 h-9 text-sm" />
+                  </div>
+                </div>
+                <ScrollArea className="max-h-60">
+                  <div className="space-y-1">
+                    {instances?.map((inst: any) => (
+                      <div
+                        key={inst.id}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border border-border/50"
+                        onClick={() => handleDeviceSelected(inst.id)}
+                      >
+                        <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{inst.name || 'Sem nome'}</p>
+                          <p className="text-xs text-muted-foreground">{inst.phone_number || '—'}</p>
+                        </div>
+                        {inst.integration_type && (
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            {inst.integration_type === 'evolution_api' ? 'Suporte' : 'Comercial'}
+                          </Badge>
+                        )}
                       </div>
-                    ))
-                  )}
+                    ))}
+                  </div>
                 </ScrollArea>
               </div>
+            )}
+          </div>
 
-              {/* Channel */}
-              <div className="space-y-2">
-                <Label className="text-sm">Canal</Label>
-                <Select value={ncChannel} onValueChange={setNcChannel}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="telegram">Telegram</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Device selection removed — now a dedicated step */}
-
-              <Separator />
-              <Button variant="outline" size="default" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold" onClick={() => setNcStep('new')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar novo contato
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label className="text-sm">Nome *</Label>
-                <Input value={ncNewName} onChange={e => setNcNewName(e.target.value)} placeholder="Nome do contato" className="h-9" autoFocus />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Email</Label>
-                <Input type="email" value={ncNewEmail} onChange={e => setNcNewEmail(e.target.value)} placeholder="email@exemplo.com" className="h-9" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Telefone com DDD</Label>
-                <Input value={ncNewPhone} onChange={e => setNcNewPhone(e.target.value.replace(/\D/g, ''))} placeholder="11999999999" className="h-9" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Canal</Label>
-                <Select value={ncChannel} onValueChange={setNcChannel}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="telegram">Telegram</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="link" size="sm" className="px-0 text-xs" onClick={() => setNcStep('search')}>
-                ← Voltar para busca
-              </Button>
-            </div>
-          )}
-
-          {/* Device selection step */}
-          {ncStep === 'device' && (
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Dispositivos conectados</Label>
-                <p className="text-xs text-primary">Selecione um dispositivo para iniciar a conversa</p>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input placeholder="Pesquisar nome ou número" className="pl-8 h-9 text-sm" />
-                </div>
-              </div>
-              <ScrollArea className="max-h-60">
-                <div className="space-y-1">
-                  {instances?.map((inst: any) => (
-                    <div
-                      key={inst.id}
-                      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border border-border/50"
-                      onClick={() => handleDeviceSelected(inst.id)}
-                    >
-                      <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{inst.name || 'Sem nome'}</p>
-                        <p className="text-xs text-muted-foreground">{inst.phone_number || '—'}</p>
-                      </div>
-                      {inst.integration_type && (
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {inst.integration_type === 'evolution_api' ? 'Suporte' : 'Comercial'}
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              <DialogFooter>
+          <DialogFooter>
+            {ncStep === 'device' ? (
+              <>
                 <Button variant="link" size="sm" onClick={() => setNcStep('search')}>Voltar</Button>
                 <Button variant="outline" onClick={resetNovaConversa}>Fechar</Button>
-              </DialogFooter>
-            </div>
-          )}
-
-          {ncStep !== 'device' && (
-            <DialogFooter>
-              <Button variant="outline" onClick={resetNovaConversa}>Cancelar</Button>
-              {ncStep === 'search' ? (
+              </>
+            ) : ncStep === 'search' ? (
+              <>
+                <Button variant="outline" onClick={resetNovaConversa}>Cancelar</Button>
                 <Button onClick={handleNovaConversaStart} disabled={!ncSelectedContact}>
                   Iniciar Atendimento
                 </Button>
-              ) : (
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={resetNovaConversa}>Cancelar</Button>
                 <Button onClick={handleCreateContactAndStart} disabled={isCreatingContact || !ncNewName.trim()}>
                   {isCreatingContact && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Salvar
+                  Criar e Iniciar
                 </Button>
-              )}
-            </DialogFooter>
-          )}
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
