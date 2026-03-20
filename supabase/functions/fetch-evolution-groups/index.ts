@@ -115,15 +115,18 @@ const fetchGroupsForInstance = async (
   instanceName: string,
 ): Promise<any[]> => {
   const encodedInstance = encodeURIComponent(instanceName);
-  const endpoints = [
-    `${baseUrl}/group/fetchAllGroups/${encodedInstance}?getParticipants=false`,
-  ];
+  const endpoint = `${baseUrl}/group/fetchAllGroups/${encodedInstance}?getParticipants=false`;
 
   let lastErrorMessage = "";
 
-  for (const endpoint of endpoints) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      console.log(`Retry ${attempt}/${MAX_RETRIES} for ${instanceName} after ${RETRY_DELAY_MS}ms...`);
+      await sleep(RETRY_DELAY_MS * attempt);
+    }
+
     try {
-      console.log("Fetching groups from:", endpoint);
+      console.log(`Fetching groups from: ${endpoint} (attempt ${attempt + 1})`);
 
       const groupsResp = await fetch(endpoint, {
         headers: { apikey: apiKey },
@@ -132,21 +135,25 @@ const fetchGroupsForInstance = async (
 
       if (!groupsResp.ok) {
         const errText = await groupsResp.text();
-        console.error(`Failed to fetch groups for ${instanceName} (${groupsResp.status}) from ${endpoint}:`, errText);
+        console.error(`Failed ${instanceName} (${groupsResp.status}):`, errText?.substring(0, 500));
         lastErrorMessage = `${groupsResp.status} ${errText || "request_failed"}`;
+        // Don't retry on 4xx client errors (except 408/429)
+        if (groupsResp.status >= 400 && groupsResp.status < 500 && groupsResp.status !== 408 && groupsResp.status !== 429) {
+          break;
+        }
         continue;
       }
 
       const rawText = await groupsResp.text();
-      console.log(`Groups response for ${instanceName} (first 1000 chars):`, rawText.substring(0, 1000));
+      console.log(`Groups response for ${instanceName}: ${rawText.length} bytes, first 500: ${rawText.substring(0, 500)}`);
 
       let groupsData: unknown;
       try {
         groupsData = JSON.parse(rawText);
       } catch {
-        console.error(`Failed to parse groups JSON for ${instanceName} from ${endpoint}`);
+        console.error(`Invalid JSON for ${instanceName} (${rawText.length} bytes)`);
         lastErrorMessage = "invalid_json_response";
-        continue;
+        continue; // Retry — may be partial response
       }
 
       const groups = parseGroups(groupsData);
@@ -154,8 +161,12 @@ const fetchGroupsForInstance = async (
       return groups;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching groups for ${instanceName} from ${endpoint}:`, error);
-      lastErrorMessage = message;
+      const isTimeout = message.includes("timeout") || message.includes("abort") || message.includes("signal");
+      console.error(`Error fetching groups for ${instanceName} (attempt ${attempt + 1}, timeout=${isTimeout}):`, message);
+      lastErrorMessage = isTimeout
+        ? `Timeout ao buscar grupos (${GROUP_FETCH_TIMEOUT_MS / 1000}s). A instância pode ter muitos grupos.`
+        : message;
+      if (!isTimeout) break; // Only retry on timeouts
     }
   }
 
