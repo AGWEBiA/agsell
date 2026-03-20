@@ -517,6 +517,12 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
             {isImporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             Buscar Grupos
           </Button>
+          {adminOnlyFilter && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-2.5 py-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span>A busca pode ser mais lenta com este filtro, pois precisa verificar os participantes de cada grupo.</span>
+            </div>
+          )}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Novo Grupo</Button></DialogTrigger>
             <DialogContent>
