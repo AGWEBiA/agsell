@@ -371,7 +371,6 @@ export function ContactInfoPanel({
                     variant="ghost"
                     className="w-full justify-start text-sm h-9"
                     onClick={() => {
-                      onTransfer(m.user_id);
                       onUpdateConversation({ assigned_to: m.user_id, status: 'open' });
                       setTransferOpen(false);
                       toast.success('Atendimento transferido!');
