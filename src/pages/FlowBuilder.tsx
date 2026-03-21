@@ -153,10 +153,46 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
     if (['timer', 'warmup'].includes(node.subtype)) return node.subtype === 'timer' ? 'TIMER' : 'AQUECIMENTO';
     if (['tag_filter'].includes(node.subtype)) return 'FILTRO';
     if (['send_email_marketing', 'send_email_performance'].includes(node.subtype)) return 'EMAIL';
+    if (node.subtype === 'parallel_channels') return 'PARALELO';
+    if (node.subtype === 'voice_torpedo') return 'VOZ';
+    if (node.subtype === 'link_split') return 'SPLIT';
+    if (node.subtype === 'note') return 'NOTA';
+    if (node.subtype === 'edit_whatsapp_group') return 'GRUPO';
     if (node.type === 'condition') return 'CONDIÇÃO';
     if (node.type === 'delay') return 'ESPERA';
     return 'AÇÃO';
   };
+
+  // Special rendering for note nodes
+  if (node.subtype === 'note') {
+    const noteColors: Record<string, string> = {
+      yellow: 'bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700',
+      blue: 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-700',
+      green: 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-700',
+      pink: 'bg-pink-50 border-pink-300 dark:bg-pink-900/20 dark:border-pink-700',
+    };
+    return (
+      <div className="flex flex-col items-center">
+        <div className={cn('relative w-[340px] rounded-xl border-2 p-4 cursor-pointer group transition-colors', noteColors[(node.config.color as string) || 'yellow'])} onClick={onEdit}>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+            <X className="h-3 w-3" />
+          </button>
+          <div className="flex items-center gap-2 mb-1">
+            <StickyNote className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0">NOTA</Badge>
+          </div>
+          <p className="text-xs text-foreground/80">{node.config.text ? String(node.config.text).slice(0, 120) : 'Clique para adicionar uma anotação...'}</p>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="w-0.5 h-6 bg-border" />
+          <button onClick={onAddAfter} className="flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed border-primary/40 hover:border-primary hover:bg-primary/10 transition-all group">
+            <Plus className="h-3.5 w-3.5 text-primary/60 group-hover:text-primary" />
+          </button>
+          <div className="w-0.5 h-6 bg-border" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center">
