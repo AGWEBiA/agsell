@@ -119,6 +119,6 @@ describe('FlowBuilder', () => {
   it('renders', async () => {
     const C = (await import('@/pages/FlowBuilder')).default;
     render(<P><C /></P>);
-    expect(screen.getByText(/Campanhas/i)).toBeInTheDocument();
+    expect(screen.getByText('Meus Fluxos')).toBeInTheDocument();
   });
 });
