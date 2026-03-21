@@ -938,6 +938,11 @@ export default function FlowBuilder() {
             <span className="text-sm text-muted-foreground">{isActive ? 'Ativo' : 'Rascunho'}</span>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
+          {nodes.length > 1 && (
+            <Button variant="outline" size="sm" onClick={handleExportCode} title="Exportar código do fluxo">
+              <Copy className="h-4 w-4 mr-2" />Exportar Código
+            </Button>
+          )}
           <Button onClick={handleSave} disabled={!hasTrigger || nodes.length < 2}>
             <Save className="h-4 w-4 mr-2" />{currentFlowId ? 'Atualizar' : 'Salvar'} Fluxo
           </Button>
