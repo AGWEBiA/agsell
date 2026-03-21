@@ -466,6 +466,42 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
         return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Curte automaticamente o comentário que acionou o gatilho.</p><div className="flex items-center gap-2"><Switch checked={config.only_keyword !== false} onCheckedChange={v => setConfig({ ...config, only_keyword: v })} /><Label>Curtir apenas comentários com palavra-chave</Label></div></div>);
       case 'instagram_follow_back':
         return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Segue automaticamente o usuário que interagiu com seu perfil.</p><div className="flex items-center gap-2"><Switch checked={!!config.add_tag_on_follow} onCheckedChange={v => setConfig({ ...config, add_tag_on_follow: v })} /><Label>Adicionar tag ao seguir</Label></div>{config.add_tag_on_follow && (<div><Label>Nome da Tag</Label><Input placeholder="Ex: seguido_de_volta" value={String(config.follow_tag || '')} onChange={e => setConfig({ ...config, follow_tag: e.target.value })} /></div>)}</div>);
+      // ── New node types ──
+      case 'voice_torpedo':
+        return (<div className="space-y-4"><div><Label>URL do Áudio (MP3)</Label><Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} /></div><div><Label>Mensagem de texto (fallback)</Label><Textarea rows={2} placeholder="Caso não consiga ouvir..." value={String(config.fallback_message || '')} onChange={e => setConfig({ ...config, fallback_message: e.target.value })} /></div><div className="flex items-center gap-2"><Switch checked={!!config.wait_answer} onCheckedChange={v => setConfig({ ...config, wait_answer: v })} /><Label>Aguardar resposta do usuário</Label></div></div>);
+      case 'parallel_channels':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Dispara mensagens em múltiplos canais simultaneamente. Se um canal falhar, os outros continuam.</p>
+          <div className="space-y-2">
+            {['whatsapp', 'email', 'sms'].map(ch => (
+              <div key={ch} className="flex items-center gap-2">
+                <Switch checked={((config.channels as string[]) || ['whatsapp', 'email']).includes(ch)} onCheckedChange={v => {
+                  const current = (config.channels as string[]) || ['whatsapp', 'email'];
+                  setConfig({ ...config, channels: v ? [...current, ch] : current.filter(c => c !== ch) });
+                }} />
+                <Label className="capitalize">{ch}</Label>
+              </div>
+            ))}
+          </div>
+          <div><Label>Mensagem WhatsApp</Label><Textarea rows={2} value={String(config.whatsapp_message || '')} onChange={e => setConfig({ ...config, whatsapp_message: e.target.value })} /></div>
+          <div><Label>Assunto Email</Label><Input value={String(config.email_subject || '')} onChange={e => setConfig({ ...config, email_subject: e.target.value })} /></div>
+          <div><Label>Conteúdo Email</Label><Textarea rows={2} value={String(config.email_content || '')} onChange={e => setConfig({ ...config, email_content: e.target.value })} /></div>
+          <div><Label>Mensagem SMS</Label><Textarea rows={2} maxLength={160} value={String(config.sms_message || '')} onChange={e => setConfig({ ...config, sms_message: e.target.value })} /></div>
+        </div>);
+      case 'edit_whatsapp_group':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Edita automaticamente o nome, descrição ou foto do grupo.</p><div><Label>JID do Grupo</Label><Input placeholder="123456789@g.us" value={String(config.group_jid || '')} onChange={e => setConfig({ ...config, group_jid: e.target.value })} /></div><div><Label>Novo Nome (opcional)</Label><Input value={String(config.new_name || '')} onChange={e => setConfig({ ...config, new_name: e.target.value })} /></div><div><Label>Nova Descrição (opcional)</Label><Textarea rows={2} value={String(config.new_description || '')} onChange={e => setConfig({ ...config, new_description: e.target.value })} /></div><div><Label>URL Nova Foto (opcional)</Label><Input placeholder="https://..." value={String(config.new_photo_url || '')} onChange={e => setConfig({ ...config, new_photo_url: e.target.value })} /></div></div>);
+      case 'link_split':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Distribui tráfego entre múltiplos links por percentual.</p>
+          {((config.links as Array<{url: string; percentage: number}>) || [{url: '', percentage: 50}, {url: '', percentage: 50}]).map((link, i) => (
+            <div key={i} className="flex gap-2 items-end">
+              <div className="flex-1"><Label className="text-xs">URL {i + 1}</Label><Input value={link.url} onChange={e => { const links = [...((config.links as any[]) || [{url:'',percentage:50},{url:'',percentage:50}])]; links[i] = {...links[i], url: e.target.value}; setConfig({...config, links}); }} placeholder="https://..." /></div>
+              <div className="w-20"><Label className="text-xs">%</Label><Input type="number" min={0} max={100} value={link.percentage} onChange={e => { const links = [...((config.links as any[]) || [{url:'',percentage:50},{url:'',percentage:50}])]; links[i] = {...links[i], percentage: parseInt(e.target.value) || 0}; setConfig({...config, links}); }} /></div>
+              {i > 1 && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const links = ((config.links as any[]) || []).filter((_: any, j: number) => j !== i); setConfig({...config, links}); }}><X className="h-3 w-3" /></Button>}
+            </div>
+          ))}
+          <Button variant="outline" size="sm" onClick={() => setConfig({...config, links: [...((config.links as any[]) || [{url:'',percentage:50},{url:'',percentage:50}]), {url:'', percentage:0}]})}><Plus className="h-3 w-3 mr-1" />Adicionar Link</Button>
+        </div>);
+      case 'note':
+        return (<div className="space-y-4"><div><Label>Anotação da equipe</Label><Textarea rows={4} placeholder="Notas internas sobre este ponto do fluxo..." value={String(config.text || '')} onChange={e => setConfig({ ...config, text: e.target.value })} /></div><div><Label>Cor</Label><Select value={String(config.color || 'yellow')} onValueChange={v => setConfig({ ...config, color: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="yellow">Amarelo</SelectItem><SelectItem value="blue">Azul</SelectItem><SelectItem value="green">Verde</SelectItem><SelectItem value="pink">Rosa</SelectItem></SelectContent></Select></div></div>);
       default:
         return <p className="text-sm text-muted-foreground">Nenhuma configuração adicional necessária.</p>;
     }
@@ -487,6 +523,11 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       abandonment: 'Configurar Abandono',
       conditional: 'Condicional',
       list_tag: 'Listar Tag',
+      voice_torpedo: 'Torpedo de Voz',
+      parallel_channels: 'Espinha de Peixe',
+      edit_whatsapp_group: 'Editar Grupo WhatsApp',
+      link_split: 'Link Split',
+      note: 'Anotação',
     };
     return titles[node.subtype] || `Configurar: ${node.label}`;
   };
