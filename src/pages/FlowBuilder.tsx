@@ -87,6 +87,16 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
       }
       case 'add_to_whatsapp_group':
         return c.group_name ? `→ ${String(c.group_name)}` : '';
+      case 'voice_torpedo':
+        return c.audio_url ? 'Áudio configurado' : '';
+      case 'parallel_channels':
+        return ((c.channels as string[]) || []).join(' + ').toUpperCase() || 'WA + Email';
+      case 'edit_whatsapp_group':
+        return c.new_name ? `→ ${String(c.new_name)}` : '';
+      case 'link_split':
+        return `${((c.links as any[]) || []).length} links`;
+      case 'note':
+        return c.text ? `"${String(c.text).slice(0, 40)}..."` : '';
       default:
         return '';
     }
