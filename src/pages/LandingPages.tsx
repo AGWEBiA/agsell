@@ -365,6 +365,40 @@ function SectionEditor({ section, onUpdate }: { section: Section; onUpdate: (con
       return (
         <div><Label className="text-xs">Altura</Label><Input value={(c.height as string) || '40px'} onChange={e => update({ height: e.target.value })} /></div>
       );
+    case 'countdown':
+      return (
+        <div className="space-y-3">
+          <div><Label className="text-xs">Título</Label><Input value={(c.title as string) || ''} onChange={e => update({ title: e.target.value })} /></div>
+          <div><Label className="text-xs">Data/Hora Fim</Label><Input type="datetime-local" value={(c.endDate as string) || ''} onChange={e => update({ endDate: e.target.value })} className="h-8 text-xs" /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="text-xs">Cor Fundo</Label><Input type="color" value={(c.bgColor as string) || '#EF4444'} onChange={e => update({ bgColor: e.target.value })} className="h-8" /></div>
+            <div><Label className="text-xs">Cor Texto</Label><Input type="color" value={(c.textColor as string) || '#ffffff'} onChange={e => update({ textColor: e.target.value })} className="h-8" /></div>
+          </div>
+        </div>
+      );
+    case 'capture_modal':
+      return (
+        <div className="space-y-3">
+          <div><Label className="text-xs">Título</Label><Input value={(c.title as string) || ''} onChange={e => update({ title: e.target.value })} /></div>
+          <div><Label className="text-xs">Subtítulo</Label><Input value={(c.subtitle as string) || ''} onChange={e => update({ subtitle: e.target.value })} /></div>
+          <div><Label className="text-xs">Texto do Botão</Label><Input value={(c.buttonText as string) || ''} onChange={e => update({ buttonText: e.target.value })} /></div>
+          <div>
+            <Label className="text-xs">Gatilho</Label>
+            <Select value={(c.triggerType as string) || 'exit_intent'} onValueChange={v => update({ triggerType: v })}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="exit_intent">Exit Intent</SelectItem><SelectItem value="timer">Timer (segundos)</SelectItem><SelectItem value="scroll">Scroll 50%</SelectItem></SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+    case 'progress_bar':
+      return (
+        <div className="space-y-3">
+          <div><Label className="text-xs">Label</Label><Input value={(c.label as string) || ''} onChange={e => update({ label: e.target.value })} /></div>
+          <div><Label className="text-xs">Valor (%)</Label><Input type="number" min={0} max={100} value={(c.value as number) || 0} onChange={e => update({ value: Number(e.target.value) })} className="h-8 text-xs" /></div>
+          <div><Label className="text-xs">Cor</Label><Input type="color" value={(c.color as string) || '#10B981'} onChange={e => update({ color: e.target.value })} className="h-8" /></div>
+        </div>
+      );
     default:
       return <p className="text-xs text-muted-foreground">Sem configurações</p>;
   }
