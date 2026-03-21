@@ -183,6 +183,46 @@ function SectionPreview({ section }: { section: Section }) {
       return <hr style={{ borderColor: (c.color as string) || '#E5E7EB', borderStyle: (c.style as string) || 'solid', margin: '16px 0' }} />;
     case 'spacer':
       return <div style={{ height: (c.height as string) || '40px' }} />;
+    case 'countdown':
+      return (
+        <div style={{ backgroundColor: (c.bgColor as string) || '#EF4444', color: (c.textColor as string) || '#fff', padding: '24px', textAlign: 'center', borderRadius: '8px' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>{(c.title as string) || 'Oferta limitada!'}</h3>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+            {['Dias', 'Horas', 'Min', 'Seg'].map(u => (
+              <div key={u} style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '8px 12px', minWidth: '60px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold' }}>00</div>
+                <div style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.8 }}>{u}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    case 'capture_modal':
+      return (
+        <div style={{ border: '2px dashed #3B82F6', padding: '24px', textAlign: 'center', borderRadius: '8px', backgroundColor: '#f0f7ff' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px', color: '#1e40af' }}>{(c.title as string) || 'Modal de Captura'}</h3>
+          <p style={{ fontSize: '13px', color: '#3b82f6', marginBottom: '12px' }}>{(c.subtitle as string) || ''}</p>
+          <div style={{ maxWidth: '280px', margin: '0 auto' }}>
+            <div style={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', fontSize: '13px', color: '#9ca3af', textAlign: 'left' }}>nome@email.com</div>
+            <button style={{ backgroundColor: '#3B82F6', color: '#fff', padding: '8px 20px', borderRadius: '6px', border: 'none', fontWeight: 'bold', width: '100%', fontSize: '13px' }}>
+              {(c.buttonText as string) || 'Enviar'}
+            </button>
+          </div>
+          <p style={{ fontSize: '10px', color: '#6b7280', marginTop: '8px' }}>Gatilho: {(c.triggerType as string) === 'exit_intent' ? 'Exit Intent' : 'Timer'}</p>
+        </div>
+      );
+    case 'progress_bar':
+      return (
+        <div style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '14px' }}>
+            <span style={{ fontWeight: 'bold' }}>{(c.label as string) || 'Progresso'}</span>
+            <span>{(c.value as number) || 0}%</span>
+          </div>
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#e5e7eb', overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: '6px', backgroundColor: (c.color as string) || '#10B981', width: `${(c.value as number) || 0}%`, transition: 'width 0.5s' }} />
+          </div>
+        </div>
+      );
     default:
       return <div className="p-4 text-sm text-muted-foreground">Seção desconhecida</div>;
   }
