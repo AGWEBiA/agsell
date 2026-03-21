@@ -877,6 +877,30 @@ export default function FlowBuilder() {
     setMode('editor');
   };
 
+  const handleImportCode = (name: string, code: string) => {
+    try {
+      let data: any;
+      try { data = JSON.parse(atob(code)); } catch { data = JSON.parse(code); }
+      if (data.nodes && Array.isArray(data.nodes)) {
+        setCurrentFlowId(null);
+        setFlowName(name || data.name || 'Fluxo Importado');
+        setNodes(data.nodes.map((n: any) => ({ ...n, id: crypto.randomUUID() })));
+        setIsActive(false);
+        setMode('editor');
+        toast({ title: '✅ Fluxo importado com sucesso!' });
+      }
+    } catch {
+      toast({ title: 'Erro ao importar', description: 'Código inválido', variant: 'destructive' });
+    }
+  };
+
+  const handleExportCode = () => {
+    const exportData = { name: flowName, nodes: nodes.map(n => ({ type: n.type, subtype: n.subtype, label: n.label, config: n.config })) };
+    const code = btoa(JSON.stringify(exportData));
+    navigator.clipboard.writeText(code);
+    toast({ title: '📋 Código copiado!', description: 'Cole o código para duplicar este fluxo em qualquer projeto.' });
+  };
+
   const handleEditFlow = (id: string) => {
     setCurrentFlowId(id);
     setMode('editor');
@@ -893,7 +917,7 @@ export default function FlowBuilder() {
     return (
       <>
         <FlowList onCreateNew={handleCreateNew} onEditFlow={handleEditFlow} />
-        <NewCampaignModal open={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} onCreate={handleCampaignCreate} />
+        <NewCampaignModal open={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} onCreate={handleCampaignCreate} onImportCode={handleImportCode} />
       </>
     );
   }
