@@ -1382,6 +1382,8 @@ Para agilizar a criação:
 
 ## Domínio personalizado de e-mail
 
+[video:🎬 Tutorial: Configurando Domínio de E-mail|/videos/tutorial-dominio-email.mp4]
+
 Para melhor **entregabilidade** (evitar caixa de spam), configure um domínio próprio:
 
 1. Acesse **"Domínio E-mail"** no menu lateral
