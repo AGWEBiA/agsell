@@ -1040,6 +1040,8 @@ Classifique conversas por:
     popular: true,
     content: `Integre o WhatsApp ao AG Sell para comunicação direta com seus contatos, campanhas em massa e automações. O sistema suporta **múltiplos provedores simultaneamente** — incluindo a API Oficial da Meta e a Evolution API via QR Code.
 
+[video:🎬 Tutorial: Configurando WhatsApp + QR Code|/videos/tutorial-whatsapp.mp4]
+
 ## Provedores disponíveis
 
 O AG Sell oferece **quatro modalidades** de conexão WhatsApp, que podem ser usadas **simultaneamente**:
