@@ -5,6 +5,8 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, ChevronRight, Clock, BookOpen, ExternalLink, Eye, Maximize2, X, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { HelpCategory, HelpArticle } from '@/data/helpCenterData';
+import { TutorialPresentation } from '@/components/help-center/TutorialPresentation';
+import { tutorialPresentations } from '@/data/tutorialPresentations';
 
 interface Props {
   article: HelpArticle;
@@ -212,6 +214,14 @@ export function HelpCenterArticle({ article, category, onBack, allArticles, onNa
                   </div>
                 </div>
               );
+            }
+          }
+          // Presentation embed
+          if (block.startsWith('[presentation:')) {
+            const match = block.match(/\[presentation:(.*?)\]/);
+            const presId = match?.[1];
+            if (presId && tutorialPresentations[presId]) {
+              return <TutorialPresentation key={idx} presentation={tutorialPresentations[presId]} />;
             }
           }
           // Screenshot with route

@@ -376,6 +376,8 @@ Use os filtros no topo para ajustar o período visualizado:
     popular: true,
     content: `Os contatos são a base do seu CRM. Aqui você gerencia todas as informações dos seus leads e clientes.
 
+[presentation:contacts]
+
 ## Visão geral da página de Contatos
 
 Ao acessar **"Contatos"** no menu, você vê:
@@ -501,6 +503,8 @@ Selecione múltiplos contatos na tabela para executar ações em lote:
     readTime: '5 min',
     content: `O módulo de Empresas permite organizar seus contatos por organização, essencial para vendas B2B.
 
+[presentation:companies]
+
 ## Visão geral
 
 Na página de **Empresas**, você encontra:
@@ -576,6 +580,8 @@ Use a barra de busca para encontrar empresas por:
     readTime: '7 min',
     popular: true,
     content: `O Pipeline é o coração do seu processo de vendas, com visualização Kanban intuitiva para acompanhar cada negociação.
+
+[presentation:pipeline]
 
 ## Conceito do Pipeline
 
@@ -678,6 +684,8 @@ Essas métricas também aparecem no **Dashboard** e no **Analytics** para análi
     readTime: '4 min',
     content: `Tags são etiquetas coloridas que ajudam a organizar, segmentar e automatizar ações com seus contatos.
 
+[presentation:tags]
+
 ## O que são Tags?
 
 Tags funcionam como **rótulos** que você aplica aos contatos para categorizá-los. Um contato pode ter múltiplas tags simultaneamente. Exemplos de uso:
@@ -765,6 +773,8 @@ Em todas as telas do CRM, você pode filtrar por tags:
     description: 'Guia completo: criar tarefas, prazos, prioridades, calendário e automação de tarefas.',
     readTime: '5 min',
     content: `O módulo de Tarefas permite organizar as atividades da sua equipe com prazos, prioridades e visualização em calendário.
+
+[presentation:tasks]
 
 ## Visão geral
 
@@ -862,6 +872,8 @@ O sistema notifica automaticamente:
     readTime: '10 min',
     popular: true,
     content: `O Inbox é sua central de atendimento que unifica mensagens de **WhatsApp**, **E-mail**, **Instagram**, **Telegram** e **SMS** em um único painel.
+
+[presentation:inbox]
 
 ## Visão geral da interface
 
@@ -1458,6 +1470,8 @@ Cada campanha exibe métricas detalhadas:
     readTime: '5 min',
     content: `Conecte contas do Instagram para automação de interações, DMs automáticas e atendimento via Inbox.
 
+[presentation:instagram]
+
 ## Conectando sua conta
 
 1. Acesse **"Instagram"** no menu lateral
@@ -1632,6 +1646,8 @@ Conecte sua loja Shopify para sincronizar dados:
     readTime: '4 min',
     content: `Os Relatórios do SAC oferecem métricas detalhadas sobre o desempenho do atendimento da sua equipe.
 
+[presentation:inbox-reports]
+
 ## Métricas disponíveis
 
 ### Tempo de resposta
@@ -1775,6 +1791,8 @@ Acompanhe o aquecimento do domínio:
     readTime: '12 min',
     popular: true,
     content: `O motor de automações permite criar fluxos que executam ações automaticamente, eliminando tarefas repetitivas e acelerando seu processo de vendas.
+
+[presentation:automations]
 
 ## Conceitos básicos
 
@@ -2139,6 +2157,8 @@ Clique em qualquer nó para configurar seus parâmetros:
     readTime: '6 min',
     content: `As Sequências permitem criar campanhas de nutrição com envios automáticos em intervalos programados — o famoso "drip marketing".
 
+[presentation:sequences]
+
 ## O que são Sequências?
 
 São séries de mensagens (e-mail, WhatsApp, SMS) enviadas automaticamente em intervalos configuráveis. Diferente de automações que reagem a eventos, sequências seguem um **cronograma fixo** após a inscrição.
@@ -2293,6 +2313,8 @@ Flows podem ser integrados com automações:
     readTime: '6 min',
     content: `O Lead Scoring atribui pontos aos contatos automaticamente baseado em suas ações e engajamento, permitindo identificar os leads mais qualificados.
 
+[presentation:lead-scoring]
+
 ## Como funciona
 
 Cada ação do lead no sistema gera pontos (positivos ou negativos). A pontuação acumulada indica o **nível de interesse e engajamento** do lead.
@@ -2383,6 +2405,8 @@ O score é uma ferramenta poderosa para automações:
     description: 'Guia completo: criar formulários, editor de campos, estilos, templates e integrações.',
     readTime: '5 min',
     content: `Crie formulários personalizados para capturar leads em seu site, landing pages ou compartilhados por WhatsApp e e-mail.
+
+[presentation:forms]
 
 ## Visão geral
 
@@ -2485,6 +2509,8 @@ Formulários se integram com todo o ecossistema:
     readTime: '4 min',
     content: `Os Testes A/B permitem comparar duas versões de uma mensagem para descobrir qual tem melhor desempenho e otimizar suas comunicações.
 
+[presentation:ab-tests]
+
 ## Como funciona
 
 1. Você cria **duas versões** (variante A e variante B) de uma mensagem
@@ -2560,6 +2586,8 @@ Além de testes independentes, você pode usar **Split Tests** dentro de automa�
     description: 'Guia completo: links de captura, QR Codes, widgets para site e métricas de conversão.',
     readTime: '5 min',
     content: `Growth Tools são ferramentas de captura de leads projetadas para atrair contatos para o seu WhatsApp e CRM de forma automatizada.
+
+[presentation:growth-tools]
 
 ## Tipos de ferramentas
 
@@ -2654,6 +2682,8 @@ Growth Tools se conectam ao ecossistema:
     description: 'Guia completo: dashboards de vendas, pipeline, equipe, filtros e como usar os dados.',
     readTime: '6 min',
     content: `O módulo de Analytics oferece dashboards completos para análise do seu negócio, com métricas de vendas, pipeline e performance da equipe.
+
+[presentation:analytics]
 
 ## Visão geral do Analytics
 
@@ -2750,6 +2780,8 @@ Filtre todas as métricas por:
     description: 'Guia completo: chat com IA contextual, tipos de perguntas, análises e sugestões.',
     readTime: '4 min',
     content: `O Assistente IA é um chat inteligente integrado ao seu CRM que pode responder perguntas, gerar textos e fornecer insights baseados nos dados do seu negócio.
+
+[presentation:ai-assistant]
 
 ## O que ele pode fazer
 
@@ -2945,6 +2977,8 @@ Acompanhe a performance do agente:
     description: 'Guia completo: sistema de pontos, níveis, ranking, conquistas e como motivar a equipe.',
     readTime: '4 min',
     content: `A Gamificação transforma atividades de vendas em um jogo motivacional, incentivando a equipe a bater metas e manter o CRM atualizado.
+
+[presentation:gamification]
 
 ## Como funciona
 
@@ -3167,6 +3201,8 @@ Recursos que não fazem parte do seu plano são protegidos por **Feature Gate**:
     readTime: '5 min',
     content: `Configure exatamente o que cada membro da equipe pode acessar no AG Sell com controle granular de permissões.
 
+[presentation:permissions]
+
 ## Como funciona
 
 O sistema de permissões tem três camadas:
@@ -3334,6 +3370,8 @@ O modo Agência requer o plano **Agência** e está protegido por **Feature Gate
     readTime: '6 min',
     content: `Use API Keys e Webhooks para integrar o AG Sell com outros sistemas e automatizar processos externos.
 
+[presentation:api-webhooks]
+
 ## API Keys
 
 ### O que são
@@ -3433,6 +3471,8 @@ O AG Sell tem webhooks pré-configurados para:
     description: 'Guia completo: Stripe, Hotmart, Eduzz, Kiwify, Evolution API, Z-API e domínio de e-mail.',
     readTime: '5 min',
     content: `O AG Sell se integra com diversas ferramentas e plataformas do mercado para automatizar seu negócio.
+
+[presentation:integrations]
 
 ## Integrações disponíveis
 
@@ -3671,6 +3711,8 @@ Em conformidade com a Lei Geral de Proteção de Dados (LGPD), você pode:
     readTime: '6 min',
     content: `O módulo de **SMS Marketing** permite enviar campanhas de texto em massa, criar automações baseadas em SMS e gerenciar conversas bidirecionais — tudo integrado ao CRM.
 
+[presentation:sms-marketing]
+
 ## Campanhas SMS
 
 1. Acesse **SMS Marketing** no menu lateral
@@ -3704,6 +3746,8 @@ Configure Twilio ou Vonage em **Canais** → **SMS** com Account SID, Auth Token
     readTime: '7 min',
     content: `O **Site Tracking** monitora visitantes do seu site em tempo real com um snippet JavaScript.
 
+[presentation:site-tracking]
+
 ## Instalação
 1. Acesse **Site Tracking** → copie o snippet JS
 2. Cole no \`<head>\` do seu site
@@ -3733,6 +3777,8 @@ Quando o visitante é identificado via formulário, as sessões são vinculadas 
     description: 'Rastreie a jornada do cliente e atribua receita a canais e campanhas.',
     readTime: '6 min',
     content: `O módulo de **Atribuição** rastreia a jornada completa e atribui receita aos canais que contribuíram para a conversão.
+
+[presentation:attribution]
 
 ## Modelos
 | Modelo | Descrição |
@@ -3858,6 +3904,8 @@ Quando o visitante é identificado via formulário, as sessões são vinculadas 
     description: 'Defina metas de vendas e acompanhe progresso em tempo real.',
     readTime: '5 min',
     content: `O módulo de **Metas** permite definir objetivos e acompanhar progresso.
+
+[presentation:goals]
 
 ## Tipos
 | Tipo | Exemplo |
