@@ -3201,6 +3201,8 @@ Recursos que não fazem parte do seu plano são protegidos por **Feature Gate**:
     readTime: '5 min',
     content: `Configure exatamente o que cada membro da equipe pode acessar no AG Sell com controle granular de permissões.
 
+[presentation:permissions]
+
 ## Como funciona
 
 O sistema de permissões tem três camadas:
