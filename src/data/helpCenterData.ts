@@ -684,6 +684,8 @@ Essas métricas também aparecem no **Dashboard** e no **Analytics** para análi
     readTime: '4 min',
     content: `Tags são etiquetas coloridas que ajudam a organizar, segmentar e automatizar ações com seus contatos.
 
+[presentation:tags]
+
 ## O que são Tags?
 
 Tags funcionam como **rótulos** que você aplica aos contatos para categorizá-los. Um contato pode ter múltiplas tags simultaneamente. Exemplos de uso:
