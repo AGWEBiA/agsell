@@ -581,6 +581,8 @@ Use a barra de busca para encontrar empresas por:
     popular: true,
     content: `O Pipeline é o coração do seu processo de vendas, com visualização Kanban intuitiva para acompanhar cada negociação.
 
+[presentation:pipeline]
+
 ## Conceito do Pipeline
 
 O pipeline representa seu **funil de vendas** — o caminho que um lead percorre desde o primeiro contato até o fechamento. Cada coluna representa uma **etapa** do funil, e cada card é um **deal** (negócio/oportunidade).
