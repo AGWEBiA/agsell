@@ -503,6 +503,8 @@ Selecione múltiplos contatos na tabela para executar ações em lote:
     readTime: '5 min',
     content: `O módulo de Empresas permite organizar seus contatos por organização, essencial para vendas B2B.
 
+[presentation:companies]
+
 ## Visão geral
 
 Na página de **Empresas**, você encontra:
