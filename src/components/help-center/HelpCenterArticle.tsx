@@ -91,6 +91,165 @@ function ScreenshotPreview({ label, route }: { label: string; route: string }) {
   );
 }
 
+function renderSingleBlock(block: string, idx: number): React.ReactNode {
+  if (!block.trim()) return null;
+
+  // Headings - but handle cases where heading has content after it on next lines
+  if (block.startsWith('### ') || block.startsWith('## ')) {
+    const lines = block.split('\n');
+    const headingLine = lines[0];
+    const isH2 = headingLine.startsWith('## ');
+    const headingText = headingLine.replace(/^#{2,3}\s/, '');
+    const rest = lines.slice(1).join('\n').trim();
+
+    if (rest) {
+      return (
+        <React.Fragment key={idx}>
+          {isH2
+            ? <h2 className="text-xl font-bold mt-10 mb-4 text-foreground">{headingText}</h2>
+            : <h3 className="text-lg font-semibold mt-8 mb-3 text-foreground">{headingText}</h3>
+          }
+          {renderSingleBlock(rest, idx + 10000)}
+        </React.Fragment>
+      );
+    }
+    return isH2
+      ? <h2 key={idx} className="text-xl font-bold mt-10 mb-4 text-foreground">{headingText}</h2>
+      : <h3 key={idx} className="text-lg font-semibold mt-8 mb-3 text-foreground">{headingText}</h3>;
+  }
+
+  // Blockquote
+  if (block.startsWith('> ')) {
+    return (
+      <div key={idx} className="border-l-4 border-primary/40 bg-primary/5 rounded-r-xl p-4 my-5">
+        <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: block.replace('> ', '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+      </div>
+    );
+  }
+
+  // Unordered list
+  if (block.startsWith('- ') || block.startsWith('* ')) {
+    const items = block.split('\n').filter(l => l.trim());
+    return (
+      <ul key={idx} className="space-y-2.5 my-5">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-2.5">
+            <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            <span className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: item.replace(/^[-*]\s/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  // Ordered list  
+  if (/^\d+\.\s/.test(block)) {
+    const items = block.split('\n').filter(l => l.trim());
+    return (
+      <ol key={idx} className="space-y-3 my-5">
+        {items.map((item, i) => {
+          const text = item.replace(/^\d+\.\s*/, '');
+          const hasSubItems = text.startsWith('   ');
+          return (
+            <li key={i} className={cn("flex items-start gap-3", hasSubItems && "ml-8")}>
+              {!hasSubItems && (
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-bold">
+                  {i + 1}
+                </span>
+              )}
+              {hasSubItems && (
+                <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-primary/60" />
+              )}
+              <span className="text-sm pt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: text.trim().replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+            </li>
+          );
+        })}
+      </ol>
+    );
+  }
+
+  // Video embed
+  if (block.startsWith('[video:')) {
+    const match = block.match(/\[video:(.*?)(?:\|(.*?))?\]/);
+    const label = match?.[1] || 'Tutorial em vídeo';
+    const videoSrc = match?.[2];
+    if (videoSrc) {
+      return (
+        <div key={idx} className="my-6 rounded-xl border overflow-hidden bg-card shadow-sm">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-primary/5 to-transparent border-b">
+            <PlayCircle className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">{label}</span>
+          </div>
+          <div className="relative aspect-video bg-black">
+            <video src={videoSrc} controls preload="metadata" className="w-full h-full">
+              Seu navegador não suporta vídeos.
+            </video>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Presentation embed
+  if (block.startsWith('[presentation:')) {
+    const match = block.match(/\[presentation:(.*?)\]/);
+    const presId = match?.[1];
+    if (presId && tutorialPresentations[presId]) {
+      return <TutorialPresentation key={idx} presentation={tutorialPresentations[presId]} />;
+    }
+  }
+
+  // Screenshot
+  if (block.startsWith('[screenshot:')) {
+    const match = block.match(/\[screenshot:(.*?)(?:\|(.*?))?\]/);
+    const label = match?.[1] || 'Tela do sistema';
+    const route = match?.[2];
+    if (route) return <ScreenshotPreview key={idx} label={label} route={route} />;
+    return (
+      <div key={idx} className="my-6 rounded-xl border bg-muted/20 p-6 text-center">
+        <div className="flex items-center justify-center gap-2 text-muted-foreground mb-2">
+          <BookOpen className="h-5 w-5" />
+          <span className="text-sm font-medium">Captura de tela</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+      </div>
+    );
+  }
+
+  // Callouts
+  if (block.startsWith('💡')) {
+    return (
+      <div key={idx} className="rounded-xl p-4 my-5 border bg-blue-500/5 border-blue-500/15 flex items-start gap-2.5">
+        <Lightbulb className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+        <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: block.replace(/^💡\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+      </div>
+    );
+  }
+  if (block.startsWith('⚠️')) {
+    return (
+      <div key={idx} className="rounded-xl p-4 my-5 border bg-amber-500/5 border-amber-500/15 flex items-start gap-2.5">
+        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+        <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: block.replace(/^⚠️\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+      </div>
+    );
+  }
+  if (block.startsWith('ℹ️')) {
+    return (
+      <div key={idx} className="rounded-xl p-4 my-5 border bg-primary/5 border-primary/15 flex items-start gap-2.5">
+        <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: block.replace(/^ℹ️\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+      </div>
+    );
+  }
+
+  // Regular paragraph
+  return <p key={idx} className="text-sm leading-relaxed my-3.5 text-foreground/80" dangerouslySetInnerHTML={{ __html: block.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />;
+}
+
+function renderContentBlocks(content: string): React.ReactNode[] {
+  return content.split('\n\n').map((block, idx) => renderSingleBlock(block, idx)).filter(Boolean);
+}
+
 export function HelpCenterArticle({ article, category, onBack, allArticles, onNavigate }: Props) {
   const relatedArticles = allArticles
     .filter((a) => a.categoryId === article.categoryId && a.id !== article.id)
