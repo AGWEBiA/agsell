@@ -2781,6 +2781,8 @@ Filtre todas as métricas por:
     readTime: '4 min',
     content: `O Assistente IA é um chat inteligente integrado ao seu CRM que pode responder perguntas, gerar textos e fornecer insights baseados nos dados do seu negócio.
 
+[presentation:ai-assistant]
+
 ## O que ele pode fazer
 
 ### 📊 Análise de dados
