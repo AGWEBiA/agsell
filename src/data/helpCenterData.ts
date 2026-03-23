@@ -3905,6 +3905,8 @@ Quando o visitante é identificado via formulário, as sessões são vinculadas 
     readTime: '5 min',
     content: `O módulo de **Metas** permite definir objetivos e acompanhar progresso.
 
+[presentation:goals]
+
 ## Tipos
 | Tipo | Exemplo |
 |------|---------|
