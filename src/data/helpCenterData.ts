@@ -2587,6 +2587,8 @@ Além de testes independentes, você pode usar **Split Tests** dentro de automa�
     readTime: '5 min',
     content: `Growth Tools são ferramentas de captura de leads projetadas para atrair contatos para o seu WhatsApp e CRM de forma automatizada.
 
+[presentation:growth-tools]
+
 ## Tipos de ferramentas
 
 ### 🔗 Links de captura
