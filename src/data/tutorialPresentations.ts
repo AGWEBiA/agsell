@@ -159,7 +159,7 @@ export const tutorialPresentations: Record<string, TutorialPresentationData> = {
           'Escolha entre Round Robin, menor carga ou manual',
           'Defina **membros elegíveis** e limite de conversas simultâneas',
         ],
-        route: '/inbox/settings',
+        route: '/inbox-settings',
       },
     ],
   },
@@ -811,7 +811,7 @@ export const tutorialPresentations: Record<string, TutorialPresentationData> = {
           'Adquira **créditos SMS** no pacote desejado',
           'Cada mensagem consome créditos conforme o destino',
         ],
-        route: '/sms',
+        route: '/sms-marketing',
       },
       {
         title: 'Envie campanhas SMS',
@@ -902,7 +902,7 @@ export const tutorialPresentations: Record<string, TutorialPresentationData> = {
           'Veja métricas de tempo de resposta, volume e satisfação',
           'Filtre por período, agente ou canal',
         ],
-        route: '/inbox/reports',
+        route: '/inbox-reports',
       },
       {
         title: 'Métricas principais',
