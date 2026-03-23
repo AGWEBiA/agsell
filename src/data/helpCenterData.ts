@@ -376,6 +376,8 @@ Use os filtros no topo para ajustar o período visualizado:
     popular: true,
     content: `Os contatos são a base do seu CRM. Aqui você gerencia todas as informações dos seus leads e clientes.
 
+[presentation:contacts]
+
 ## Visão geral da página de Contatos
 
 Ao acessar **"Contatos"** no menu, você vê:
