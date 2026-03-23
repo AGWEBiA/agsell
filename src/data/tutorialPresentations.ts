@@ -902,7 +902,7 @@ export const tutorialPresentations: Record<string, TutorialPresentationData> = {
           'Veja métricas de tempo de resposta, volume e satisfação',
           'Filtre por período, agente ou canal',
         ],
-        route: '/inbox/reports',
+        route: '/inbox-reports',
       },
       {
         title: 'Métricas principais',
