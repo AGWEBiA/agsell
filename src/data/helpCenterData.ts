@@ -3472,6 +3472,8 @@ O AG Sell tem webhooks pré-configurados para:
     readTime: '5 min',
     content: `O AG Sell se integra com diversas ferramentas e plataformas do mercado para automatizar seu negócio.
 
+[presentation:integrations]
+
 ## Integrações disponíveis
 
 ### 💳 Provedores de pagamento
