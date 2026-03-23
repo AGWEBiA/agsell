@@ -811,7 +811,7 @@ export const tutorialPresentations: Record<string, TutorialPresentationData> = {
           'Adquira **créditos SMS** no pacote desejado',
           'Cada mensagem consome créditos conforme o destino',
         ],
-        route: '/sms',
+        route: '/sms-marketing',
       },
       {
         title: 'Envie campanhas SMS',
