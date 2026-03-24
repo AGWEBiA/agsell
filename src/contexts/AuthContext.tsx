@@ -146,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    localStorage.removeItem('orgPickerDismissed');
     await supabase.auth.signOut();
   };
 

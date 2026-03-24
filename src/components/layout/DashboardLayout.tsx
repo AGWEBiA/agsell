@@ -10,6 +10,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { OrganizationPickerDialog } from '@/components/organization/OrganizationPickerDialog';
 import { Eye, AlertTriangle } from 'lucide-react';
 
 export function DashboardLayout() {
@@ -17,7 +18,8 @@ export function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { currentOrganization } = useOrganization();
+  const [showOrgPicker, setShowOrgPicker] = useState(false);
+  const { currentOrganization, organizations } = useOrganization();
   const { progress, isLoading } = useOnboarding();
   const { isUserMode, toggleViewMode, simulatedPlan, exitSimulation } = useAdminView();
   const { isPastDue } = useSubscriptionStatus();
@@ -29,6 +31,16 @@ export function DashboardLayout() {
       setShowOnboarding(shouldShow);
     }
   }, [currentOrganization, progress, isLoading]);
+
+  // Show org picker when user has multiple orgs and hasn't dismissed it this session
+  useEffect(() => {
+    if (organizations.length > 1 && !isLoading) {
+      const dismissed = localStorage.getItem('orgPickerDismissed');
+      if (!dismissed) {
+        setShowOrgPicker(true);
+      }
+    }
+  }, [organizations, isLoading]);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -128,6 +140,11 @@ export function DashboardLayout() {
       <OnboardingWizard 
         open={showOnboarding} 
         onComplete={() => setShowOnboarding(false)} 
+      />
+
+      <OrganizationPickerDialog
+        open={showOrgPicker}
+        onClose={() => setShowOrgPicker(false)}
       />
 
       <SupportAgentChat />
