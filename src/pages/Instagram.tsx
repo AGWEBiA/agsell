@@ -90,26 +90,52 @@ function ConnectWizard({
   React.useEffect(() => {
     const handleOAuthCallback = async () => {
       const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const state = params.get('state');
-      const error = params.get('error');
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const hashParams = new URLSearchParams(hash);
+
+      const code = params.get('code') || hashParams.get('code');
+      const state = params.get('state') || hashParams.get('state');
+      const error = params.get('error') || hashParams.get('error');
+      const errorDescription =
+        params.get('error_description') ||
+        hashParams.get('error_description') ||
+        params.get('error_reason') ||
+        hashParams.get('error_reason');
 
       if (!code && !error) return;
 
       if (error) {
+        sessionStorage.removeItem('ig_oauth_state');
         window.history.replaceState({}, '', window.location.pathname);
-        toast({ title: 'Conexão cancelada', description: 'Você cancelou a conexão com o Facebook.', variant: 'destructive' });
+        toast({
+          title: 'Conexão cancelada',
+          description: errorDescription || 'Você cancelou a conexão com o Facebook.',
+          variant: 'destructive'
+        });
         return;
       }
 
-      if (!code || !state) {
+      if (!code) {
+        sessionStorage.removeItem('ig_oauth_state');
         window.history.replaceState({}, '', window.location.pathname);
         toast({ title: 'Erro ao conectar', description: 'Callback OAuth inválido.', variant: 'destructive' });
         return;
       }
 
       const savedState = sessionStorage.getItem('ig_oauth_state');
-      if (!savedState || state !== savedState) {
+      if (!savedState) {
+        window.history.replaceState({}, '', window.location.pathname);
+        toast({
+          title: 'Sessão expirada',
+          description: 'A sessão de conexão expirou. Clique em conectar novamente.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Alguns fluxos do Instagram podem não retornar `state`; validamos apenas quando ele vem no callback.
+      if (state && state !== savedState) {
+        sessionStorage.removeItem('ig_oauth_state');
         window.history.replaceState({}, '', window.location.pathname);
         toast({ title: 'Erro de segurança', description: 'Estado OAuth inválido. Tente novamente.', variant: 'destructive' });
         return;
