@@ -50,6 +50,7 @@ serve(async (req) => {
     const userId = userData.user.id;
 
     const { code, redirect_uri, organization_id } = await req.json();
+    console.log("[INSTAGRAM-OAUTH] Request received", { redirect_uri, organization_id, hasCode: !!code, userId });
 
     if (!code || !redirect_uri || !organization_id) {
       return new Response(
