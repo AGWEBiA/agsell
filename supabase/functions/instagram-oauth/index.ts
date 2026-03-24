@@ -186,7 +186,7 @@ serve(async (req) => {
       .from("instagram_accounts")
       .insert({
         organization_id,
-        access_token: longLivedToken,
+        access_token: finalToken,
         instagram_user_id: instagramAccount.instagram_user_id,
         username: instagramAccount.username,
         full_name: instagramAccount.full_name,
