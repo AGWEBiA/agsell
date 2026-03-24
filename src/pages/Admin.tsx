@@ -271,6 +271,10 @@ export default function Admin() {
             <MessageSquare className="h-4 w-4" />
             SMS
           </TabsTrigger>
+          <TabsTrigger value="domains" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Domínios
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
           {/* KPIs */}
