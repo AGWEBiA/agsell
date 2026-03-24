@@ -127,9 +127,9 @@ serve(async (req) => {
     const finalToken = longLivedData.access_token || shortLivedToken;
     const expiresIn = longLivedData.expires_in || 3600;
 
-    // Step 3: Get Instagram profile info
+    console.log("[INSTAGRAM-OAUTH] Step 3: Fetching profile");
     const profileRes = await fetch(
-      `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(longLivedToken)}`
+      `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(finalToken)}`
     );
     const profileData = await profileRes.json();
 
