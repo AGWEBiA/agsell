@@ -657,6 +657,14 @@ export function PlansManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => handleDuplicate(plan)}
+                      title="Duplicar plano"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleOpenEdit(plan)}
                     >
                       <Pencil className="h-4 w-4" />
