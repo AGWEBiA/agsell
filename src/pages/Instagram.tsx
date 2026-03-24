@@ -84,6 +84,7 @@ function ConnectWizard({
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const OAUTH_REDIRECT_URI = 'https://site.agsell.com.br/instagram';
 
   // Listen for OAuth callback
   React.useEffect(() => {
@@ -95,37 +96,43 @@ function ConnectWizard({
 
       if (!code && !error) return;
 
-      // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
-
       if (error) {
+        window.history.replaceState({}, '', window.location.pathname);
         toast({ title: 'Conexão cancelada', description: 'Você cancelou a conexão com o Facebook.', variant: 'destructive' });
         return;
       }
 
-      if (!code || !state) return;
+      if (!code || !state) {
+        window.history.replaceState({}, '', window.location.pathname);
+        toast({ title: 'Erro ao conectar', description: 'Callback OAuth inválido.', variant: 'destructive' });
+        return;
+      }
 
-      // Validate state
       const savedState = sessionStorage.getItem('ig_oauth_state');
-      if (state !== savedState) {
+      if (!savedState || state !== savedState) {
+        window.history.replaceState({}, '', window.location.pathname);
         toast({ title: 'Erro de segurança', description: 'Estado OAuth inválido. Tente novamente.', variant: 'destructive' });
         return;
       }
-      sessionStorage.removeItem('ig_oauth_state');
+
+      // Aguarda organização carregar antes de enviar o callback para backend
+      if (!currentOrganization?.id) return;
 
       setLoading(true);
       try {
-        const redirectUri = `${window.location.origin}/instagram`;
         const { data, error: fnError } = await supabase.functions.invoke('instagram-oauth', {
           body: {
             code,
-            redirect_uri: redirectUri,
-            organization_id: currentOrganization?.id,
+            redirect_uri: OAUTH_REDIRECT_URI,
+            organization_id: currentOrganization.id,
           },
         });
 
         if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
+
+        sessionStorage.removeItem('ig_oauth_state');
+        window.history.replaceState({}, '', window.location.pathname);
 
         toast({
           title: data.updated ? '🔄 Conta reconectada!' : '✅ Conta conectada!',
@@ -133,6 +140,7 @@ function ConnectWizard({
         });
         onConnected();
       } catch (err: any) {
+        window.history.replaceState({}, '', window.location.pathname);
         toast({ title: 'Erro ao conectar', description: err.message, variant: 'destructive' });
       } finally {
         setLoading(false);
@@ -140,13 +148,12 @@ function ConnectWizard({
     };
 
     handleOAuthCallback();
-  }, []);
+  }, [currentOrganization?.id, onConnected, toast]);
 
   const handleInstagramLogin = () => {
     const state = crypto.randomUUID();
     sessionStorage.setItem('ig_oauth_state', state);
-    const redirectUri = 'https://site.agsell.com.br/instagram';
-    const igUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}`;
+    const igUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&response_type=code&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}`;
     window.location.href = igUrl;
   };
 
