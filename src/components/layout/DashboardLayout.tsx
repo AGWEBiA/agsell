@@ -10,6 +10,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { OrganizationPickerDialog } from '@/components/organization/OrganizationPickerDialog';
 import { Eye, AlertTriangle } from 'lucide-react';
 
 export function DashboardLayout() {
