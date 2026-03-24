@@ -59,7 +59,7 @@ serve(async (req) => {
     }
 
     // Verify user is member of org
-    const { data: isMember } = await supabaseAuth.rpc("is_org_member", {
+    const { data: isMember } = await supabaseAdmin.rpc("is_org_member", {
       _org_id: organization_id,
       _user_id: userId,
     });
