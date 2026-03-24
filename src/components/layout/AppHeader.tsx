@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { AgencyAccountSelector } from '@/components/agency/AgencyAccountSelector';
+import { OrganizationSwitcher } from '@/components/organization/OrganizationSwitcher';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
