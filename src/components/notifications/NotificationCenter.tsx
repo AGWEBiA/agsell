@@ -45,6 +45,7 @@ const notificationIcons: Record<string, React.ReactNode> = {
   automation: <Zap className="h-4 w-4 text-purple-500" />,
   email: <Mail className="h-4 w-4 text-blue-500" />,
   whatsapp: <MessageSquare className="h-4 w-4 text-emerald-500" />,
+  whatsapp_disconnected: <WifiOff className="h-4 w-4 text-destructive" />,
   system: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 
