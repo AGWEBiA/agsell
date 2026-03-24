@@ -79,6 +79,8 @@ serve(async (req) => {
     tokenForm.append("redirect_uri", redirect_uri);
     tokenForm.append("code", code);
 
+    console.log("[INSTAGRAM-OAUTH] Step 1: Exchanging code for short-lived token", { redirect_uri });
+
     const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       body: tokenForm,
@@ -86,7 +88,7 @@ serve(async (req) => {
     const tokenData = await tokenRes.json();
 
     if (tokenData.error_type || tokenData.error_message) {
-      console.error("Instagram token exchange error:", tokenData);
+      console.error("[INSTAGRAM-OAUTH] Token exchange error:", JSON.stringify(tokenData));
       return new Response(
         JSON.stringify({ error: tokenData.error_message || "Erro ao trocar código por token" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -95,27 +97,39 @@ serve(async (req) => {
 
     const shortLivedToken = tokenData.access_token;
     const igUserId = tokenData.user_id;
+    console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", { igUserId });
 
     // Step 2: Exchange for long-lived token
     const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(INSTAGRAM_APP_SECRET)}&access_token=${encodeURIComponent(shortLivedToken)}`;
     
+    console.log("[INSTAGRAM-OAUTH] Step 2: Exchanging for long-lived token");
     const longLivedRes = await fetch(longLivedUrl);
-    const longLivedData = await longLivedRes.json();
+    const longLivedText = await longLivedRes.text();
+    console.log("[INSTAGRAM-OAUTH] Step 2 response:", longLivedText);
 
-    if (longLivedData.error) {
-      console.error("Long-lived token error:", longLivedData.error);
+    let longLivedData;
+    try {
+      longLivedData = JSON.parse(longLivedText);
+    } catch {
+      console.error("[INSTAGRAM-OAUTH] Failed to parse long-lived response");
       return new Response(
-        JSON.stringify({ error: "Erro ao obter token de longa duração" }),
+        JSON.stringify({ error: "Resposta inválida ao obter token de longa duração" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const longLivedToken = longLivedData.access_token;
-    const expiresIn = longLivedData.expires_in; // ~60 days
+    if (longLivedData.error) {
+      console.error("[INSTAGRAM-OAUTH] Long-lived token error:", JSON.stringify(longLivedData.error));
+      // Fallback: use short-lived token (valid ~1h) 
+      console.log("[INSTAGRAM-OAUTH] Falling back to short-lived token");
+    }
 
-    // Step 3: Get Instagram profile info
+    const finalToken = longLivedData.access_token || shortLivedToken;
+    const expiresIn = longLivedData.expires_in || 3600;
+
+    console.log("[INSTAGRAM-OAUTH] Step 3: Fetching profile");
     const profileRes = await fetch(
-      `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(longLivedToken)}`
+      `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(finalToken)}`
     );
     const profileData = await profileRes.json();
 
@@ -147,7 +161,7 @@ serve(async (req) => {
       await supabaseAdmin
         .from("instagram_accounts")
         .update({
-          access_token: longLivedToken,
+           access_token: finalToken,
           page_access_token: null,
           page_id: null,
           username: instagramAccount.username,
@@ -172,7 +186,7 @@ serve(async (req) => {
       .from("instagram_accounts")
       .insert({
         organization_id,
-        access_token: longLivedToken,
+        access_token: finalToken,
         instagram_user_id: instagramAccount.instagram_user_id,
         username: instagramAccount.username,
         full_name: instagramAccount.full_name,
