@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Star, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Check, Copy } from 'lucide-react';
 
 interface Plan {
   id: string;
