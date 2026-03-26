@@ -67,7 +67,8 @@ const automationCategories: { value: AutomationCategory; label: string }[] = [
 ];
 
 const INSTAGRAM_APP_ID = "1231864369151883";
-const INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments";
+const META_OAUTH_VERSION = "v25.0";
+const INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,pages_show_list,pages_read_engagement,business_management";
 
 /* ─── Wizard de Conexão via Facebook Login ─── */
 function ConnectWizard({ 
@@ -85,7 +86,7 @@ function ConnectWizard({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const oauthInFlightRef = React.useRef(false);
-  const OAUTH_REDIRECT_URI = 'https://site.agsell.com.br/instagram';
+  const OAUTH_REDIRECT_URI = `${window.location.origin}/instagram`;
 
   // Listen for OAuth callback
   React.useEffect(() => {
@@ -185,8 +186,8 @@ function ConnectWizard({
   const handleInstagramLogin = () => {
     const state = crypto.randomUUID();
     sessionStorage.setItem('ig_oauth_state', state);
-    const igUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&response_type=code&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}`;
-    window.location.href = igUrl;
+    const oauthUrl = `https://www.facebook.com/${META_OAUTH_VERSION}/dialog/oauth?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&response_type=code&state=${encodeURIComponent(state)}&auth_type=rerequest&scope=${encodeURIComponent(INSTAGRAM_SCOPES)}`;
+    window.location.assign(oauthUrl);
   };
 
   if (!canAddMore) {
