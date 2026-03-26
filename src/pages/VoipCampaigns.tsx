@@ -56,6 +56,9 @@ const VoipCampaigns = () => {
   const orgId = currentOrganization?.id;
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [audioFileName, setAudioFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     audio_url: '',
@@ -64,6 +67,45 @@ const VoipCampaigns = () => {
     scheduled_at: '',
     credits_per_call: 1,
   });
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/x-m4a'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Formato não suportado. Use MP3, WAV, OGG ou M4A.');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 20MB.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'mp3';
+      const filePath = `${user.id}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('voip-audio')
+        .upload(filePath, file, { contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('voip-audio')
+        .getPublicUrl(filePath);
+
+      setCampaignForm(f => ({ ...f, audio_url: urlData.publicUrl }));
+      setAudioFileName(file.name);
+      toast.success('Áudio enviado com sucesso!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar áudio');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Fetch campaigns
   const { data: campaigns = [], isLoading } = useQuery({
