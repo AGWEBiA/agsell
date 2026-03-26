@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useIntegrations, Integration } from '@/hooks/useIntegrations';
 import { IntegrationMarketplace } from '@/components/integrations/IntegrationMarketplace';
+import { PaymentGatewayWebhooks } from '@/components/integrations/PaymentGatewayWebhooks';
 import { WhatsAppProviderSetup } from '@/components/integrations/WhatsAppProviderSetup';
 import { GoogleFormsGuide } from '@/components/integrations/GoogleFormsGuide';
 import { GoogleSheetsIntegration } from '@/components/integrations/GoogleSheetsIntegration';
