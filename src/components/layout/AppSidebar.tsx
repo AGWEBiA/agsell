@@ -81,11 +81,14 @@ const menuSections: MenuSection[] = [
     label: 'Automações',
     icon: Workflow,
     items: [
-      { label: 'E-mail', icon: Mail, path: '/flow-builder?channel=email', featureRequired: 'automacoes' },
-      { label: 'WhatsApp Individual', icon: Smartphone, path: '/flow-builder?channel=whatsapp', featureRequired: 'automacoes' },
+      { label: 'Individuais', icon: Smartphone, path: '/flow-builder?channel=whatsapp', featureRequired: 'automacoes' },
       { label: 'Grupos', icon: Users, path: '/flow-builder?channel=groups', featureRequired: 'automacoes' },
+      { label: 'Chatbot / Agente IA', icon: Bot, path: '/chatbot-builder', featureRequired: 'automacoes' },
+      { label: 'E-mail', icon: Mail, path: '/flow-builder?channel=email', featureRequired: 'automacoes' },
       { label: 'Instagram', icon: Instagram, path: '/flow-builder?channel=instagram', featureRequired: 'automacoes' },
       { label: 'Telegram', icon: Send, path: '/flow-builder?channel=telegram', featureRequired: 'automacoes' },
+      { label: 'Campanhas WhatsApp', icon: Megaphone, path: '/whatsapp-campaigns', featureRequired: 'whatsapp' },
+      { label: 'Mensagens Grupos', icon: MessageSquare, path: '/whatsapp-group-messages', featureRequired: 'whatsapp' },
     ],
   },
   {
@@ -96,7 +99,7 @@ const menuSections: MenuSection[] = [
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
       { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
       { label: 'Torpedo de Voz', icon: PhoneCall, path: '/voip-campaigns' },
-      { label: 'Chatbot', icon: Bot, path: '/chatbot-builder' },
+      
       { label: 'Growth Tools', icon: Rocket, path: '/growth-tools' },
       { label: 'Formulários', icon: FileText, path: '/forms' },
       { label: 'Landing Pages', icon: Layout, path: '/landing-pages' },

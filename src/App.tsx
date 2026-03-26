@@ -97,6 +97,8 @@ import PaidGroups from "./pages/PaidGroups";
 import SystemStatus from "./pages/SystemStatus";
 import VoIP from "./pages/VoIP";
 import VoipCampaigns from "./pages/VoipCampaigns";
+import WhatsAppCampaignsPage from "./pages/WhatsAppCampaignsPage";
+import WhatsAppGroupMessagesPage from "./pages/WhatsAppGroupMessagesPage";
 import GroupRotator from "./pages/GroupRotator";
 import GroupRedirect from "./pages/GroupRedirect";
 import ChatbotBuilder from "./pages/ChatbotBuilder";
@@ -203,6 +205,8 @@ const App = () => (
                     <Route path="paid-groups" element={<FeatureRequiredPage feature="paid_groups" featureLabel="Grupos Pagos"><PaidGroups /></FeatureRequiredPage>} />
                     <Route path="voip" element={<VoIP />} />
                     <Route path="voip-campaigns" element={<VoipCampaigns />} />
+                    <Route path="whatsapp-campaigns" element={<FeatureRequiredPage feature="whatsapp" featureLabel="Campanhas WhatsApp"><WhatsAppCampaignsPage /></FeatureRequiredPage>} />
+                    <Route path="whatsapp-group-messages" element={<FeatureRequiredPage feature="whatsapp" featureLabel="Mensagens Grupos"><WhatsAppGroupMessagesPage /></FeatureRequiredPage>} />
                     <Route path="group-rotator" element={<GroupRotator />} />
                     <Route path="chatbot-builder" element={<ChatbotBuilder />} />
                     <Route path="funnel-planner" element={<FunnelPlanner />} />
