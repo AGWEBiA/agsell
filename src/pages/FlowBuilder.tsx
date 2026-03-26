@@ -639,7 +639,7 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
 
 // ─── Trigger Selection Screen ───
 function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }) {
-  const [filter, setFilter] = useState<'all' | 'instagram' | 'whatsapp' | 'crm' | 'pagamento'>('all');
+  const [filter, setFilter] = useState<string>('all');
   const filtered = triggerOptions.filter(t => filter === 'all' || t.channel === filter);
 
   return (
@@ -653,11 +653,14 @@ function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }
       </div>
       <div className="flex gap-2 mb-6 flex-wrap justify-center">
         {([
-          { key: 'all' as const, label: 'Todos' },
-          { key: 'instagram' as const, label: '📸 Instagram' },
-          { key: 'whatsapp' as const, label: '💬 WhatsApp' },
-          { key: 'crm' as const, label: '👤 CRM' },
-          { key: 'pagamento' as const, label: '💳 Pagamentos' },
+          { key: 'all', label: 'Todos' },
+          { key: 'instagram', label: '📸 Instagram' },
+          { key: 'whatsapp', label: '💬 WhatsApp' },
+          { key: 'crm', label: '👤 CRM' },
+          { key: 'pagamento', label: '💳 Pagamentos' },
+          { key: 'email', label: '📧 E-mail' },
+          { key: 'voip', label: '📞 VoIP' },
+          { key: 'telegram', label: '✈️ Telegram' },
         ]).map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)} className={cn('px-4 py-2 rounded-full text-sm font-medium transition-colors', filter === f.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
             {f.label}
