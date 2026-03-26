@@ -19,6 +19,12 @@ type ResolvedInstagramProfile = {
   page_access_token: string | null;
 };
 
+function extractErrorMessage(payload: any, fallback = "Erro desconhecido"): string {
+  if (!payload) return fallback;
+  if (typeof payload === "string") return payload;
+  return payload?.error?.message || payload?.message || fallback;
+}
+
 function safeJsonParse(text: string): any {
   try {
     return JSON.parse(text);
@@ -47,79 +53,121 @@ function normalizeTokenPayload(payload: any): { access_token?: string; user_id?:
 }
 
 async function exchangeLongLivedToken(shortLivedToken: string, appSecret: string): Promise<{ access_token?: string; expires_in?: number; error?: any }> {
-  const getUrl = `https://graph.instagram.com/${GRAPH_API_VERSION}/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
+  const attempts: Array<{ name: string; url: string; method: "GET" | "POST"; body?: URLSearchParams }> = [];
 
-  const getRes = await fetch(getUrl, { method: "GET" });
-  const getRaw = await getRes.text();
-  const getData = safeJsonParse(getRaw);
+  const igGetUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
+  attempts.push({ name: "instagram_get", url: igGetUrl, method: "GET" });
 
-  if (getRes.ok && getData?.access_token) {
-    return {
-      access_token: getData.access_token,
-      expires_in: getData.expires_in,
-    };
+  const igPostBody = new URLSearchParams();
+  igPostBody.append("grant_type", "ig_exchange_token");
+  igPostBody.append("client_secret", appSecret);
+  igPostBody.append("access_token", shortLivedToken);
+  attempts.push({ name: "instagram_post", url: "https://graph.instagram.com/access_token", method: "POST", body: igPostBody });
+
+  const fbGetUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?client_id=${encodeURIComponent(INSTAGRAM_APP_ID)}&client_secret=${encodeURIComponent(appSecret)}&grant_type=fb_exchange_token&fb_exchange_token=${encodeURIComponent(shortLivedToken)}`;
+  attempts.push({ name: "facebook_get", url: fbGetUrl, method: "GET" });
+
+  const errors: any[] = [];
+
+  for (const attempt of attempts) {
+    const response = await fetch(attempt.url, {
+      method: attempt.method,
+      headers: attempt.method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
+      body: attempt.body,
+    });
+
+    const raw = await response.text();
+    const data = safeJsonParse(raw);
+
+    if (response.ok && data?.access_token) {
+      console.log("[INSTAGRAM-OAUTH] Long-lived token success", { provider: attempt.name });
+      return {
+        access_token: data.access_token,
+        expires_in: data.expires_in,
+      };
+    }
+
+    errors.push({ provider: attempt.name, error: data || raw });
   }
 
-  const getErrorMessage = getData?.error?.message || getData?.message || "";
-  if (!getErrorMessage.toLowerCase().includes("unsupported request - method type: get")) {
-    return { error: getData || getRaw };
-  }
-
-  console.warn("[INSTAGRAM-OAUTH] Long-lived token GET failed with method error, trying POST fallback");
-  const postBody = new URLSearchParams();
-  postBody.append("grant_type", "ig_exchange_token");
-  postBody.append("client_secret", appSecret);
-  postBody.append("access_token", shortLivedToken);
-
-  const postRes = await fetch(`https://graph.instagram.com/${GRAPH_API_VERSION}/access_token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: postBody,
-  });
-  const postRaw = await postRes.text();
-  const postData = safeJsonParse(postRaw);
-
-  if (postRes.ok && postData?.access_token) {
-    return {
-      access_token: postData.access_token,
-      expires_in: postData.expires_in,
-    };
-  }
-
-  return { error: postData || postRaw };
+  return { error: errors };
 }
 
-async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
-  const response = await fetch(
-    `https://graph.instagram.com/${GRAPH_API_VERSION}/me?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`
-  );
-  const raw = await response.text();
-  const data = safeJsonParse(raw);
-
-  if (!response.ok || data?.error) {
-    return {
-      error: data?.error?.message || data?.message || "Erro ao buscar perfil no graph.instagram.com",
-    };
-  }
-
-  const user = Array.isArray(data?.data) ? data.data[0] : data;
+function mapProfileFromAnyPayload(payload: any): ResolvedInstagramProfile | null {
+  const user = Array.isArray(payload?.data) ? payload.data[0] : payload;
 
   if (!user?.username || !(user?.user_id || user?.id)) {
-    return {
-      error: "Resposta inválida ao buscar perfil no graph.instagram.com",
-    };
+    return null;
   }
 
   return {
-    profile: {
-      instagram_user_id: String(user.user_id || user.id),
-      username: user.username,
-      full_name: user.name || null,
-      profile_picture_url: user.profile_picture_url || null,
-      page_id: null,
-      page_access_token: null,
-    },
+    instagram_user_id: String(user.user_id || user.id),
+    username: user.username,
+    full_name: user.name || null,
+    profile_picture_url: user.profile_picture_url || null,
+    page_id: null,
+    page_access_token: null,
   };
+}
+
+async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
+  const endpoints = [
+    `https://graph.instagram.com/me?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
+    `https://graph.instagram.com/${GRAPH_API_VERSION}/me?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
+  ];
+
+  let lastError = "Erro ao buscar perfil no graph.instagram.com";
+
+  for (const endpoint of endpoints) {
+    const response = await fetch(endpoint);
+    const raw = await response.text();
+    const data = safeJsonParse(raw);
+
+    if (response.ok && !data?.error) {
+      const mapped = mapProfileFromAnyPayload(data);
+      if (mapped) {
+        return { profile: mapped };
+      }
+      lastError = "Resposta inválida ao buscar perfil no graph.instagram.com";
+      continue;
+    }
+
+    lastError = extractErrorMessage(data, lastError);
+  }
+
+  return { error: lastError };
+}
+
+async function fetchProfileViaInstagramUserId(accessToken: string, igUserId?: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
+  if (!igUserId) {
+    return { error: "IG User ID indisponível para lookup de perfil" };
+  }
+
+  const endpoints = [
+    `https://graph.instagram.com/${igUserId}?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
+    `https://graph.instagram.com/${GRAPH_API_VERSION}/${igUserId}?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
+  ];
+
+  let lastError = "Erro ao buscar perfil por ID no graph.instagram.com";
+
+  for (const endpoint of endpoints) {
+    const response = await fetch(endpoint);
+    const raw = await response.text();
+    const data = safeJsonParse(raw);
+
+    if (response.ok && !data?.error) {
+      const mapped = mapProfileFromAnyPayload(data);
+      if (mapped) {
+        return { profile: mapped };
+      }
+      lastError = "Resposta inválida ao buscar perfil por ID no graph.instagram.com";
+      continue;
+    }
+
+    lastError = extractErrorMessage(data, lastError);
+  }
+
+  return { error: lastError };
 }
 
 async function fetchProfileViaFacebookGraph(accessToken: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
@@ -159,7 +207,7 @@ async function fetchProfileViaFacebookGraph(accessToken: string): Promise<{ prof
   };
 }
 
-async function resolveInstagramProfile(primaryToken: string, fallbackToken?: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
+async function resolveInstagramProfile(primaryToken: string, fallbackToken?: string, igUserId?: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
   const attempts = [primaryToken, fallbackToken].filter((token, index, arr): token is string => !!token && arr.indexOf(token) === index);
   const errors: string[] = [];
 
@@ -173,15 +221,22 @@ async function resolveInstagramProfile(primaryToken: string, fallbackToken?: str
       console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile lookup failed", { error: viaInstagram.error });
     }
 
-    if (token.startsWith("EAA")) {
-      const viaFacebook = await fetchProfileViaFacebookGraph(token);
-      if (viaFacebook.profile) {
-        return viaFacebook;
-      }
-      if (viaFacebook.error) {
-        errors.push(viaFacebook.error);
-        console.warn("[INSTAGRAM-OAUTH] graph.facebook.com profile lookup failed", { error: viaFacebook.error });
-      }
+    const viaInstagramById = await fetchProfileViaInstagramUserId(token, igUserId);
+    if (viaInstagramById.profile) {
+      return viaInstagramById;
+    }
+    if (viaInstagramById.error) {
+      errors.push(viaInstagramById.error);
+      console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile-by-id lookup failed", { error: viaInstagramById.error });
+    }
+
+    const viaFacebook = await fetchProfileViaFacebookGraph(token);
+    if (viaFacebook.profile) {
+      return viaFacebook;
+    }
+    if (viaFacebook.error) {
+      errors.push(viaFacebook.error);
+      console.warn("[INSTAGRAM-OAUTH] graph.facebook.com profile lookup failed", { error: viaFacebook.error });
     }
   }
 
@@ -302,11 +357,16 @@ serve(async (req) => {
     }
 
     console.log("[INSTAGRAM-OAUTH] Step 3: Fetching profile");
-    const resolvedProfile = await resolveInstagramProfile(finalToken, shortLivedToken);
+    const resolvedProfile = await resolveInstagramProfile(finalToken, shortLivedToken, igUserId);
 
     if (!resolvedProfile.profile) {
+      const normalizedError = (resolvedProfile.error || "").toLowerCase();
+      const userSafeError = normalizedError.includes("unsupported request - method type")
+        ? "Não foi possível concluir a conexão com os dados retornados pela Meta para essa conta. Confirme se a conta é Business/Creator e se está vinculada a uma Página do Facebook, então tente novamente."
+        : (resolvedProfile.error || "Erro ao buscar perfil do Instagram");
+
       return new Response(
-        JSON.stringify({ error: resolvedProfile.error || "Erro ao buscar perfil do Instagram" }),
+        JSON.stringify({ error: userSafeError }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
