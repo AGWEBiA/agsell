@@ -12,12 +12,19 @@ export function usePaidGroupsConfig() {
     queryKey: ['paid-groups-config', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('paid_groups_config')
-        .select('*')
-        .eq('organization_id', orgId!)
-        .maybeSingle();
+        .rpc('get_paid_groups_config_safe', { _org_id: orgId! });
       if (error) throw error;
-      return data;
+      return data as {
+        id: string;
+        organization_id: string;
+        evolution_api_url: string | null;
+        evolution_api_key_set: boolean;
+        evolution_api_key_masked: string | null;
+        webhook_secret: string | null;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+      } | null;
     },
     enabled: !!orgId,
   });
