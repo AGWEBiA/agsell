@@ -431,11 +431,20 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
   onSave: (config: Record<string, unknown>) => void;
 }) {
   const [config, setConfig] = useState<Record<string, unknown>>(node?.config || {});
+  const [showEmailEditor, setShowEmailEditor] = useState(false);
   const { forms } = useForms();
   const { automations } = useAutomations();
   const { data: gatewayProducts = [] } = useGatewayProducts(String(config.gateway || 'any'));
 
   useEffect(() => { if (node) setConfig(node.config); }, [node]);
+
+  // Watch for _editing_template flag
+  useEffect(() => {
+    if (config._editing_template) {
+      setShowEmailEditor(true);
+      setConfig(prev => { const { _editing_template, ...rest } = prev; return rest; });
+    }
+  }, [config._editing_template]);
   if (!node) return null;
 
   const contactSources = ['website', 'landing_page', 'formulario', 'whatsapp', 'instagram', 'indicacao', 'evento', 'ads', 'importacao', 'outro'];
