@@ -92,11 +92,22 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
+    id: 'automations',
+    label: 'Automações',
+    icon: Workflow,
+    items: [
+      { label: 'E-mail', icon: Mail, path: '/flow-builder?channel=email', featureRequired: 'automacoes' },
+      { label: 'WhatsApp Individual', icon: Smartphone, path: '/flow-builder?channel=whatsapp', featureRequired: 'automacoes' },
+      { label: 'Grupos', icon: Users, path: '/flow-builder?channel=groups', featureRequired: 'automacoes' },
+      { label: 'Instagram', icon: Instagram, path: '/flow-builder?channel=instagram', featureRequired: 'automacoes' },
+      { label: 'Telegram', icon: Send, path: '/flow-builder?channel=telegram', featureRequired: 'automacoes' },
+    ],
+  },
+  {
     id: 'marketing',
     label: 'Marketing',
     icon: Megaphone,
     items: [
-      { label: 'Automações', icon: Workflow, path: '/flow-builder', featureRequired: 'automacoes' },
       { label: 'Chatbot', icon: Bot, path: '/chatbot-builder' },
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
       { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
@@ -282,8 +293,10 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     menuSections.forEach((section) => {
-      const hasActive = section.items.some((item) => location.pathname === item.path);
-      initial[section.id] = hasActive || section.id === 'overview';
+      const hasActive = section.items.some((item) => {
+        const itemPath = item.path.split('?')[0];
+        return location.pathname === itemPath;
+      });
     });
     return initial;
   });
@@ -327,7 +340,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
           <nav className="space-y-1 p-2" aria-label="Menu principal">
             {filteredSections.map((section) => {
               if (section.items.length === 0) return null;
-              const hasActiveItem = section.items.some((item) => location.pathname === item.path);
+              const hasActiveItem = section.items.some((item) => location.pathname === item.path.split('?')[0]);
               const isOpen = openSections[section.id] ?? false;
 
               return (
@@ -352,7 +365,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                         <MenuItemLink
                           key={item.path}
                           item={item}
-                          isActive={location.pathname === item.path}
+                          isActive={location.pathname === item.path.split('?')[0] && location.search === (item.path.includes('?') ? '?' + item.path.split('?')[1] : '')}
                           collapsed={false}
                           onNavigate={onClose}
                           isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
@@ -394,7 +407,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
         <nav className="space-y-1 p-2" aria-label="Menu principal">
           {filteredSections.map((section) => {
             if (section.items.length === 0) return null;
-            const hasActiveItem = section.items.some((item) => location.pathname === item.path);
+            const hasActiveItem = section.items.some((item) => location.pathname === item.path.split('?')[0]);
             const isOpen = openSections[section.id] ?? false;
 
             return (
@@ -419,7 +432,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                       <MenuItemLink
                         key={item.path}
                         item={item}
-                        isActive={location.pathname === item.path}
+                        isActive={location.pathname === item.path.split('?')[0] && location.search === (item.path.includes('?') ? '?' + item.path.split('?')[1] : '')}
                         collapsed={collapsed}
                         isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
                       />
