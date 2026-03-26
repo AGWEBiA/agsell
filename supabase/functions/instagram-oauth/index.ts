@@ -61,6 +61,10 @@ function expandTokenCandidates(raw: unknown): string[] {
   return Array.from(candidates);
 }
 
+function isFacebookUserToken(token: string): boolean {
+  return sanitizeAccessToken(token).startsWith("EAA");
+}
+
 async function requestWithToken(baseUrl: string, token: string): Promise<{ ok: boolean; data: any }> {
   const queryUrl = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(token)}`;
 
@@ -152,6 +156,37 @@ async function exchangeLongLivedToken(shortLivedToken: string, appSecret: string
 
       errors.push({ provider: attempt.name, error: data || raw });
     }
+  }
+
+  return { error: errors };
+}
+
+async function exchangeCodeForFacebookUserToken(
+  code: string,
+  redirectUri: string,
+  appSecret: string,
+): Promise<{ access_token?: string; error?: any }> {
+  const errors: any[] = [];
+
+  const endpoints = [
+    ...GRAPH_API_VERSIONS.map((version) => `https://graph.facebook.com/${version}/oauth/access_token`),
+    "https://graph.facebook.com/oauth/access_token",
+  ];
+
+  for (const endpoint of endpoints) {
+    const url = `${endpoint}?client_id=${encodeURIComponent(INSTAGRAM_APP_ID)}&redirect_uri=${encodeURIComponent(
+      redirectUri,
+    )}&client_secret=${encodeURIComponent(appSecret)}&code=${encodeURIComponent(code)}`;
+
+    const response = await fetch(url, { method: "GET" });
+    const raw = await response.text();
+    const data = safeJsonParse(raw);
+
+    if (response.ok && data?.access_token) {
+      return { access_token: sanitizeAccessToken(data.access_token) };
+    }
+
+    errors.push({ endpoint, error: data || raw });
   }
 
   return { error: errors };
@@ -270,38 +305,48 @@ async function fetchProfileViaFacebookGraph(accessToken: string): Promise<{ prof
   return { error: lastError };
 }
 
-async function resolveInstagramProfile(primaryToken: string, fallbackToken?: string, igUserId?: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
-  const attempts = [primaryToken, fallbackToken]
+async function resolveInstagramProfile(
+  primaryToken: string,
+  fallbackToken?: string,
+  igUserId?: string,
+  facebookUserToken?: string,
+): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
+  const attempts = [primaryToken, fallbackToken, facebookUserToken]
     .flatMap((token) => expandTokenCandidates(token))
     .filter((token, index, arr) => arr.indexOf(token) === index);
+
   const errors: string[] = [];
 
   for (const token of attempts) {
-    const viaInstagram = await fetchProfileViaInstagramGraph(token);
-    if (viaInstagram.profile) {
-      return viaInstagram;
-    }
-    if (viaInstagram.error) {
-      errors.push(viaInstagram.error);
-      console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile lookup failed", { error: viaInstagram.error });
+    if (!isFacebookUserToken(token)) {
+      const viaInstagram = await fetchProfileViaInstagramGraph(token);
+      if (viaInstagram.profile) {
+        return viaInstagram;
+      }
+      if (viaInstagram.error) {
+        errors.push(viaInstagram.error);
+        console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile lookup failed", { error: viaInstagram.error });
+      }
+
+      const viaInstagramById = await fetchProfileViaInstagramUserId(token, igUserId);
+      if (viaInstagramById.profile) {
+        return viaInstagramById;
+      }
+      if (viaInstagramById.error) {
+        errors.push(viaInstagramById.error);
+        console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile-by-id lookup failed", { error: viaInstagramById.error });
+      }
     }
 
-    const viaInstagramById = await fetchProfileViaInstagramUserId(token, igUserId);
-    if (viaInstagramById.profile) {
-      return viaInstagramById;
-    }
-    if (viaInstagramById.error) {
-      errors.push(viaInstagramById.error);
-      console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile-by-id lookup failed", { error: viaInstagramById.error });
-    }
-
-    const viaFacebook = await fetchProfileViaFacebookGraph(token);
-    if (viaFacebook.profile) {
-      return viaFacebook;
-    }
-    if (viaFacebook.error) {
-      errors.push(viaFacebook.error);
-      console.warn("[INSTAGRAM-OAUTH] graph.facebook.com profile lookup failed", { error: viaFacebook.error });
+    if (isFacebookUserToken(token)) {
+      const viaFacebook = await fetchProfileViaFacebookGraph(token);
+      if (viaFacebook.profile) {
+        return viaFacebook;
+      }
+      if (viaFacebook.error) {
+        errors.push(viaFacebook.error);
+        console.warn("[INSTAGRAM-OAUTH] graph.facebook.com profile lookup failed", { error: viaFacebook.error });
+      }
     }
   }
 
@@ -415,6 +460,17 @@ serve(async (req) => {
       tokenLength: shortLivedToken.length,
     });
 
+    console.log("[INSTAGRAM-OAUTH] Step 1B: Exchanging code for Facebook user token fallback");
+    const facebookTokenData = await exchangeCodeForFacebookUserToken(code, redirect_uri, INSTAGRAM_APP_SECRET);
+    const facebookUserToken = sanitizeAccessToken(facebookTokenData.access_token);
+    if (facebookUserToken) {
+      console.log("[INSTAGRAM-OAUTH] Step 1B OK: Got Facebook user token fallback", {
+        tokenPrefix: facebookUserToken.slice(0, 4),
+      });
+    } else if (facebookTokenData.error) {
+      console.warn("[INSTAGRAM-OAUTH] Facebook user token fallback unavailable", facebookTokenData.error);
+    }
+
     // Step 2: Exchange for long-lived token (Instagram endpoint)
     console.log("[INSTAGRAM-OAUTH] Step 2: Exchanging for long-lived token");
     const longLivedData = await exchangeLongLivedToken(shortLivedToken, INSTAGRAM_APP_SECRET);
@@ -433,12 +489,14 @@ serve(async (req) => {
     }
 
     console.log("[INSTAGRAM-OAUTH] Step 3: Fetching profile");
-    const resolvedProfile = await resolveInstagramProfile(finalToken, shortLivedToken, igUserId);
+    const resolvedProfile = await resolveInstagramProfile(finalToken, shortLivedToken, igUserId, facebookUserToken);
 
     if (!resolvedProfile.profile) {
       const normalizedError = (resolvedProfile.error || "").toLowerCase();
       const userSafeError = normalizedError.includes("cannot parse access token")
         ? "A Meta rejeitou o token retornado nesta conexão. Tente novamente e, se persistir, reconecte a conta no Instagram Business Login para gerar um novo token válido."
+        : normalizedError.includes("error validating application") || normalizedError.includes("application info")
+        ? "A Meta rejeitou a validação desta aplicação para este login. Verifique no app da Meta se ele está em modo Live, com permissões de produção aprovadas e contrato de Business Login aceito, depois tente novamente."
         : normalizedError.includes("unsupported request - method type")
         ? "Não foi possível concluir a conexão com os dados retornados pela Meta para essa conta. Confirme se a conta é Business/Creator e se está vinculada a uma Página do Facebook, então tente novamente."
         : (resolvedProfile.error || "Erro ao buscar perfil do Instagram");
