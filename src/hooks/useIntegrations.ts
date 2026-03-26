@@ -8,7 +8,7 @@ export type Integration = {
   name: string;
   description: string;
   icon: string;
-  category: 'infoproduct' | 'analytics' | 'crm';
+  category: 'analytics' | 'crm';
   status: IntegrationStatus;
   configFields: { key: string; label: string; type: string; placeholder: string; required?: boolean }[];
   config?: Record<string, string>;
