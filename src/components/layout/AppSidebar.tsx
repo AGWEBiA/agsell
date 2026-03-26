@@ -81,11 +81,14 @@ const menuSections: MenuSection[] = [
     label: 'Automações',
     icon: Workflow,
     items: [
-      { label: 'E-mail', icon: Mail, path: '/flow-builder?channel=email', featureRequired: 'automacoes' },
-      { label: 'WhatsApp Individual', icon: Smartphone, path: '/flow-builder?channel=whatsapp', featureRequired: 'automacoes' },
+      { label: 'Individuais', icon: Smartphone, path: '/flow-builder?channel=whatsapp', featureRequired: 'automacoes' },
       { label: 'Grupos', icon: Users, path: '/flow-builder?channel=groups', featureRequired: 'automacoes' },
+      { label: 'Chatbot / Agente IA', icon: Bot, path: '/chatbot-builder', featureRequired: 'automacoes' },
+      { label: 'E-mail', icon: Mail, path: '/flow-builder?channel=email', featureRequired: 'automacoes' },
       { label: 'Instagram', icon: Instagram, path: '/flow-builder?channel=instagram', featureRequired: 'automacoes' },
       { label: 'Telegram', icon: Send, path: '/flow-builder?channel=telegram', featureRequired: 'automacoes' },
+      { label: 'Campanhas WhatsApp', icon: Megaphone, path: '/whatsapp-campaigns', featureRequired: 'whatsapp' },
+      { label: 'Mensagens Grupos', icon: MessageSquare, path: '/whatsapp-group-messages', featureRequired: 'whatsapp' },
     ],
   },
   {
