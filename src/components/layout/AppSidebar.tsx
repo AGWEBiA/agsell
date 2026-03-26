@@ -142,6 +142,7 @@ const menuSections: MenuSection[] = [
       { label: 'Templates API', icon: FileText, path: '/whatsapp-templates', featureRequired: 'whatsapp' },
       { label: 'Grupos Pagos', icon: Crown, path: '/paid-groups', featureRequired: 'paid_groups' },
       { label: 'Direcionador Grupos', icon: Route, path: '/group-rotator', featureRequired: 'whatsapp' },
+      { label: 'VoIP & Ligações', icon: PhoneCall, path: '/voip' },
       { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
       { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true },
       { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
