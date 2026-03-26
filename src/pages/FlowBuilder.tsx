@@ -92,6 +92,8 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
         return c.group_name ? `→ ${String(c.group_name)}` : '';
       case 'voice_torpedo':
         return c.audio_url ? 'Áudio configurado' : '';
+      case 'send_voip_call':
+        return c.on_answer === 'connect_agent' ? 'Conectar atendente' : c.audio_url ? 'Reproduzir áudio' : '';
       case 'parallel_channels':
         return ((c.channels as string[]) || []).join(' + ').toUpperCase() || 'WA + Email';
       case 'edit_whatsapp_group':
