@@ -619,7 +619,48 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
         return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Segue automaticamente o usuário que interagiu com seu perfil.</p><div className="flex items-center gap-2"><Switch checked={!!config.add_tag_on_follow} onCheckedChange={v => setConfig({ ...config, add_tag_on_follow: v })} /><Label>Adicionar tag ao seguir</Label></div>{config.add_tag_on_follow && (<div><Label>Nome da Tag</Label><Input placeholder="Ex: seguido_de_volta" value={String(config.follow_tag || '')} onChange={e => setConfig({ ...config, follow_tag: e.target.value })} /></div>)}</div>);
       // ── New node types ──
       case 'voice_torpedo':
-        return (<div className="space-y-4"><div><Label>URL do Áudio (MP3)</Label><Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} /></div><div><Label>Mensagem de texto (fallback)</Label><Textarea rows={2} placeholder="Caso não consiga ouvir..." value={String(config.fallback_message || '')} onChange={e => setConfig({ ...config, fallback_message: e.target.value })} /></div><div className="flex items-center gap-2"><Switch checked={!!config.wait_answer} onCheckedChange={v => setConfig({ ...config, wait_answer: v })} /><Label>Aguardar resposta do usuário</Label></div></div>);
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>URL do Áudio (MP3) *</Label>
+              <Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">Arquivo MP3 hospedado. Recomendado até 60s.</p>
+            </div>
+            <div>
+              <Label>Mensagem de texto (fallback SMS)</Label>
+              <Textarea rows={2} placeholder="Caso não atenda, enviar este SMS..." value={String(config.fallback_message || '')} onChange={e => setConfig({ ...config, fallback_message: e.target.value })} />
+            </div>
+            <div>
+              <Label>Créditos por chamada</Label>
+              <Select value={String(config.credits_per_call || '1')} onValueChange={v => setConfig({ ...config, credits_per_call: Number(v) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 crédito (até 1 min)</SelectItem>
+                  <SelectItem value="2">2 créditos (até 2 min)</SelectItem>
+                  <SelectItem value="3">3 créditos (até 3 min)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={!!config.wait_answer} onCheckedChange={v => setConfig({ ...config, wait_answer: v })} />
+              <Label>Aguardar resposta do usuário</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={!!config.retry_on_busy} onCheckedChange={v => setConfig({ ...config, retry_on_busy: v })} />
+              <Label>Tentar novamente se ocupado</Label>
+            </div>
+            {config.retry_on_busy && (
+              <div>
+                <Label>Intervalo para retry (minutos)</Label>
+                <Input type="number" min={5} max={120} value={String(config.retry_interval || 30)} onChange={e => setConfig({ ...config, retry_interval: Number(e.target.value) })} />
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Switch checked={!!config.record_call} onCheckedChange={v => setConfig({ ...config, record_call: v })} />
+              <Label>Gravar chamada</Label>
+            </div>
+          </div>
+        );
       case 'parallel_channels':
         return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Dispara mensagens em múltiplos canais simultaneamente. Se um canal falhar, os outros continuam.</p>
           <div className="space-y-2">

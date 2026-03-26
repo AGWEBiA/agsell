@@ -127,6 +127,7 @@ export const nodeCategories = [
     nodes: [
       { id: 'send_sms', label: 'SMS', icon: Smartphone, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300' },
       { id: 'voice_torpedo', label: 'Torpedo de Voz', icon: Volume2, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+      { id: 'send_voip_call', label: 'Ligação VoIP', icon: Phone, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
     ],
   },
   {
