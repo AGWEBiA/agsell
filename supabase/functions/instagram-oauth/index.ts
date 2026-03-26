@@ -27,9 +27,71 @@ function safeJsonParse(text: string): any {
   }
 }
 
+function normalizeTokenPayload(payload: any): { access_token?: string; user_id?: string } {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+
+  if (Array.isArray(payload.data) && payload.data.length > 0) {
+    const first = payload.data[0] ?? {};
+    return {
+      access_token: first.access_token,
+      user_id: first.user_id,
+    };
+  }
+
+  return {
+    access_token: payload.access_token,
+    user_id: payload.user_id,
+  };
+}
+
+async function exchangeLongLivedToken(shortLivedToken: string, appSecret: string): Promise<{ access_token?: string; expires_in?: number; error?: any }> {
+  const getUrl = `https://graph.instagram.com/${GRAPH_API_VERSION}/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
+
+  const getRes = await fetch(getUrl, { method: "GET" });
+  const getRaw = await getRes.text();
+  const getData = safeJsonParse(getRaw);
+
+  if (getRes.ok && getData?.access_token) {
+    return {
+      access_token: getData.access_token,
+      expires_in: getData.expires_in,
+    };
+  }
+
+  const getErrorMessage = getData?.error?.message || getData?.message || "";
+  if (!getErrorMessage.toLowerCase().includes("unsupported request - method type: get")) {
+    return { error: getData || getRaw };
+  }
+
+  console.warn("[INSTAGRAM-OAUTH] Long-lived token GET failed with method error, trying POST fallback");
+  const postBody = new URLSearchParams();
+  postBody.append("grant_type", "ig_exchange_token");
+  postBody.append("client_secret", appSecret);
+  postBody.append("access_token", shortLivedToken);
+
+  const postRes = await fetch(`https://graph.instagram.com/${GRAPH_API_VERSION}/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: postBody,
+  });
+  const postRaw = await postRes.text();
+  const postData = safeJsonParse(postRaw);
+
+  if (postRes.ok && postData?.access_token) {
+    return {
+      access_token: postData.access_token,
+      expires_in: postData.expires_in,
+    };
+  }
+
+  return { error: postData || postRaw };
+}
+
 async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
   const response = await fetch(
-    `https://graph.instagram.com/me?fields=id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`
+    `https://graph.instagram.com/${GRAPH_API_VERSION}/me?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`
   );
   const raw = await response.text();
   const data = safeJsonParse(raw);
@@ -40,7 +102,9 @@ async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ pro
     };
   }
 
-  if (!data?.id || !data?.username) {
+  const user = Array.isArray(data?.data) ? data.data[0] : data;
+
+  if (!user?.username || !(user?.user_id || user?.id)) {
     return {
       error: "Resposta inválida ao buscar perfil no graph.instagram.com",
     };
@@ -48,10 +112,10 @@ async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ pro
 
   return {
     profile: {
-      instagram_user_id: String(data.id),
-      username: data.username,
-      full_name: data.name || null,
-      profile_picture_url: data.profile_picture_url || null,
+      instagram_user_id: String(user.user_id || user.id),
+      username: user.username,
+      full_name: user.name || null,
+      profile_picture_url: user.profile_picture_url || null,
       page_id: null,
       page_access_token: null,
     },
@@ -109,13 +173,15 @@ async function resolveInstagramProfile(primaryToken: string, fallbackToken?: str
       console.warn("[INSTAGRAM-OAUTH] graph.instagram.com profile lookup failed", { error: viaInstagram.error });
     }
 
-    const viaFacebook = await fetchProfileViaFacebookGraph(token);
-    if (viaFacebook.profile) {
-      return viaFacebook;
-    }
-    if (viaFacebook.error) {
-      errors.push(viaFacebook.error);
-      console.warn("[INSTAGRAM-OAUTH] graph.facebook.com profile lookup failed", { error: viaFacebook.error });
+    if (token.startsWith("EAA")) {
+      const viaFacebook = await fetchProfileViaFacebookGraph(token);
+      if (viaFacebook.profile) {
+        return viaFacebook;
+      }
+      if (viaFacebook.error) {
+        errors.push(viaFacebook.error);
+        console.warn("[INSTAGRAM-OAUTH] graph.facebook.com profile lookup failed", { error: viaFacebook.error });
+      }
     }
   }
 
@@ -211,58 +277,28 @@ serve(async (req) => {
       );
     }
 
-    const shortLivedToken = tokenData.access_token;
-    const igUserId = tokenData.user_id;
-    console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", { igUserId });
+    const normalizedTokenData = normalizeTokenPayload(tokenData);
+    const shortLivedToken = normalizedTokenData.access_token;
+    const igUserId = normalizedTokenData.user_id;
 
-    // Step 2: Exchange for long-lived token (Instagram endpoint)
-    const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(INSTAGRAM_APP_SECRET)}&access_token=${encodeURIComponent(shortLivedToken)}`;
-    
-    console.log("[INSTAGRAM-OAUTH] Step 2: Exchanging for long-lived token");
-    const longLivedRes = await fetch(longLivedUrl);
-    const longLivedText = await longLivedRes.text();
-    console.log("[INSTAGRAM-OAUTH] Step 2 response received", { status: longLivedRes.status });
-
-    let longLivedData;
-    try {
-      longLivedData = JSON.parse(longLivedText);
-    } catch {
-      console.error("[INSTAGRAM-OAUTH] Failed to parse long-lived response");
+    if (!shortLivedToken) {
+      console.error("[INSTAGRAM-OAUTH] Step 1 returned no access_token", tokenData);
       return new Response(
-        JSON.stringify({ error: "Resposta inválida ao obter token de longa duração" }),
+        JSON.stringify({ error: "Não foi possível obter token de acesso do Instagram" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", { igUserId });
+
+    // Step 2: Exchange for long-lived token (Instagram endpoint)
+    console.log("[INSTAGRAM-OAUTH] Step 2: Exchanging for long-lived token");
+    const longLivedData = await exchangeLongLivedToken(shortLivedToken, INSTAGRAM_APP_SECRET);
     let finalToken = longLivedData.access_token || shortLivedToken;
     let expiresIn = longLivedData.expires_in || 3600;
 
-    if (longLivedData.error) {
-      console.error("[INSTAGRAM-OAUTH] Long-lived token error:", JSON.stringify(longLivedData.error));
-
-      // Fallback attempt for token types that require Facebook exchange endpoint
-      try {
-        console.log("[INSTAGRAM-OAUTH] Step 2b: Trying Facebook token exchange fallback");
-        const fbExchangeUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(INSTAGRAM_APP_ID)}&client_secret=${encodeURIComponent(INSTAGRAM_APP_SECRET)}&fb_exchange_token=${encodeURIComponent(shortLivedToken)}`;
-        const fbExchangeRes = await fetch(fbExchangeUrl);
-        const fbExchangeText = await fbExchangeRes.text();
-        const fbExchangeData = safeJsonParse(fbExchangeText);
-
-        if (fbExchangeData?.access_token && fbExchangeRes.ok) {
-          finalToken = fbExchangeData.access_token;
-          expiresIn = fbExchangeData.expires_in || expiresIn;
-          console.log("[INSTAGRAM-OAUTH] Step 2b OK: Facebook exchange succeeded");
-        } else {
-          console.error("[INSTAGRAM-OAUTH] Step 2b failed response", {
-            status: fbExchangeRes.status,
-            body: fbExchangeData || fbExchangeText,
-          });
-          console.log("[INSTAGRAM-OAUTH] Step 2b failed, using short-lived token fallback");
-        }
-      } catch (fallbackError) {
-        console.error("[INSTAGRAM-OAUTH] Step 2b fallback error:", fallbackError);
-        console.log("[INSTAGRAM-OAUTH] Falling back to short-lived token");
-      }
+    if (!longLivedData.access_token && longLivedData.error) {
+      console.error("[INSTAGRAM-OAUTH] Long-lived token exchange failed, using short-lived fallback", longLivedData.error);
     }
 
     console.log("[INSTAGRAM-OAUTH] Step 3: Fetching profile");
