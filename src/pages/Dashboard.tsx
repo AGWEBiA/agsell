@@ -1,6 +1,10 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +20,7 @@ import {
   CheckCircle2,
   Clock,
   Mail,
-  Phone,
+  Phone, PhoneCall,
   MessageSquare,
   FileText,
   Calendar,
@@ -66,6 +70,35 @@ export default function Dashboard() {
   const { data: activities, isLoading: loadingActivities } = useRecentActivities();
   const { data: topLeads, isLoading: loadingTopLeads } = useTopLeads();
   const { stats: gamificationStats, getLevelTitle } = useGamification();
+  const { currentOrganization } = useOrganization();
+
+  const { data: smsCredits } = useQuery({
+    queryKey: ['sms-credits', currentOrganization?.id],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+      const { data } = await supabase
+        .from('sms_credits')
+        .select('balance, total_purchased, total_used')
+        .eq('organization_id', currentOrganization.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!currentOrganization?.id,
+  });
+
+  const { data: voipCredits } = useQuery({
+    queryKey: ['voip-credits', currentOrganization?.id],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+      const { data } = await supabase
+        .from('voip_credits')
+        .select('balance, total_purchased, total_used')
+        .eq('organization_id', currentOrganization.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!currentOrganization?.id,
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -214,6 +247,65 @@ export default function Dashboard() {
                   />
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Saldos de Créditos */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Saldo SMS
+            </CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(smsCredits?.balance ?? 0).toLocaleString('pt-BR')}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-muted-foreground">
+                Comprados: {(smsCredits?.total_purchased ?? 0).toLocaleString('pt-BR')}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Usados: {(smsCredits?.total_used ?? 0).toLocaleString('pt-BR')}
+              </span>
+            </div>
+            {(smsCredits?.total_purchased ?? 0) > 0 && (
+              <Progress
+                value={((smsCredits?.balance ?? 0) / (smsCredits?.total_purchased ?? 1)) * 100}
+                className="h-1.5 mt-2"
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Saldo VoIP
+            </CardTitle>
+            <PhoneCall className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(voipCredits?.balance ?? 0).toLocaleString('pt-BR')}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-muted-foreground">
+                Comprados: {(voipCredits?.total_purchased ?? 0).toLocaleString('pt-BR')}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Usados: {(voipCredits?.total_used ?? 0).toLocaleString('pt-BR')}
+              </span>
+            </div>
+            {(voipCredits?.total_purchased ?? 0) > 0 && (
+              <Progress
+                value={((voipCredits?.balance ?? 0) / (voipCredits?.total_purchased ?? 1)) * 100}
+                className="h-1.5 mt-2"
+              />
             )}
           </CardContent>
         </Card>
