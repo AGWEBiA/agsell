@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   Clock,
   Mail,
-  Phone,
+  Phone, PhoneCall,
   MessageSquare,
   FileText,
   Calendar,
@@ -70,6 +70,35 @@ export default function Dashboard() {
   const { data: activities, isLoading: loadingActivities } = useRecentActivities();
   const { data: topLeads, isLoading: loadingTopLeads } = useTopLeads();
   const { stats: gamificationStats, getLevelTitle } = useGamification();
+  const { currentOrganization } = useOrganization();
+
+  const { data: smsCredits } = useQuery({
+    queryKey: ['sms-credits', currentOrganization?.id],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+      const { data } = await supabase
+        .from('sms_credits')
+        .select('balance, total_purchased, total_used')
+        .eq('organization_id', currentOrganization.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!currentOrganization?.id,
+  });
+
+  const { data: voipCredits } = useQuery({
+    queryKey: ['voip-credits', currentOrganization?.id],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+      const { data } = await supabase
+        .from('voip_credits')
+        .select('balance, total_purchased, total_used')
+        .eq('organization_id', currentOrganization.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!currentOrganization?.id,
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
