@@ -46,8 +46,8 @@ interface MenuSection {
 
 const menuSections: MenuSection[] = [
   {
-    id: 'overview',
-    label: 'Visão Geral',
+    id: 'daily',
+    label: 'Dia a Dia',
     icon: Home,
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -69,26 +69,11 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    id: 'communication',
-    label: 'Comunicação',
+    id: 'attendance',
+    label: 'Atendimento',
     icon: Inbox,
     items: [
-      { label: 'SAC', icon: Inbox, path: '/inbox' },
-      { label: 'Suporte', icon: Ticket, path: '/support' },
-      { label: 'Caixa de E-mail', icon: Mail, path: '/email-inbox', featureRequired: 'email_marketing' },
-      { label: 'Instagram', icon: Instagram, path: '/instagram', featureRequired: 'instagram' },
-      { label: 'VoIP', icon: PhoneCall, path: '/voip' },
-    ],
-  },
-  {
-    id: 'whatsapp',
-    label: 'WhatsApp',
-    icon: Smartphone,
-    items: [
-      { label: 'Dispositivos', icon: Smartphone, path: '/whatsapp', featureRequired: 'whatsapp' },
-      { label: 'Templates API', icon: FileText, path: '/whatsapp-templates', featureRequired: 'whatsapp' },
-      { label: 'Grupos Pagos', icon: Crown, path: '/paid-groups', featureRequired: 'paid_groups' },
-      { label: 'Direcionador de Grupos', icon: Route, path: '/group-rotator', featureRequired: 'whatsapp' },
+      { label: 'Inbox Central', icon: Inbox, path: '/inbox' },
     ],
   },
   {
@@ -104,17 +89,17 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    id: 'marketing',
-    label: 'Marketing',
-    icon: Megaphone,
+    id: 'growth',
+    label: 'Crescimento',
+    icon: Rocket,
     items: [
-      { label: 'Chatbot', icon: Bot, path: '/chatbot-builder' },
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
       { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
-      { label: 'Testes A/B', icon: FlaskConical, path: '/ab-tests' },
+      { label: 'Chatbot', icon: Bot, path: '/chatbot-builder' },
       { label: 'Growth Tools', icon: Rocket, path: '/growth-tools' },
       { label: 'Formulários', icon: FileText, path: '/forms' },
       { label: 'Landing Pages', icon: Layout, path: '/landing-pages' },
+      { label: 'Testes A/B', icon: FlaskConical, path: '/ab-tests' },
       { label: 'Planejador Funil', icon: Target, path: '/funnel-planner' },
       { label: 'Event Tracking', icon: Activity, path: '/event-tracking' },
       { label: 'Site Tracking', icon: Monitor, path: '/site-tracking' },
@@ -124,9 +109,9 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    id: 'insights',
-    label: 'Insights',
-    icon: BarChart3,
+    id: 'intelligence',
+    label: 'Inteligência',
+    icon: Brain,
     items: [
       { label: 'Analytics', icon: BarChart3, path: '/analytics', featureRequired: 'analytics' },
       { label: 'BI do Funil', icon: Target, path: '/funnel-bi' },
@@ -143,22 +128,19 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    id: 'workspace',
-    label: 'Workspace',
-    icon: Building2,
+    id: 'config',
+    label: 'Configurações',
+    icon: Settings,
     items: [
       { label: 'Organização', icon: Building2, path: '/organization', orgAdminOnly: true },
       { label: 'Permissões', icon: Shield, path: '/permissions', orgAdminOnly: true },
       { label: 'Planos', icon: Target, path: '/plans' },
       { label: 'Clientes (Agência)', icon: Briefcase, path: '/agency-clients', featureRequired: 'agency_management' },
-    ],
-  },
-  {
-    id: 'technical',
-    label: 'Técnico',
-    icon: Wrench,
-    items: [
       { label: 'Canais', icon: Send, path: '/channels' },
+      { label: 'WhatsApp', icon: Smartphone, path: '/whatsapp', featureRequired: 'whatsapp' },
+      { label: 'Templates API', icon: FileText, path: '/whatsapp-templates', featureRequired: 'whatsapp' },
+      { label: 'Grupos Pagos', icon: Crown, path: '/paid-groups', featureRequired: 'paid_groups' },
+      { label: 'Direcionador Grupos', icon: Route, path: '/group-rotator', featureRequired: 'whatsapp' },
       { label: 'Integrações', icon: LinkIcon, path: '/integrations' },
       { label: 'API Keys', icon: Key, path: '/api-keys', orgAdminOnly: true },
       { label: 'Webhooks', icon: Webhook, path: '/webhooks' },
