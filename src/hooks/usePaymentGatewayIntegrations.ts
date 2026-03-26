@@ -110,7 +110,8 @@ export function usePaymentGatewayIntegrations() {
   const getWebhookUrl = (gateway: GatewayType) => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const info = GATEWAY_INFO[gateway];
-    return `${supabaseUrl}/functions/v1/${info.webhookPath}`;
+    const orgId = currentOrganization?.id;
+    return `${supabaseUrl}/functions/v1/${info.webhookPath}${orgId ? `?org_id=${orgId}` : ''}`;
   };
 
   const getGatewayIntegration = (gateway: GatewayType) => {
