@@ -499,6 +499,17 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       case 'form_submitted':
         return (<div className="space-y-4"><div><Label>Formulário *</Label><Select value={String(config.form_id || '')} onValueChange={v => { const form = forms.find(f => f.id === v); setConfig({ ...config, form_id: v, form_name: form?.name || '' }); }}><SelectTrigger><SelectValue placeholder="Selecione um formulário" /></SelectTrigger><SelectContent>{forms.map(f => (<SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>))}{forms.length === 0 && (<SelectItem value="_none" disabled>Nenhum formulário criado</SelectItem>)}</SelectContent></Select></div></div>);
 
+      // ── Payment gateway triggers ──
+      case 'gateway_purchase_approved':
+      case 'gateway_boleto_generated':
+      case 'gateway_boleto_paid':
+      case 'gateway_pix_generated':
+      case 'gateway_refund':
+      case 'gateway_chargeback':
+      case 'gateway_subscription_canceled':
+      case 'gateway_cart_abandoned':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Este gatilho é acionado automaticamente quando o evento correspondente é recebido via webhook do gateway de pagamento.</p><div><Label>Gateway</Label><Select value={String(config.gateway || 'any')} onValueChange={v => setConfig({ ...config, gateway: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer gateway</SelectItem><SelectItem value="hotmart">Hotmart</SelectItem><SelectItem value="kiwify">Kiwify</SelectItem><SelectItem value="eduzz">Eduzz</SelectItem><SelectItem value="shopify">Shopify</SelectItem></SelectContent></Select></div><div><Label>Produto (opcional)</Label><Input placeholder="Nome ou ID do produto" value={String(config.product_name || '')} onChange={e => setConfig({ ...config, product_name: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para qualquer produto</p></div></div>);
+
       // ── Simple actions ──
       // ── New node types ──
       case 'send_whatsapp_oficial':
@@ -628,7 +639,7 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
 
 // ─── Trigger Selection Screen ───
 function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }) {
-  const [filter, setFilter] = useState<'all' | 'instagram' | 'whatsapp' | 'crm'>('all');
+  const [filter, setFilter] = useState<'all' | 'instagram' | 'whatsapp' | 'crm' | 'pagamento'>('all');
   const filtered = triggerOptions.filter(t => filter === 'all' || t.channel === filter);
 
   return (
@@ -640,12 +651,13 @@ function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }
         <h2 className="text-2xl font-bold">Como o fluxo começa?</h2>
         <p className="text-muted-foreground mt-1">Escolha o gatilho que vai iniciar sua automação</p>
       </div>
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap justify-center">
         {([
           { key: 'all' as const, label: 'Todos' },
           { key: 'instagram' as const, label: '📸 Instagram' },
           { key: 'whatsapp' as const, label: '💬 WhatsApp' },
           { key: 'crm' as const, label: '👤 CRM' },
+          { key: 'pagamento' as const, label: '💳 Pagamentos' },
         ]).map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)} className={cn('px-4 py-2 rounded-full text-sm font-medium transition-colors', filter === f.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
             {f.label}

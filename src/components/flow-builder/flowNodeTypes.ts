@@ -6,6 +6,7 @@ import {
   Globe, MousePointer, LogOut, List, LayoutTemplate,
   Package, Code, AtSign, Share2, Link, Megaphone, Users,
   Phone, StickyNote, Split, Shuffle, Volume2, Pencil,
+  CreditCard, Receipt, Ban, FileText, ShoppingCart, RotateCcw,
 } from 'lucide-react';
 
 export interface FlowNode {
@@ -41,6 +42,15 @@ export const triggerOptions = [
   { id: 'form_submitted', label: 'Formulário Enviado', icon: CheckSquare, channel: 'crm', color: 'from-indigo-500 to-blue-500', description: 'Quando um formulário específico é preenchido' },
   { id: 'page_visited', label: 'Página Visitada', icon: Globe, channel: 'site', color: 'from-cyan-500 to-blue-500', description: 'Quando um contato visita uma página específica do seu site' },
   { id: 'site_event', label: 'Evento no Site', icon: MousePointer, channel: 'site', color: 'from-teal-500 to-cyan-500', description: 'Quando um evento customizado é disparado no site' },
+  // Payment gateway triggers
+  { id: 'gateway_purchase_approved', label: 'Compra Aprovada', icon: CreditCard, channel: 'pagamento', color: 'from-green-500 to-emerald-600', description: 'Quando uma compra é aprovada (Hotmart, Kiwify, Eduzz)' },
+  { id: 'gateway_boleto_generated', label: 'Boleto Gerado', icon: FileText, channel: 'pagamento', color: 'from-amber-500 to-yellow-500', description: 'Quando um boleto é emitido pelo gateway' },
+  { id: 'gateway_boleto_paid', label: 'Boleto Pago', icon: Receipt, channel: 'pagamento', color: 'from-green-400 to-lime-500', description: 'Quando um boleto é pago pelo comprador' },
+  { id: 'gateway_pix_generated', label: 'PIX Gerado', icon: ShoppingCart, channel: 'pagamento', color: 'from-teal-500 to-cyan-500', description: 'Quando um PIX é gerado aguardando pagamento' },
+  { id: 'gateway_refund', label: 'Reembolso', icon: RotateCcw, channel: 'pagamento', color: 'from-red-500 to-rose-500', description: 'Quando um reembolso é processado' },
+  { id: 'gateway_chargeback', label: 'Chargeback', icon: Ban, channel: 'pagamento', color: 'from-red-600 to-red-700', description: 'Quando ocorre um chargeback/disputa' },
+  { id: 'gateway_subscription_canceled', label: 'Assinatura Cancelada', icon: Ban, channel: 'pagamento', color: 'from-orange-500 to-red-500', description: 'Quando uma assinatura recorrente é cancelada' },
+  { id: 'gateway_cart_abandoned', label: 'Checkout Abandonado', icon: ShoppingCart, channel: 'pagamento', color: 'from-orange-400 to-amber-500', description: 'Quando o comprador abandona o checkout' },
 ];
 
 // ── Node categories ──
@@ -154,6 +164,14 @@ export const triggerTypeMap: Record<string, string> = {
   form_submitted: 'form_submitted',
   page_visited: 'page_visited',
   site_event: 'site_event',
+  gateway_purchase_approved: 'gateway_event',
+  gateway_boleto_generated: 'gateway_event',
+  gateway_boleto_paid: 'gateway_event',
+  gateway_pix_generated: 'gateway_event',
+  gateway_refund: 'gateway_event',
+  gateway_chargeback: 'gateway_event',
+  gateway_subscription_canceled: 'gateway_event',
+  gateway_cart_abandoned: 'gateway_event',
 };
 
 export const TEMPLATE_VARIABLES = [
