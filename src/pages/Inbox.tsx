@@ -118,12 +118,31 @@ export default function Inbox() {
   });
 
   const filteredConversations = queueFiltered.filter(c => {
+    // Channel filter
+    if (channelFilter !== 'all') {
+      if (channelFilter === 'support') {
+        if (c.channel !== 'support' && c.category !== 'support') return false;
+      } else if (channelFilter === 'voip') {
+        if (c.channel !== 'voip' && c.channel !== 'phone') return false;
+      } else {
+        if (c.channel !== channelFilter) return false;
+      }
+    }
     if (!searchQuery) return true;
     const name = `${c.contacts?.first_name || ''} ${c.contacts?.last_name || ''}`.toLowerCase();
     const protocol = (c as any).protocol_number?.toLowerCase() || '';
     const phone = c.contacts?.phone?.toLowerCase() || '';
     return name.includes(searchQuery.toLowerCase()) || protocol.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery.toLowerCase());
   });
+
+  const channelCounts = {
+    all: queueFiltered.length,
+    whatsapp: queueFiltered.filter(c => c.channel === 'whatsapp').length,
+    instagram: queueFiltered.filter(c => c.channel === 'instagram').length,
+    email: queueFiltered.filter(c => c.channel === 'email').length,
+    voip: queueFiltered.filter(c => c.channel === 'voip' || c.channel === 'phone').length,
+    support: queueFiltered.filter(c => c.channel === 'support' || c.category === 'support').length,
+  };
 
   const queueCounts = {
     fila: conversations.filter(c => !c.assigned_to && c.status !== 'resolved' && c.status !== 'closed').length,
