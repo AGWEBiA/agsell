@@ -684,16 +684,36 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{dialogTitle()}</DialogTitle></DialogHeader>
-        <div className="space-y-4 py-2">{renderFields()}</div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => { onSave(config); onClose(); }}>Salvar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open && !showEmailEditor} onOpenChange={onClose}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{dialogTitle()}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">{renderFields()}</div>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button onClick={() => { onSave(config); onClose(); }}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Template Editor Dialog */}
+      <Dialog open={showEmailEditor} onOpenChange={v => { if (!v) setShowEmailEditor(false); }}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editor de E-mail</DialogTitle>
+            <DialogDescription>Edite o template visual do seu e-mail marketing.</DialogDescription>
+          </DialogHeader>
+          <EmailTemplateEditor
+            content={String(config.email_html || '')}
+            onChange={html => setConfig(prev => ({ ...prev, email_html: html }))}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEmailEditor(false)}>Cancelar</Button>
+            <Button onClick={() => setShowEmailEditor(false)}>Salvar Template</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
