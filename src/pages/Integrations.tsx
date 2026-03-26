@@ -94,8 +94,11 @@ export default function Integrations() {
       </PageHeader>
 
       {/* WhatsApp & Instagram Section */}
-      <Tabs defaultValue="whatsapp" className="w-full">
+      <Tabs defaultValue="payments" className="w-full">
         <TabsList className="w-auto">
+          <TabsTrigger value="payments" className="flex items-center gap-2">
+            💳 Pagamentos
+          </TabsTrigger>
           <TabsTrigger value="whatsapp" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             WhatsApp
@@ -116,6 +119,10 @@ export default function Integrations() {
             🛒 Marketplace
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="payments" className="mt-6">
+          <PaymentGatewayWebhooks />
+        </TabsContent>
 
         <TabsContent value="whatsapp" className="mt-6">
           <WhatsAppProviderSetup />
