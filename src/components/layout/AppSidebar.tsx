@@ -340,7 +340,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
           <nav className="space-y-1 p-2" aria-label="Menu principal">
             {filteredSections.map((section) => {
               if (section.items.length === 0) return null;
-              const hasActiveItem = section.items.some((item) => location.pathname === item.path);
+              const hasActiveItem = section.items.some((item) => location.pathname === item.path.split('?')[0]);
               const isOpen = openSections[section.id] ?? false;
 
               return (
@@ -365,7 +365,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                         <MenuItemLink
                           key={item.path}
                           item={item}
-                          isActive={location.pathname === item.path}
+                          isActive={location.pathname === item.path.split('?')[0] && location.search === (item.path.includes('?') ? '?' + item.path.split('?')[1] : '')}
                           collapsed={false}
                           onNavigate={onClose}
                           isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
@@ -407,7 +407,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
         <nav className="space-y-1 p-2" aria-label="Menu principal">
           {filteredSections.map((section) => {
             if (section.items.length === 0) return null;
-            const hasActiveItem = section.items.some((item) => location.pathname === item.path);
+            const hasActiveItem = section.items.some((item) => location.pathname === item.path.split('?')[0]);
             const isOpen = openSections[section.id] ?? false;
 
             return (
@@ -432,7 +432,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                       <MenuItemLink
                         key={item.path}
                         item={item}
-                        isActive={location.pathname === item.path}
+                        isActive={location.pathname === item.path.split('?')[0] && location.search === (item.path.includes('?') ? '?' + item.path.split('?')[1] : '')}
                         collapsed={collapsed}
                         isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
                       />
