@@ -8,50 +8,13 @@ export type Integration = {
   name: string;
   description: string;
   icon: string;
-  category: 'infoproduct' | 'analytics' | 'crm';
+  category: 'analytics' | 'crm';
   status: IntegrationStatus;
   configFields: { key: string; label: string; type: string; placeholder: string; required?: boolean }[];
   config?: Record<string, string>;
 };
 
 const defaultIntegrations: Integration[] = [
-  {
-    id: 'hotmart',
-    name: 'Hotmart',
-    description: 'Plataforma de infoprodutos',
-    icon: '🔥',
-    category: 'infoproduct',
-    status: 'disconnected',
-    configFields: [
-      { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'Seu Client ID', required: true },
-      { key: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Seu Client Secret', required: true },
-      { key: 'hottok', label: 'Hottok (Webhook)', type: 'password', placeholder: 'Token do Webhook' },
-    ],
-  },
-  {
-    id: 'kiwify',
-    name: 'Kiwify',
-    description: 'Vendas de produtos digitais',
-    icon: '🥝',
-    category: 'infoproduct',
-    status: 'disconnected',
-    configFields: [
-      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Sua API Key', required: true },
-      { key: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'Secret do Webhook' },
-    ],
-  },
-  {
-    id: 'eduzz',
-    name: 'Eduzz',
-    description: 'Plataforma de cursos e produtos digitais',
-    icon: '📚',
-    category: 'infoproduct',
-    status: 'disconnected',
-    configFields: [
-      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Sua API Key', required: true },
-      { key: 'public_key', label: 'Public Key', type: 'text', placeholder: 'Sua Public Key' },
-    ],
-  },
   {
     id: 'google_analytics',
     name: 'Google Analytics',

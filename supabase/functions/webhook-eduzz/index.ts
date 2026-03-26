@@ -75,13 +75,31 @@ Deno.serve(async (req) => {
 
     console.log("Eduzz webhook received:", EDUZZ_STATUS[payload.trans_status], payload.cus_email);
 
-    // Find organization by integration
-    const { data: integration } = await supabase
-      .from("organization_integrations")
-      .select("organization_id, config")
-      .eq("integration_type", "eduzz")
-      .eq("is_active", true)
-      .single();
+    // Find organization by integration — support multi-tenant
+    const url = new URL(req.url);
+    const orgIdParam = url.searchParams.get("org_id");
+    
+    let integration: { organization_id: string; config: Record<string, unknown> } | null = null;
+    
+    if (orgIdParam) {
+      const { data } = await supabase
+        .from("organization_integrations")
+        .select("organization_id, config")
+        .eq("integration_type", "eduzz")
+        .eq("organization_id", orgIdParam)
+        .eq("is_active", true)
+        .maybeSingle();
+      integration = data;
+    } else {
+      const { data } = await supabase
+        .from("organization_integrations")
+        .select("organization_id, config")
+        .eq("integration_type", "eduzz")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      integration = data;
+    }
 
     const organizationId = integration?.organization_id;
 

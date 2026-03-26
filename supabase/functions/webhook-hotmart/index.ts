@@ -65,13 +65,33 @@ Deno.serve(async (req) => {
 
     console.log("Hotmart webhook received:", payload.status, payload.buyer_email);
 
-    // Find organization by integration
-    const { data: integration } = await supabase
-      .from("organization_integrations")
-      .select("organization_id, config")
-      .eq("integration_type", "hotmart")
-      .eq("is_active", true)
-      .single();
+    // Find organization by integration — support multi-tenant
+    // Try org_id from query param first, then fall back to single active integration
+    const url = new URL(req.url);
+    const orgIdParam = url.searchParams.get("org_id");
+    
+    let integration: { organization_id: string; config: Record<string, unknown> } | null = null;
+    
+    if (orgIdParam) {
+      const { data } = await supabase
+        .from("organization_integrations")
+        .select("organization_id, config")
+        .eq("integration_type", "hotmart")
+        .eq("organization_id", orgIdParam)
+        .eq("is_active", true)
+        .maybeSingle();
+      integration = data;
+    } else {
+      // Fallback: find any active hotmart integration (legacy single-tenant)
+      const { data } = await supabase
+        .from("organization_integrations")
+        .select("organization_id, config")
+        .eq("integration_type", "hotmart")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      integration = data;
+    }
 
     const organizationId = integration?.organization_id;
 
