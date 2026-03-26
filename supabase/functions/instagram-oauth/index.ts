@@ -8,7 +8,8 @@ const corsHeaders = {
 };
 
 const INSTAGRAM_APP_ID = "1231864369151883";
-const GRAPH_API_VERSION = "v21.0";
+const GRAPH_API_VERSION = "v25.0";
+const GRAPH_API_VERSIONS = ["v25.0", "v24.0", "v23.0", "v22.0", "v21.0"] as const;
 
 type ResolvedInstagramProfile = {
   instagram_user_id: string;
@@ -33,6 +34,59 @@ function safeJsonParse(text: string): any {
   }
 }
 
+function sanitizeAccessToken(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw
+    .trim()
+    .replace(/^Bearer\s+/i, "")
+    .replace(/^"+|"+$/g, "");
+}
+
+function expandTokenCandidates(raw: unknown): string[] {
+  const primary = sanitizeAccessToken(raw);
+  if (!primary) return [];
+
+  const candidates = new Set<string>([primary]);
+
+  try {
+    const decoded = decodeURIComponent(primary);
+    const normalizedDecoded = sanitizeAccessToken(decoded);
+    if (normalizedDecoded) {
+      candidates.add(normalizedDecoded);
+    }
+  } catch {
+    // token may not be urlencoded; ignore
+  }
+
+  return Array.from(candidates);
+}
+
+async function requestWithToken(baseUrl: string, token: string): Promise<{ ok: boolean; data: any }> {
+  const queryUrl = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(token)}`;
+
+  const queryResponse = await fetch(queryUrl);
+  const queryRaw = await queryResponse.text();
+  const queryData = safeJsonParse(queryRaw);
+
+  if (queryResponse.ok && !queryData?.error) {
+    return { ok: true, data: queryData };
+  }
+
+  const headerResponse = await fetch(baseUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const headerRaw = await headerResponse.text();
+  const headerData = safeJsonParse(headerRaw);
+
+  if (headerResponse.ok && !headerData?.error) {
+    return { ok: true, data: headerData };
+  }
+
+  return { ok: false, data: headerData || queryData || queryRaw || headerRaw };
+}
+
 function normalizeTokenPayload(payload: any): { access_token?: string; user_id?: string } {
   if (!payload || typeof payload !== "object") {
     return {};
@@ -53,41 +107,51 @@ function normalizeTokenPayload(payload: any): { access_token?: string; user_id?:
 }
 
 async function exchangeLongLivedToken(shortLivedToken: string, appSecret: string): Promise<{ access_token?: string; expires_in?: number; error?: any }> {
-  const attempts: Array<{ name: string; url: string; method: "GET" | "POST"; body?: URLSearchParams }> = [];
-
-  const igGetUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
-  attempts.push({ name: "instagram_get", url: igGetUrl, method: "GET" });
-
-  const igPostBody = new URLSearchParams();
-  igPostBody.append("grant_type", "ig_exchange_token");
-  igPostBody.append("client_secret", appSecret);
-  igPostBody.append("access_token", shortLivedToken);
-  attempts.push({ name: "instagram_post", url: "https://graph.instagram.com/access_token", method: "POST", body: igPostBody });
-
-  const fbGetUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?client_id=${encodeURIComponent(INSTAGRAM_APP_ID)}&client_secret=${encodeURIComponent(appSecret)}&grant_type=fb_exchange_token&fb_exchange_token=${encodeURIComponent(shortLivedToken)}`;
-  attempts.push({ name: "facebook_get", url: fbGetUrl, method: "GET" });
-
   const errors: any[] = [];
 
-  for (const attempt of attempts) {
-    const response = await fetch(attempt.url, {
-      method: attempt.method,
-      headers: attempt.method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
-      body: attempt.body,
-    });
+  for (const tokenCandidate of expandTokenCandidates(shortLivedToken)) {
+    const attempts: Array<{ name: string; url: string; method: "GET" | "POST"; body?: URLSearchParams }> = [];
 
-    const raw = await response.text();
-    const data = safeJsonParse(raw);
-
-    if (response.ok && data?.access_token) {
-      console.log("[INSTAGRAM-OAUTH] Long-lived token success", { provider: attempt.name });
-      return {
-        access_token: data.access_token,
-        expires_in: data.expires_in,
-      };
+    for (const version of GRAPH_API_VERSIONS) {
+      const igVersionedGetUrl = `https://graph.instagram.com/${version}/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(tokenCandidate)}`;
+      attempts.push({ name: `instagram_get_${version}`, url: igVersionedGetUrl, method: "GET" });
     }
 
-    errors.push({ provider: attempt.name, error: data || raw });
+    const igGetUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(tokenCandidate)}`;
+    attempts.push({ name: "instagram_get", url: igGetUrl, method: "GET" });
+
+    const igPostBody = new URLSearchParams();
+    igPostBody.append("grant_type", "ig_exchange_token");
+    igPostBody.append("client_secret", appSecret);
+    igPostBody.append("access_token", tokenCandidate);
+    attempts.push({ name: "instagram_post", url: "https://graph.instagram.com/access_token", method: "POST", body: igPostBody });
+
+    const fbGetUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?client_id=${encodeURIComponent(INSTAGRAM_APP_ID)}&client_secret=${encodeURIComponent(appSecret)}&grant_type=fb_exchange_token&fb_exchange_token=${encodeURIComponent(tokenCandidate)}`;
+    attempts.push({ name: "facebook_get", url: fbGetUrl, method: "GET" });
+
+    for (const attempt of attempts) {
+      const response = await fetch(attempt.url, {
+        method: attempt.method,
+        headers: attempt.method === "POST" ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
+        body: attempt.body,
+      });
+
+      const raw = await response.text();
+      const data = safeJsonParse(raw);
+
+      if (response.ok && data?.access_token) {
+        console.log("[INSTAGRAM-OAUTH] Long-lived token success", {
+          provider: attempt.name,
+          tokenPrefix: sanitizeAccessToken(data.access_token).slice(0, 4),
+        });
+        return {
+          access_token: sanitizeAccessToken(data.access_token),
+          expires_in: data.expires_in,
+        };
+      }
+
+      errors.push({ provider: attempt.name, error: data || raw });
+    }
   }
 
   return { error: errors };
@@ -112,19 +176,17 @@ function mapProfileFromAnyPayload(payload: any): ResolvedInstagramProfile | null
 
 async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
   const endpoints = [
-    `https://graph.instagram.com/me?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
-    `https://graph.instagram.com/${GRAPH_API_VERSION}/me?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
+    "https://graph.instagram.com/me?fields=id,user_id,username,name,profile_picture_url,account_type",
+    ...GRAPH_API_VERSIONS.map((version) => `https://graph.instagram.com/${version}/me?fields=id,user_id,username,name,profile_picture_url,account_type`),
   ];
 
   let lastError = "Erro ao buscar perfil no graph.instagram.com";
 
   for (const endpoint of endpoints) {
-    const response = await fetch(endpoint);
-    const raw = await response.text();
-    const data = safeJsonParse(raw);
+    const response = await requestWithToken(endpoint, accessToken);
 
-    if (response.ok && !data?.error) {
-      const mapped = mapProfileFromAnyPayload(data);
+    if (response.ok && !response.data?.error) {
+      const mapped = mapProfileFromAnyPayload(response.data);
       if (mapped) {
         return { profile: mapped };
       }
@@ -132,7 +194,7 @@ async function fetchProfileViaInstagramGraph(accessToken: string): Promise<{ pro
       continue;
     }
 
-    lastError = extractErrorMessage(data, lastError);
+    lastError = extractErrorMessage(response.data, lastError);
   }
 
   return { error: lastError };
@@ -144,19 +206,17 @@ async function fetchProfileViaInstagramUserId(accessToken: string, igUserId?: st
   }
 
   const endpoints = [
-    `https://graph.instagram.com/${igUserId}?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
-    `https://graph.instagram.com/${GRAPH_API_VERSION}/${igUserId}?fields=id,user_id,username,name,profile_picture_url,account_type&access_token=${encodeURIComponent(accessToken)}`,
+    `https://graph.instagram.com/${igUserId}?fields=id,user_id,username,name,profile_picture_url,account_type`,
+    ...GRAPH_API_VERSIONS.map((version) => `https://graph.instagram.com/${version}/${igUserId}?fields=id,user_id,username,name,profile_picture_url,account_type`),
   ];
 
   let lastError = "Erro ao buscar perfil por ID no graph.instagram.com";
 
   for (const endpoint of endpoints) {
-    const response = await fetch(endpoint);
-    const raw = await response.text();
-    const data = safeJsonParse(raw);
+    const response = await requestWithToken(endpoint, accessToken);
 
-    if (response.ok && !data?.error) {
-      const mapped = mapProfileFromAnyPayload(data);
+    if (response.ok && !response.data?.error) {
+      const mapped = mapProfileFromAnyPayload(response.data);
       if (mapped) {
         return { profile: mapped };
       }
@@ -164,51 +224,56 @@ async function fetchProfileViaInstagramUserId(accessToken: string, igUserId?: st
       continue;
     }
 
-    lastError = extractErrorMessage(data, lastError);
+    lastError = extractErrorMessage(response.data, lastError);
   }
 
   return { error: lastError };
 }
 
 async function fetchProfileViaFacebookGraph(accessToken: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
-  const response = await fetch(
-    `https://graph.facebook.com/${GRAPH_API_VERSION}/me/accounts?fields=id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}&access_token=${encodeURIComponent(accessToken)}`
-  );
-  const raw = await response.text();
-  const data = safeJsonParse(raw);
+  let lastError = "Erro ao buscar páginas no graph.facebook.com";
 
-  if (!response.ok || data?.error) {
+  for (const version of GRAPH_API_VERSIONS) {
+    const response = await requestWithToken(
+      `https://graph.facebook.com/${version}/me/accounts?fields=id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}`,
+      accessToken,
+    );
+
+    if (!response.ok || response.data?.error) {
+      lastError = extractErrorMessage(response.data, lastError);
+      continue;
+    }
+
+    const pages = Array.isArray(response.data?.data) ? response.data.data : [];
+    const pageWithInstagram = pages.find((page: any) => page?.instagram_business_account?.id && page?.instagram_business_account?.username);
+
+    if (!pageWithInstagram) {
+      lastError = "Nenhuma Página do Facebook com Instagram Business/Creator vinculada foi encontrada.";
+      continue;
+    }
+
     return {
-      error: data?.error?.message || data?.message || "Erro ao buscar páginas no graph.facebook.com",
+      profile: {
+        instagram_user_id: String(pageWithInstagram.instagram_business_account.id),
+        username: pageWithInstagram.instagram_business_account.username,
+        full_name:
+          pageWithInstagram.instagram_business_account.name ||
+          pageWithInstagram.name ||
+          null,
+        profile_picture_url: pageWithInstagram.instagram_business_account.profile_picture_url || null,
+        page_id: pageWithInstagram.id || null,
+        page_access_token: sanitizeAccessToken(pageWithInstagram.access_token) || null,
+      },
     };
   }
 
-  const pages = Array.isArray(data?.data) ? data.data : [];
-  const pageWithInstagram = pages.find((page: any) => page?.instagram_business_account?.id && page?.instagram_business_account?.username);
-
-  if (!pageWithInstagram) {
-    return {
-      error: "Nenhuma Página do Facebook com Instagram Business/Creator vinculada foi encontrada.",
-    };
-  }
-
-  return {
-    profile: {
-      instagram_user_id: String(pageWithInstagram.instagram_business_account.id),
-      username: pageWithInstagram.instagram_business_account.username,
-      full_name:
-        pageWithInstagram.instagram_business_account.name ||
-        pageWithInstagram.name ||
-        null,
-      profile_picture_url: pageWithInstagram.instagram_business_account.profile_picture_url || null,
-      page_id: pageWithInstagram.id || null,
-      page_access_token: pageWithInstagram.access_token || null,
-    },
-  };
+  return { error: lastError };
 }
 
 async function resolveInstagramProfile(primaryToken: string, fallbackToken?: string, igUserId?: string): Promise<{ profile?: ResolvedInstagramProfile; error?: string }> {
-  const attempts = [primaryToken, fallbackToken].filter((token, index, arr): token is string => !!token && arr.indexOf(token) === index);
+  const attempts = [primaryToken, fallbackToken]
+    .flatMap((token) => expandTokenCandidates(token))
+    .filter((token, index, arr) => arr.indexOf(token) === index);
   const errors: string[] = [];
 
   for (const token of attempts) {
@@ -333,8 +398,8 @@ serve(async (req) => {
     }
 
     const normalizedTokenData = normalizeTokenPayload(tokenData);
-    const shortLivedToken = normalizedTokenData.access_token;
-    const igUserId = normalizedTokenData.user_id;
+    const shortLivedToken = sanitizeAccessToken(normalizedTokenData.access_token);
+    const igUserId = normalizedTokenData.user_id ? String(normalizedTokenData.user_id) : undefined;
 
     if (!shortLivedToken) {
       console.error("[INSTAGRAM-OAUTH] Step 1 returned no access_token", tokenData);
@@ -344,13 +409,24 @@ serve(async (req) => {
       );
     }
 
-    console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", { igUserId });
+    console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", {
+      igUserId,
+      tokenPrefix: shortLivedToken.slice(0, 4),
+      tokenLength: shortLivedToken.length,
+    });
 
     // Step 2: Exchange for long-lived token (Instagram endpoint)
     console.log("[INSTAGRAM-OAUTH] Step 2: Exchanging for long-lived token");
     const longLivedData = await exchangeLongLivedToken(shortLivedToken, INSTAGRAM_APP_SECRET);
-    let finalToken = longLivedData.access_token || shortLivedToken;
+    let finalToken = sanitizeAccessToken(longLivedData.access_token || shortLivedToken);
     let expiresIn = longLivedData.expires_in || 3600;
+
+    if (!finalToken) {
+      return new Response(
+        JSON.stringify({ error: "Não foi possível validar token de acesso retornado pelo Instagram" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!longLivedData.access_token && longLivedData.error) {
       console.error("[INSTAGRAM-OAUTH] Long-lived token exchange failed, using short-lived fallback", longLivedData.error);
@@ -361,7 +437,9 @@ serve(async (req) => {
 
     if (!resolvedProfile.profile) {
       const normalizedError = (resolvedProfile.error || "").toLowerCase();
-      const userSafeError = normalizedError.includes("unsupported request - method type")
+      const userSafeError = normalizedError.includes("cannot parse access token")
+        ? "A Meta rejeitou o token retornado nesta conexão. Tente novamente e, se persistir, reconecte a conta no Instagram Business Login para gerar um novo token válido."
+        : normalizedError.includes("unsupported request - method type")
         ? "Não foi possível concluir a conexão com os dados retornados pela Meta para essa conta. Confirme se a conta é Business/Creator e se está vinculada a uma Página do Facebook, então tente novamente."
         : (resolvedProfile.error || "Erro ao buscar perfil do Instagram");
 
