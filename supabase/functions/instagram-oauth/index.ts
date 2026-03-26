@@ -418,7 +418,7 @@ serve(async (req) => {
       );
     }
 
-    // Step 1: Exchange code for short-lived Instagram token
+    // Step 1: Try exchanging code for short-lived Instagram token
     const tokenForm = new URLSearchParams();
     tokenForm.append("client_id", INSTAGRAM_APP_ID);
     tokenForm.append("client_secret", INSTAGRAM_APP_SECRET);
@@ -428,37 +428,47 @@ serve(async (req) => {
 
     console.log("[INSTAGRAM-OAUTH] Step 1: Exchanging code for short-lived token", { redirect_uri });
 
-    const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
-      method: "POST",
-      body: tokenForm,
-    });
-    const tokenData = await tokenRes.json();
+    let shortLivedToken = "";
+    let igUserId: string | undefined;
+    let step1ErrorMessage: string | null = null;
 
-    if (tokenData.error_type || tokenData.error_message) {
-      console.error("[INSTAGRAM-OAUTH] Token exchange error:", JSON.stringify(tokenData));
-      return new Response(
-        JSON.stringify({ error: tokenData.error_message || "Erro ao trocar código por token" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    try {
+      const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
+        method: "POST",
+        body: tokenForm,
+      });
+      const tokenRaw = await tokenRes.text();
+      const tokenData = safeJsonParse(tokenRaw) || {};
+      const normalizedTokenData = normalizeTokenPayload(tokenData);
+
+      shortLivedToken = sanitizeAccessToken(normalizedTokenData.access_token);
+      igUserId = normalizedTokenData.user_id ? String(normalizedTokenData.user_id) : undefined;
+
+      if (tokenRes.ok && shortLivedToken && !tokenData.error_type && !tokenData.error_message) {
+        console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", {
+          igUserId,
+          tokenPrefix: shortLivedToken.slice(0, 4),
+          tokenLength: shortLivedToken.length,
+        });
+      } else {
+        step1ErrorMessage = extractErrorMessage(
+          tokenData,
+          `Erro ao trocar código por token do Instagram (HTTP ${tokenRes.status})`,
+        );
+        console.warn("[INSTAGRAM-OAUTH] Step 1 unavailable, continuing with Facebook fallback", {
+          status: tokenRes.status,
+          error: step1ErrorMessage,
+        });
+      }
+    } catch (step1Error) {
+      step1ErrorMessage =
+        step1Error instanceof Error
+          ? step1Error.message
+          : "Erro ao trocar código por token do Instagram";
+      console.warn("[INSTAGRAM-OAUTH] Step 1 request failed, continuing with Facebook fallback", {
+        error: step1ErrorMessage,
+      });
     }
-
-    const normalizedTokenData = normalizeTokenPayload(tokenData);
-    const shortLivedToken = sanitizeAccessToken(normalizedTokenData.access_token);
-    const igUserId = normalizedTokenData.user_id ? String(normalizedTokenData.user_id) : undefined;
-
-    if (!shortLivedToken) {
-      console.error("[INSTAGRAM-OAUTH] Step 1 returned no access_token", tokenData);
-      return new Response(
-        JSON.stringify({ error: "Não foi possível obter token de acesso do Instagram" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("[INSTAGRAM-OAUTH] Step 1 OK: Got short-lived token", {
-      igUserId,
-      tokenPrefix: shortLivedToken.slice(0, 4),
-      tokenLength: shortLivedToken.length,
-    });
 
     console.log("[INSTAGRAM-OAUTH] Step 1B: Exchanging code for Facebook user token fallback");
     const facebookTokenData = await exchangeCodeForFacebookUserToken(code, redirect_uri, INSTAGRAM_APP_SECRET);
@@ -471,21 +481,45 @@ serve(async (req) => {
       console.warn("[INSTAGRAM-OAUTH] Facebook user token fallback unavailable", facebookTokenData.error);
     }
 
-    // Step 2: Exchange for long-lived token (Instagram endpoint)
+    if (!shortLivedToken && !facebookUserToken) {
+      const normalizedError = (step1ErrorMessage || "").toLowerCase();
+      const userSafeError = normalizedError.includes("error validating application") || normalizedError.includes("application info")
+        ? "A Meta rejeitou a validação desta aplicação para este login. Verifique no app da Meta se ele está em modo Live, com permissões de produção aprovadas e contrato de Business Login aceito, depois tente novamente."
+        : step1ErrorMessage || "Não foi possível obter um token válido retornado pela Meta.";
+
+      return new Response(
+        JSON.stringify({ error: userSafeError }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Step 2: Exchange for long-lived token (Instagram endpoint) when available
     console.log("[INSTAGRAM-OAUTH] Step 2: Exchanging for long-lived token");
-    const longLivedData = await exchangeLongLivedToken(shortLivedToken, INSTAGRAM_APP_SECRET);
-    let finalToken = sanitizeAccessToken(longLivedData.access_token || shortLivedToken);
-    let expiresIn = longLivedData.expires_in || 3600;
+    let finalToken = shortLivedToken;
+    let expiresIn = 3600;
+
+    if (shortLivedToken) {
+      const longLivedData = await exchangeLongLivedToken(shortLivedToken, INSTAGRAM_APP_SECRET);
+      finalToken = sanitizeAccessToken(longLivedData.access_token || shortLivedToken);
+      expiresIn = longLivedData.expires_in || 3600;
+
+      if (!longLivedData.access_token && longLivedData.error) {
+        console.error("[INSTAGRAM-OAUTH] Long-lived token exchange failed, using short-lived fallback", longLivedData.error);
+      }
+    }
+
+    if (!finalToken && facebookUserToken) {
+      finalToken = facebookUserToken;
+      console.log("[INSTAGRAM-OAUTH] Using Facebook user token as primary token fallback", {
+        tokenPrefix: facebookUserToken.slice(0, 4),
+      });
+    }
 
     if (!finalToken) {
       return new Response(
         JSON.stringify({ error: "Não foi possível validar token de acesso retornado pelo Instagram" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    if (!longLivedData.access_token && longLivedData.error) {
-      console.error("[INSTAGRAM-OAUTH] Long-lived token exchange failed, using short-lived fallback", longLivedData.error);
     }
 
     console.log("[INSTAGRAM-OAUTH] Step 3: Fetching profile");
