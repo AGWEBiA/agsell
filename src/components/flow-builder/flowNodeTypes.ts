@@ -7,6 +7,8 @@ import {
   Package, Code, AtSign, Share2, Link, Megaphone, Users,
   Phone, StickyNote, Split, Shuffle, Volume2, Pencil,
   CreditCard, Receipt, Ban, FileText, ShoppingCart, RotateCcw,
+  TrendingUp, TrendingDown, ArrowRightLeft, CalendarDays, UserX,
+  PhoneOff, PhoneIncoming, MailOpen, MousePointerClick, MailX,
 } from 'lucide-react';
 
 export interface FlowNode {
@@ -51,6 +53,30 @@ export const triggerOptions = [
   { id: 'gateway_chargeback', label: 'Chargeback', icon: Ban, channel: 'pagamento', color: 'from-red-600 to-red-700', description: 'Quando ocorre um chargeback/disputa' },
   { id: 'gateway_subscription_canceled', label: 'Assinatura Cancelada', icon: Ban, channel: 'pagamento', color: 'from-orange-500 to-red-500', description: 'Quando uma assinatura recorrente é cancelada' },
   { id: 'gateway_cart_abandoned', label: 'Checkout Abandonado', icon: ShoppingCart, channel: 'pagamento', color: 'from-orange-400 to-amber-500', description: 'Quando o comprador abandona o checkout' },
+  // Pipeline triggers
+  { id: 'deal_stage_changed', label: 'Etapa do Negócio', icon: ArrowRightLeft, channel: 'crm', color: 'from-blue-500 to-cyan-500', description: 'Quando um negócio muda de etapa no pipeline' },
+  { id: 'deal_won', label: 'Negócio Ganho', icon: TrendingUp, channel: 'crm', color: 'from-green-500 to-emerald-500', description: 'Quando um negócio é marcado como ganho' },
+  { id: 'deal_lost', label: 'Negócio Perdido', icon: TrendingDown, channel: 'crm', color: 'from-red-500 to-rose-500', description: 'Quando um negócio é marcado como perdido' },
+  // Tag/Score triggers
+  { id: 'tag_added', label: 'Tag Adicionada', icon: Tag, channel: 'crm', color: 'from-emerald-500 to-green-500', description: 'Quando uma tag é adicionada a um contato' },
+  { id: 'tag_removed', label: 'Tag Removida', icon: Tag, channel: 'crm', color: 'from-rose-500 to-red-500', description: 'Quando uma tag é removida de um contato' },
+  { id: 'score_threshold', label: 'Score Atingido', icon: Star, channel: 'crm', color: 'from-yellow-500 to-amber-500', description: 'Quando o score do contato atinge um valor específico' },
+  // Email triggers
+  { id: 'email_opened', label: 'E-mail Aberto', icon: MailOpen, channel: 'email', color: 'from-blue-400 to-indigo-500', description: 'Quando o contato abre um e-mail enviado' },
+  { id: 'email_clicked', label: 'Link Clicado no E-mail', icon: MousePointerClick, channel: 'email', color: 'from-indigo-500 to-violet-500', description: 'Quando o contato clica em um link do e-mail' },
+  { id: 'email_bounced', label: 'E-mail Bounce', icon: MailX, channel: 'email', color: 'from-red-400 to-orange-500', description: 'Quando um e-mail retorna como bounce' },
+  // Date/Inactivity triggers
+  { id: 'date_trigger', label: 'Data Agendada', icon: CalendarDays, channel: 'crm', color: 'from-violet-500 to-purple-500', description: 'Acionado em uma data específica (aniversário, vencimento)' },
+  { id: 'inactivity_trigger', label: 'Inatividade', icon: UserX, channel: 'crm', color: 'from-slate-500 to-gray-600', description: 'Quando o contato fica inativo por X dias' },
+  // VoIP triggers
+  { id: 'call_completed', label: 'Chamada Completada', icon: PhoneIncoming, channel: 'voip', color: 'from-blue-500 to-sky-500', description: 'Quando uma chamada VoIP é completada' },
+  { id: 'call_missed', label: 'Chamada Perdida', icon: PhoneOff, channel: 'voip', color: 'from-red-400 to-rose-500', description: 'Quando uma chamada é perdida' },
+  // Telegram triggers
+  { id: 'telegram_message', label: 'Mensagem Telegram', icon: Send, channel: 'telegram', color: 'from-sky-500 to-blue-500', description: 'Quando uma mensagem é recebida no Telegram' },
+  { id: 'telegram_keyword', label: 'Palavra-chave Telegram', icon: Sparkles, channel: 'telegram', color: 'from-blue-500 to-sky-600', description: 'Quando mensagem no Telegram contém palavra-chave' },
+  // WhatsApp group triggers
+  { id: 'whatsapp_group_join', label: 'Entrou no Grupo', icon: UserPlus, channel: 'whatsapp', color: 'from-green-500 to-lime-500', description: 'Quando alguém entra em um grupo do WhatsApp' },
+  { id: 'whatsapp_group_leave', label: 'Saiu do Grupo', icon: LogOut, channel: 'whatsapp', color: 'from-red-400 to-orange-400', description: 'Quando alguém sai de um grupo do WhatsApp' },
 ];
 
 // ── Node categories ──
@@ -172,6 +198,23 @@ export const triggerTypeMap: Record<string, string> = {
   gateway_chargeback: 'gateway_event',
   gateway_subscription_canceled: 'gateway_event',
   gateway_cart_abandoned: 'gateway_event',
+  deal_stage_changed: 'deal_stage_changed',
+  deal_won: 'deal_won',
+  deal_lost: 'deal_lost',
+  tag_added: 'tag_added',
+  tag_removed: 'tag_removed',
+  score_threshold: 'score_threshold',
+  email_opened: 'email_opened',
+  email_clicked: 'email_clicked',
+  email_bounced: 'email_bounced',
+  date_trigger: 'date_trigger',
+  inactivity_trigger: 'inactivity_trigger',
+  call_completed: 'call_completed',
+  call_missed: 'call_missed',
+  telegram_message: 'telegram_message',
+  telegram_keyword: 'telegram_message',
+  whatsapp_group_join: 'whatsapp_group_join',
+  whatsapp_group_leave: 'whatsapp_group_leave',
 };
 
 export const TEMPLATE_VARIABLES = [
