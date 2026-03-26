@@ -757,6 +757,7 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       conditional: 'Condicional',
       list_tag: 'Listar Tag',
       voice_torpedo: 'Torpedo de Voz',
+      send_voip_call: 'Ligação VoIP',
       parallel_channels: 'Espinha de Peixe',
       edit_whatsapp_group: 'Editar Grupo WhatsApp',
       link_split: 'Link Split',
