@@ -15,6 +15,10 @@ describe('Flow Node Types', () => {
     expect(ids).toContain('note');
     expect(ids).toContain('link_split');
     expect(ids).toContain('edit_whatsapp_group');
+    expect(ids).toContain('sequence_lead');
+    expect(ids).toContain('sequence_transaction');
+    expect(ids).toContain('sequence_rewarming');
+    expect(ids).toContain('sequence_optin');
   });
 
   it('each node has id, label, icon', () => {
