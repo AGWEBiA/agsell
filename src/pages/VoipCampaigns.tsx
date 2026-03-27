@@ -224,8 +224,6 @@ const VoipCampaigns = () => {
     return <Badge variant={info.variant}>{info.label}</Badge>;
   };
 
-  const estimatedCredits = contactCount * campaignForm.credits_per_call;
-  const hasEnoughCredits = (credits?.balance ?? 0) >= estimatedCredits;
 
   return (
     <div className="space-y-6">
