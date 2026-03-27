@@ -54,12 +54,17 @@ import { FlowNodeAnalyticsOverlay } from '@/components/automations/FlowNodeAnaly
 import type { FlowNodeAnalytic } from '@/hooks/useFlowNodeAnalytics';
 
 // ─── Node Component ───
-function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
+function FlowNodeCard({ node, index, onEdit, onDelete, onAddAfter, analytics, onDrop, onDragOver, onDragLeave, isDragOver }: {
   node: FlowNode;
+  index: number;
   onEdit: () => void;
   onDelete: () => void;
   onAddAfter: () => void;
   analytics?: FlowNodeAnalytic;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  isDragOver?: boolean;
 }) {
   const getTriggerInfo = () => triggerOptions.find(t => t.id === node.subtype);
   const getActionInfo = () => [...actionOptions, ...conditionOptions].find(a => a.id === node.subtype);
