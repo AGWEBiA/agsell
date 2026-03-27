@@ -1338,15 +1338,26 @@ export default function FlowBuilder() {
                   <FlowNodeCard
                     key={node.id}
                     node={node}
+                    index={index}
                     onEdit={() => handleEditNode(node)}
                     onDelete={() => handleDeleteNode(index)}
                     onAddAfter={() => { setAddAfterIndex(index); setAddStepOpen(true); }}
                     analytics={nodeAnalytics?.find(a => a.node_id === node.id)}
+                    onDrop={e => handleDrop(e, index)}
+                    onDragOver={e => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    isDragOver={dragOverIndex === index}
                   />
                 ))}
-                <div className="flex flex-col items-center">
-                  <div className="h-12 w-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
-                    <span className="text-xs text-white/40 font-medium">FIM</span>
+                {/* End drop zone */}
+                <div
+                  className={cn("flex flex-col items-center transition-all", dragOverIndex === nodes.length - 1 && "scale-110")}
+                  onDrop={e => handleDrop(e, nodes.length - 1)}
+                  onDragOver={e => handleDragOver(e, nodes.length - 1)}
+                  onDragLeave={handleDragLeave}
+                >
+                  <div className={cn("h-12 w-12 rounded-full border-2 border-dashed flex items-center justify-center transition-colors", dragOverIndex === nodes.length - 1 ? "border-primary bg-primary/20" : "border-white/20")}>
+                    <span className={cn("text-xs font-medium", dragOverIndex === nodes.length - 1 ? "text-primary" : "text-white/40")}>FIM</span>
                   </div>
                 </div>
               </>
