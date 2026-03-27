@@ -1220,8 +1220,8 @@ export default function FlowBuilder() {
                 />
               ))}
               <div className="flex flex-col items-center">
-                <div className="h-12 w-12 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground font-medium">FIM</span>
+                <div className="h-12 w-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                  <span className="text-xs text-white/40 font-medium">FIM</span>
                 </div>
               </div>
             </>
