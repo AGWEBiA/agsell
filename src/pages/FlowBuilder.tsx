@@ -1189,7 +1189,7 @@ export default function FlowBuilder() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="flex flex-col items-center py-10 px-4 min-h-[60vh]">
+        <div className="flex flex-col items-center py-10 px-4 min-h-[60vh] bg-[#1a1a2e] dark:bg-[#0d0d1a] rounded-lg mx-2 mb-2" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }}>
           {!hasTrigger ? (
             <TriggerSelector onSelect={handleSelectTrigger} />
           ) : (
