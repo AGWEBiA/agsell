@@ -12,6 +12,8 @@ import {
   Zap,
   Star,
   Gift,
+  CalendarCheck,
+  Users,
 } from 'lucide-react';
 import type { Action } from '@/components/automations/AutomationActionsEditor';
 
