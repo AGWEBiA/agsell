@@ -91,6 +91,7 @@ import Goals from "./pages/Goals";
 import WinProbability from "./pages/WinProbability";
 import ConditionalContent from "./pages/ConditionalContent";
 import SMSMarketing from "./pages/SMSMarketing";
+import CommunicationCampaigns from "./pages/CommunicationCampaigns";
 import CustomReports from "./pages/CustomReports";
 import RevenueReporting from "./pages/RevenueReporting";
 import PaidGroups from "./pages/PaidGroups";
@@ -199,12 +200,13 @@ const App = () => (
                     <Route path="goals" element={<Goals />} />
                     <Route path="win-probability" element={<WinProbability />} />
                     <Route path="conditional-content" element={<ConditionalContent />} />
-                    <Route path="sms-marketing" element={<SMSMarketing />} />
+                    <Route path="sms-marketing" element={<Navigate to="/communication-campaigns" replace />} />
+                    <Route path="communication-campaigns" element={<CommunicationCampaigns />} />
                     <Route path="custom-reports" element={<CustomReports />} />
                     <Route path="revenue-reporting" element={<RevenueReporting />} />
                     <Route path="paid-groups" element={<FeatureRequiredPage feature="paid_groups" featureLabel="Grupos Pagos"><PaidGroups /></FeatureRequiredPage>} />
                     <Route path="voip" element={<VoIP />} />
-                    <Route path="voip-campaigns" element={<VoipCampaigns />} />
+                    <Route path="voip-campaigns" element={<Navigate to="/communication-campaigns" replace />} />
                     <Route path="whatsapp-campaigns" element={<FeatureRequiredPage feature="whatsapp" featureLabel="Campanhas WhatsApp"><WhatsAppCampaignsPage /></FeatureRequiredPage>} />
                     <Route path="whatsapp-group-messages" element={<FeatureRequiredPage feature="whatsapp" featureLabel="Mensagens Grupos"><WhatsAppGroupMessagesPage /></FeatureRequiredPage>} />
                     <Route path="group-rotator" element={<GroupRotator />} />

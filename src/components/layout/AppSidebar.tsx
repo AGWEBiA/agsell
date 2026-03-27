@@ -97,8 +97,7 @@ const menuSections: MenuSection[] = [
     icon: Rocket,
     items: [
       { label: 'E-mail Marketing', icon: Send, path: '/email', featureRequired: 'email_marketing' },
-      { label: 'SMS Marketing', icon: Phone, path: '/sms-marketing' },
-      { label: 'Torpedo de Voz', icon: PhoneCall, path: '/voip-campaigns' },
+      { label: 'Campanhas SMS/VoIP', icon: Megaphone, path: '/communication-campaigns' },
       
       { label: 'Growth Tools', icon: Rocket, path: '/growth-tools' },
       { label: 'Formulários', icon: FileText, path: '/forms' },
