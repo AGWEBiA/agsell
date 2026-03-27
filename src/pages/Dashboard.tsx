@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   Clock,
   Mail,
-  Phone, PhoneCall,
+  Phone, PhoneCall, Wallet,
   MessageSquare,
   FileText,
   Calendar,
