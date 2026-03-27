@@ -1203,31 +1203,123 @@ export default function FlowBuilder() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col items-center py-10 px-4 min-h-[60vh] bg-[#1a1a2e] dark:bg-[#0d0d1a] rounded-lg mx-2 mb-2" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }}>
-          {!hasTrigger ? (
-            <TriggerSelector onSelect={handleSelectTrigger} />
-          ) : (
-            <>
-              {nodes.map((node, index) => (
-                <FlowNodeCard
-                  key={node.id}
-                  node={node}
-                  onEdit={() => handleEditNode(node)}
-                  onDelete={() => handleDeleteNode(index)}
-                  onAddAfter={() => { setAddAfterIndex(index); setAddStepOpen(true); }}
-                  analytics={nodeAnalytics?.find(a => a.node_id === node.id)}
-                />
+      <div className="flex flex-1 overflow-hidden">
+        {/* SellFlux-style sidebar */}
+        {hasTrigger && (
+          <div className="w-[160px] shrink-0 border-r bg-[#1a1a2e] dark:bg-[#0d0d1a] overflow-y-auto">
+            <div className="p-2">
+              <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider px-1 mb-2">Arraste os ícones</p>
+              {nodeCategories.map(cat => (
+                <div key={cat.label} className="mb-3">
+                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">{cat.label}</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {cat.nodes.map(opt => {
+                      const getNodeType = (id: string): FlowNode['type'] => {
+                        if (id === 'timer') return 'timer';
+                        if (id === 'warmup') return 'warmup';
+                        if (id === 'wait') return 'delay';
+                        if (id === 'note') return 'note';
+                        if (id.startsWith('sequence_')) return 'sequence';
+                        if (id === 'conditional' || conditionOptions.some(c => c.id === id)) return 'condition';
+                        return 'action';
+                      };
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => {
+                            setAddAfterIndex(nodes.length - 1);
+                            handleAddStep(getNodeType(opt.id) as any, opt.id);
+                          }}
+                          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
+                          title={opt.label}
+                        >
+                          <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
+                            <opt.icon className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
-              <div className="flex flex-col items-center">
-                <div className="h-12 w-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
-                  <span className="text-xs text-white/40 font-medium">FIM</span>
+              {/* Condições extras */}
+              <div className="mb-3">
+                <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">Condições</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {conditionOptions.map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        setAddAfterIndex(nodes.length - 1);
+                        handleAddStep('condition', opt.id);
+                      }}
+                      className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
+                      title={opt.label}
+                    >
+                      <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
+                        <opt.icon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
-            </>
-          )}
+            </div>
+          </div>
+        )}
+
+        {/* Canvas */}
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col items-center py-10 px-4 min-h-[60vh] bg-[#1a1a2e] dark:bg-[#0d0d1a]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }}>
+            {!hasTrigger ? (
+              <TriggerSelector onSelect={handleSelectTrigger} />
+            ) : (
+              <>
+                {nodes.map((node, index) => (
+                  <FlowNodeCard
+                    key={node.id}
+                    node={node}
+                    onEdit={() => handleEditNode(node)}
+                    onDelete={() => handleDeleteNode(index)}
+                    onAddAfter={() => { setAddAfterIndex(index); setAddStepOpen(true); }}
+                    analytics={nodeAnalytics?.find(a => a.node_id === node.id)}
+                  />
+                ))}
+                <div className="flex flex-col items-center">
+                  <div className="h-12 w-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                    <span className="text-xs text-white/40 font-medium">FIM</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Bottom status bar - SellFlux style */}
+      {hasTrigger && (
+        <div className="flex items-center gap-6 border-t bg-[#1a1a2e] dark:bg-[#0d0d1a] px-4 py-2 text-xs text-white/50">
+          <div className="flex items-center gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span>2 msg/minuto</span>
+            <span className="text-white/30">Envios de WhatsApp</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Send className="h-3.5 w-3.5" />
+            <span>12 - 4000 msg/minuto</span>
+            <span className="text-white/30">Envios de WhatsApp API oficial (Limite ajustável)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span>🏛️ {nodes.length - 1}</span>
+            <span className="text-white/30">Leads na sequência</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span>⚡ 0</span>
+            <span className="text-white/30">Leads que saíram da sequência</span>
+          </div>
         </div>
-      </ScrollArea>
+      )}
 
       <AddStepDialog open={addStepOpen} onClose={() => setAddStepOpen(false)} onAdd={handleAddStep} />
       <NodeConfigDialog node={editingNode} open={editDialogOpen} onClose={() => { setEditDialogOpen(false); setEditingNode(null); }} onSave={handleSaveNodeConfig} />
