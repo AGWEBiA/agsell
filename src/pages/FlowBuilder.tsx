@@ -54,12 +54,17 @@ import { FlowNodeAnalyticsOverlay } from '@/components/automations/FlowNodeAnaly
 import type { FlowNodeAnalytic } from '@/hooks/useFlowNodeAnalytics';
 
 // ─── Node Component ───
-function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
+function FlowNodeCard({ node, index, onEdit, onDelete, onAddAfter, analytics, onDrop, onDragOver, onDragLeave, isDragOver }: {
   node: FlowNode;
+  index: number;
   onEdit: () => void;
   onDelete: () => void;
   onAddAfter: () => void;
   analytics?: FlowNodeAnalytic;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  isDragOver?: boolean;
 }) {
   const getTriggerInfo = () => triggerOptions.find(t => t.id === node.subtype);
   const getActionInfo = () => [...actionOptions, ...conditionOptions].find(a => a.id === node.subtype);
@@ -153,12 +158,17 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
             )}
           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="w-0.5 h-6 bg-white/10" />
-          <button onClick={onAddAfter} className="flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 transition-all group">
-            <Plus className="h-3.5 w-3.5 text-white/40 group-hover:text-white/70" />
+        <div
+          className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+        >
+          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
+          <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
+            <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
           </button>
-          <div className="w-0.5 h-6 bg-white/10" />
+          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
         </div>
       </div>
     );
@@ -208,12 +218,17 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
           </div>
           <p className="text-xs text-white/70">{node.config.text ? String(node.config.text).slice(0, 120) : 'Clique para adicionar uma anotação...'}</p>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="w-0.5 h-6 bg-white/10" />
-          <button onClick={onAddAfter} className="flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 transition-all group">
-            <Plus className="h-3.5 w-3.5 text-white/40 group-hover:text-white/70" />
+        <div
+          className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+        >
+          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
+          <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
+            <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
           </button>
-          <div className="w-0.5 h-6 bg-white/10" />
+          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
         </div>
       </div>
     );
@@ -263,12 +278,17 @@ function FlowNodeCard({ node, onEdit, onDelete, onAddAfter, analytics }: {
           </div>
         )}
       </div>
-      <div className="flex flex-col items-center">
-        <div className="w-0.5 h-6 bg-white/10" />
-        <button onClick={onAddAfter} className="flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 transition-all group">
-          <Plus className="h-3.5 w-3.5 text-white/40 group-hover:text-white/70" />
+      <div
+        className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+      >
+        <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
+        <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
+          <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
         </button>
-        <div className="w-0.5 h-6 bg-white/10" />
+        <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
       </div>
     </div>
   );
@@ -993,6 +1013,40 @@ export default function FlowBuilder() {
   const [editingNode, setEditingNode] = useState<FlowNode | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, nodeType: string, subtype: string) => {
+    e.dataTransfer.setData('application/flow-node', JSON.stringify({ nodeType, subtype }));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDrop = (e: React.DragEvent, afterIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    const raw = e.dataTransfer.getData('application/flow-node');
+    if (!raw) return;
+    try {
+      const { nodeType, subtype } = JSON.parse(raw);
+      const info = [...actionOptions, ...conditionOptions].find(a => a.id === subtype);
+      if (!info) return;
+      const newNode: FlowNode = { id: crypto.randomUUID(), type: nodeType, subtype, label: info.label, config: {} };
+      setNodes(prev => {
+        const copy = [...prev];
+        copy.splice(afterIndex + 1, 0, newNode);
+        return copy;
+      });
+    } catch {}
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
 
   useEffect(() => {
     if (currentFlowId && automations.length > 0) {
@@ -1226,11 +1280,13 @@ export default function FlowBuilder() {
                       return (
                         <button
                           key={opt.id}
+                          draggable
+                          onDragStart={e => handleDragStart(e, getNodeType(opt.id), opt.id)}
                           onClick={() => {
                             setAddAfterIndex(nodes.length - 1);
                             handleAddStep(getNodeType(opt.id) as any, opt.id);
                           }}
-                          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
+                          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
                           title={opt.label}
                         >
                           <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
@@ -1247,21 +1303,23 @@ export default function FlowBuilder() {
               <div className="mb-3">
                 <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">Condições</p>
                 <div className="grid grid-cols-2 gap-1">
-                  {conditionOptions.map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setAddAfterIndex(nodes.length - 1);
-                        handleAddStep('condition', opt.id);
-                      }}
-                      className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
-                      title={opt.label}
-                    >
-                      <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
-                        <opt.icon className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
-                    </button>
+                   {conditionOptions.map(opt => (
+                     <button
+                       key={opt.id}
+                       draggable
+                       onDragStart={e => handleDragStart(e, 'condition', opt.id)}
+                       onClick={() => {
+                         setAddAfterIndex(nodes.length - 1);
+                         handleAddStep('condition', opt.id);
+                       }}
+                       className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
+                       title={opt.label}
+                     >
+                       <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
+                         <opt.icon className="h-3.5 w-3.5" />
+                       </div>
+                       <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                     </button>
                   ))}
                 </div>
               </div>
@@ -1280,15 +1338,26 @@ export default function FlowBuilder() {
                   <FlowNodeCard
                     key={node.id}
                     node={node}
+                    index={index}
                     onEdit={() => handleEditNode(node)}
                     onDelete={() => handleDeleteNode(index)}
                     onAddAfter={() => { setAddAfterIndex(index); setAddStepOpen(true); }}
                     analytics={nodeAnalytics?.find(a => a.node_id === node.id)}
+                    onDrop={e => handleDrop(e, index)}
+                    onDragOver={e => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    isDragOver={dragOverIndex === index}
                   />
                 ))}
-                <div className="flex flex-col items-center">
-                  <div className="h-12 w-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
-                    <span className="text-xs text-white/40 font-medium">FIM</span>
+                {/* End drop zone */}
+                <div
+                  className={cn("flex flex-col items-center transition-all", dragOverIndex === nodes.length - 1 && "scale-110")}
+                  onDrop={e => handleDrop(e, nodes.length - 1)}
+                  onDragOver={e => handleDragOver(e, nodes.length - 1)}
+                  onDragLeave={handleDragLeave}
+                >
+                  <div className={cn("h-12 w-12 rounded-full border-2 border-dashed flex items-center justify-center transition-colors", dragOverIndex === nodes.length - 1 ? "border-primary bg-primary/20" : "border-white/20")}>
+                    <span className={cn("text-xs font-medium", dragOverIndex === nodes.length - 1 ? "text-primary" : "text-white/40")}>FIM</span>
                   </div>
                 </div>
               </>
