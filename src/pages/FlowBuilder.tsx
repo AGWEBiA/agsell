@@ -218,12 +218,17 @@ function FlowNodeCard({ node, index, onEdit, onDelete, onAddAfter, analytics, on
           </div>
           <p className="text-xs text-white/70">{node.config.text ? String(node.config.text).slice(0, 120) : 'Clique para adicionar uma anotação...'}</p>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="w-0.5 h-6 bg-white/10" />
-          <button onClick={onAddAfter} className="flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 transition-all group">
-            <Plus className="h-3.5 w-3.5 text-white/40 group-hover:text-white/70" />
+        <div
+          className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+        >
+          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
+          <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
+            <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
           </button>
-          <div className="w-0.5 h-6 bg-white/10" />
+          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
         </div>
       </div>
     );
@@ -273,12 +278,17 @@ function FlowNodeCard({ node, index, onEdit, onDelete, onAddAfter, analytics, on
           </div>
         )}
       </div>
-      <div className="flex flex-col items-center">
-        <div className="w-0.5 h-6 bg-white/10" />
-        <button onClick={onAddAfter} className="flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 transition-all group">
-          <Plus className="h-3.5 w-3.5 text-white/40 group-hover:text-white/70" />
+      <div
+        className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+      >
+        <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
+        <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
+          <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
         </button>
-        <div className="w-0.5 h-6 bg-white/10" />
+        <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
       </div>
     </div>
   );
