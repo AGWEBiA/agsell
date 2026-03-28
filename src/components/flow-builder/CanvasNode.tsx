@@ -92,6 +92,26 @@ export function CanvasNode({
   const isCondition = node.type === 'condition';
   const NODE_WIDTH = 320;
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onDelete();
+  };
+
+  const handleDeleteMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleSettingsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onEdit();
+  };
+
+  const handleSettingsMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   // Note node special rendering
   if (node.subtype === 'note') {
     const noteColors: Record<string, string> = {
@@ -115,11 +135,15 @@ export function CanvasNode({
           <div className="h-2 w-2 rounded-full bg-white/40" />
         </div>
         <div
-          className={cn('rounded-xl border-2 p-4 cursor-move group transition-colors', noteColors[(node.config.color as string) || 'yellow'])}
+          className={cn('relative rounded-xl border-2 p-4 cursor-move group transition-colors', noteColors[(node.config.color as string) || 'yellow'])}
           onMouseDown={onMouseDown}
           onDoubleClick={onEdit}
         >
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+          <button
+            onClick={handleDeleteClick}
+            onMouseDown={handleDeleteMouseDown}
+            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20"
+          >
             <X className="h-3 w-3" />
           </button>
           <div className="flex items-center gap-2 mb-1">
@@ -159,13 +183,22 @@ export function CanvasNode({
       {/* Node body */}
       <div
         className={cn(
-          'rounded-xl border hover:border-white/25 bg-[#222240] p-4 cursor-move group transition-colors shadow-lg',
+          'relative rounded-xl border hover:border-white/25 bg-[#222240] p-4 cursor-move group transition-colors shadow-lg',
           node.type === 'trigger' ? 'border-2 p-[2px]' : 'border-white/10',
           node.type === 'trigger' && `bg-gradient-to-r ${(info as any).color}`
         )}
         onMouseDown={onMouseDown}
         onDoubleClick={onEdit}
       >
+        {/* Delete button - positioned relative to node body */}
+        <button
+          onClick={handleDeleteClick}
+          onMouseDown={handleDeleteMouseDown}
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20"
+        >
+          <X className="h-3 w-3" />
+        </button>
+
         {node.type === 'trigger' ? (
           <div className="bg-[#222240] rounded-[10px] p-4">
             <InnerContent />
@@ -213,9 +246,6 @@ export function CanvasNode({
   function InnerContent() {
     return (
       <>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
-          <X className="h-3 w-3" />
-        </button>
         <div className="flex items-center gap-3">
           <div className={cn('flex items-center justify-center h-12 w-12 rounded-full shadow-lg shrink-0', node.type === 'trigger' ? `bg-gradient-to-br text-white ${(info as any).color}` : colorClass)}>
             <Icon className="h-5 w-5" />
@@ -231,7 +261,14 @@ export function CanvasNode({
             {summary && <p className="text-xs text-white/50 mt-0.5 truncate max-w-[200px]">{summary}</p>}
             {node.config.keyword && <p className="text-xs text-white/50 mt-0.5">Palavra: "{String(node.config.keyword)}"</p>}
           </div>
-          <Settings className="h-4 w-4 text-white/30 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          <button
+            onClick={handleSettingsClick}
+            onMouseDown={handleSettingsMouseDown}
+            className="h-8 w-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hover:bg-white/10"
+            title="Configurar"
+          >
+            <Settings className="h-4 w-4 text-white/50 hover:text-white" />
+          </button>
         </div>
         {isCondition && (
           <div className="mt-3 flex gap-2 text-xs">
