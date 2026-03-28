@@ -389,7 +389,12 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
 // ─── Trigger Selection (shown when canvas has no trigger) ───
 function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }) {
   const [filter, setFilter] = useState<string>('all');
-  const filtered = triggerOptions.filter(t => filter === 'all' || t.channel === filter);
+  const tagTriggerIds = ['tag_added', 'tag_removed'];
+  const filtered = triggerOptions.filter(t => {
+    if (filter === 'all') return true;
+    if (filter === 'tags') return tagTriggerIds.includes(t.id);
+    return t.channel === filter;
+  });
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
@@ -403,11 +408,13 @@ function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }
       <div className="flex gap-2 mb-6 flex-wrap justify-center">
         {([
           { key: 'all', label: 'Todos' },
+          { key: 'tags', label: '🏷️ Tags' },
           { key: 'instagram', label: '📸 Instagram' },
           { key: 'whatsapp', label: '💬 WhatsApp' },
           { key: 'crm', label: '👤 CRM' },
           { key: 'pagamento', label: '💳 Pagamentos' },
           { key: 'email', label: '📧 E-mail' },
+          { key: 'site', label: '🌐 Site' },
           { key: 'voip', label: '📞 VoIP' },
           { key: 'telegram', label: '✈️ Telegram' },
         ]).map(f => (
