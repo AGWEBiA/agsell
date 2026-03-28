@@ -14,101 +14,118 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeatureRequiredPage } from "@/components/permissions/FeatureRequiredPage";
 import { RuntimeProtection } from "@/components/security/RuntimeProtection";
+import React, { Suspense } from "react";
 
-// Auth Pages
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Pricing from "./pages/Pricing";
-import Features from "./pages/Features";
-import Apresentacao from "./pages/Apresentacao";
-import SalesPitch from "./pages/SalesPitch";
-import PurchaseSuccess from "./pages/PurchaseSuccess";
-import SubscriptionExpired from "./pages/SubscriptionExpired";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import ApiDocs from "./pages/ApiDocs";
+// Loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+  </div>
+);
 
-// Dashboard Pages
-import Dashboard from "./pages/Dashboard";
-import Contacts from "./pages/Contacts";
-import Companies from "./pages/Companies";
-import Pipeline from "./pages/Pipeline";
-import Tags from "./pages/Tags";
-import Tasks from "./pages/Tasks";
-import Inbox from "./pages/Inbox";
-import Email from "./pages/Email";
-import WhatsApp from "./pages/WhatsApp";
-import InstagramPage from "./pages/Instagram";
-import WhatsAppFlowsPage from "./pages/WhatsAppFlows";
-import Automations from "./pages/Automations";
-import LeadScoring from "./pages/LeadScoring";
-import Forms from "./pages/Forms";
-import FormView from "./pages/FormView";
-import Analytics from "./pages/Analytics";
-import Gamification from "./pages/Gamification";
-import Integrations from "./pages/Integrations";
-import AIAssistant from "./pages/AIAssistant";
-import AIAgents from "./pages/AIAgents";
-import Settings from "./pages/Settings";
-import Organization from "./pages/Organization";
-import Plans from "./pages/Plans";
-import Permissions from "./pages/Permissions";
-import Admin from "./pages/Admin";
-import ApiKeys from "./pages/ApiKeys";
-import Webhooks from "./pages/Webhooks";
-import EmailDomain from "./pages/EmailDomain";
-import EmailInbox from "./pages/EmailInbox";
-import InboxSettings from "./pages/InboxSettings";
-import InboxReports from "./pages/InboxReports";
-import SystemGuide from "./pages/SystemGuide";
-import HelpCenter from "./pages/HelpCenter";
-import AgencyClients from "./pages/AgencyClients";
-import AgencyInvite from "./pages/AgencyInvite";
-import ABTests from "./pages/ABTests";
-import GrowthTools from "./pages/GrowthTools";
-import Sequences from "./pages/Sequences";
-import Channels from "./pages/Channels";
-import FlowBuilder from "./pages/FlowBuilder";
-import TechnicalManual from "./pages/TechnicalManual";
-import Migration from "./pages/Migration";
-import SupportTickets from "./pages/SupportTickets";
-import SupportCenter from "./pages/SupportCenter";
-import SupportPortal from "./pages/SupportPortal";
-import SupportPortalSettingsPage from "./pages/SupportPortalSettings";
-import TicketTracker from "./pages/TicketTracker";
-import WhatsAppTemplates from "./pages/WhatsAppTemplates";
-import ContactPreferences from "./pages/ContactPreferences";
-import EventTracking from "./pages/EventTracking";
-import Attribution from "./pages/Attribution";
-import LandingPagesPage from "./pages/LandingPages";
-import AIBuilder from "./pages/AIBuilder";
-import PredictiveSending from "./pages/PredictiveSending";
-import SentimentDashboard from "./pages/SentimentDashboard";
-import SiteTracking from "./pages/SiteTracking";
-import SalesRouting from "./pages/SalesRouting";
-import Goals from "./pages/Goals";
-import WinProbability from "./pages/WinProbability";
-import ConditionalContent from "./pages/ConditionalContent";
-import SMSMarketing from "./pages/SMSMarketing";
-import CommunicationCampaigns from "./pages/CommunicationCampaigns";
-import CustomReports from "./pages/CustomReports";
-import RevenueReporting from "./pages/RevenueReporting";
-import PaidGroups from "./pages/PaidGroups";
-import SystemStatus from "./pages/SystemStatus";
-import VoIP from "./pages/VoIP";
-import VoipCampaigns from "./pages/VoipCampaigns";
-import WhatsAppCampaignsPage from "./pages/WhatsAppCampaignsPage";
-import WhatsAppGroupMessagesPage from "./pages/WhatsAppGroupMessagesPage";
-import GroupRotator from "./pages/GroupRotator";
-import GroupRedirect from "./pages/GroupRedirect";
-import ChatbotBuilder from "./pages/ChatbotBuilder";
-import FunnelPlanner from "./pages/FunnelPlanner";
-import FunnelBI from "./pages/FunnelBI";
-import AutomationMetrics from "./pages/AutomationMetrics";
-import NotFound from "./pages/NotFound";
+// Lazy-loaded public pages
+const Index = React.lazy(() => import("./pages/Index"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
+const Pricing = React.lazy(() => import("./pages/Pricing"));
+const Features = React.lazy(() => import("./pages/Features"));
+const Apresentacao = React.lazy(() => import("./pages/Apresentacao"));
+const SalesPitch = React.lazy(() => import("./pages/SalesPitch"));
+const PurchaseSuccess = React.lazy(() => import("./pages/PurchaseSuccess"));
+const SubscriptionExpired = React.lazy(() => import("./pages/SubscriptionExpired"));
+const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = React.lazy(() => import("./pages/TermsOfService"));
+const ApiDocs = React.lazy(() => import("./pages/ApiDocs"));
+const FormView = React.lazy(() => import("./pages/FormView"));
+const TicketTracker = React.lazy(() => import("./pages/TicketTracker"));
+const AgencyInvite = React.lazy(() => import("./pages/AgencyInvite"));
+const SupportPortal = React.lazy(() => import("./pages/SupportPortal"));
+const GroupRedirect = React.lazy(() => import("./pages/GroupRedirect"));
+const TechnicalManual = React.lazy(() => import("./pages/TechnicalManual"));
+const SystemStatus = React.lazy(() => import("./pages/SystemStatus"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+// Lazy-loaded protected pages
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Contacts = React.lazy(() => import("./pages/Contacts"));
+const Companies = React.lazy(() => import("./pages/Companies"));
+const Pipeline = React.lazy(() => import("./pages/Pipeline"));
+const Tags = React.lazy(() => import("./pages/Tags"));
+const Tasks = React.lazy(() => import("./pages/Tasks"));
+const Inbox = React.lazy(() => import("./pages/Inbox"));
+const Email = React.lazy(() => import("./pages/Email"));
+const WhatsApp = React.lazy(() => import("./pages/WhatsApp"));
+const InstagramPage = React.lazy(() => import("./pages/Instagram"));
+const WhatsAppFlowsPage = React.lazy(() => import("./pages/WhatsAppFlows"));
+const Automations = React.lazy(() => import("./pages/Automations"));
+const LeadScoring = React.lazy(() => import("./pages/LeadScoring"));
+const Forms = React.lazy(() => import("./pages/Forms"));
+const Analytics = React.lazy(() => import("./pages/Analytics"));
+const Gamification = React.lazy(() => import("./pages/Gamification"));
+const Integrations = React.lazy(() => import("./pages/Integrations"));
+const AIAssistant = React.lazy(() => import("./pages/AIAssistant"));
+const AIAgents = React.lazy(() => import("./pages/AIAgents"));
+const Settings = React.lazy(() => import("./pages/Settings"));
+const Organization = React.lazy(() => import("./pages/Organization"));
+const Plans = React.lazy(() => import("./pages/Plans"));
+const Permissions = React.lazy(() => import("./pages/Permissions"));
+const Admin = React.lazy(() => import("./pages/Admin"));
+const ApiKeys = React.lazy(() => import("./pages/ApiKeys"));
+const Webhooks = React.lazy(() => import("./pages/Webhooks"));
+const EmailDomain = React.lazy(() => import("./pages/EmailDomain"));
+const EmailInbox = React.lazy(() => import("./pages/EmailInbox"));
+const InboxSettings = React.lazy(() => import("./pages/InboxSettings"));
+const InboxReports = React.lazy(() => import("./pages/InboxReports"));
+const SystemGuide = React.lazy(() => import("./pages/SystemGuide"));
+const HelpCenter = React.lazy(() => import("./pages/HelpCenter"));
+const AgencyClients = React.lazy(() => import("./pages/AgencyClients"));
+const ABTests = React.lazy(() => import("./pages/ABTests"));
+const GrowthTools = React.lazy(() => import("./pages/GrowthTools"));
+const Sequences = React.lazy(() => import("./pages/Sequences"));
+const Channels = React.lazy(() => import("./pages/Channels"));
+const FlowBuilder = React.lazy(() => import("./pages/FlowBuilder"));
+const Migration = React.lazy(() => import("./pages/Migration"));
+const SupportTickets = React.lazy(() => import("./pages/SupportTickets"));
+const SupportCenter = React.lazy(() => import("./pages/SupportCenter"));
+const SupportPortalSettingsPage = React.lazy(() => import("./pages/SupportPortalSettings"));
+const WhatsAppTemplates = React.lazy(() => import("./pages/WhatsAppTemplates"));
+const ContactPreferences = React.lazy(() => import("./pages/ContactPreferences"));
+const EventTracking = React.lazy(() => import("./pages/EventTracking"));
+const Attribution = React.lazy(() => import("./pages/Attribution"));
+const LandingPagesPage = React.lazy(() => import("./pages/LandingPages"));
+const AIBuilder = React.lazy(() => import("./pages/AIBuilder"));
+const PredictiveSending = React.lazy(() => import("./pages/PredictiveSending"));
+const SentimentDashboard = React.lazy(() => import("./pages/SentimentDashboard"));
+const SiteTracking = React.lazy(() => import("./pages/SiteTracking"));
+const SalesRouting = React.lazy(() => import("./pages/SalesRouting"));
+const Goals = React.lazy(() => import("./pages/Goals"));
+const WinProbability = React.lazy(() => import("./pages/WinProbability"));
+const ConditionalContent = React.lazy(() => import("./pages/ConditionalContent"));
+const CommunicationCampaigns = React.lazy(() => import("./pages/CommunicationCampaigns"));
+const CustomReports = React.lazy(() => import("./pages/CustomReports"));
+const RevenueReporting = React.lazy(() => import("./pages/RevenueReporting"));
+const PaidGroups = React.lazy(() => import("./pages/PaidGroups"));
+const VoIP = React.lazy(() => import("./pages/VoIP"));
+const VoipCampaigns = React.lazy(() => import("./pages/VoipCampaigns"));
+const WhatsAppCampaignsPage = React.lazy(() => import("./pages/WhatsAppCampaignsPage"));
+const WhatsAppGroupMessagesPage = React.lazy(() => import("./pages/WhatsAppGroupMessagesPage"));
+const GroupRotator = React.lazy(() => import("./pages/GroupRotator"));
+const ChatbotBuilder = React.lazy(() => import("./pages/ChatbotBuilder"));
+const FunnelPlanner = React.lazy(() => import("./pages/FunnelPlanner"));
+const FunnelBI = React.lazy(() => import("./pages/FunnelBI"));
+const AutomationMetrics = React.lazy(() => import("./pages/AutomationMetrics"));
+const SMSMarketing = React.lazy(() => import("./pages/SMSMarketing"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -123,6 +140,7 @@ const App = () => (
               <RuntimeProtection />
               <BrowserRouter>
                 <GlobalSearch />
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                 {/* Public Routes */}
                   <Route path="/" element={<Index />} />
@@ -231,6 +249,7 @@ const App = () => (
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </Suspense>
               </BrowserRouter>
             </TooltipProvider>
             </AdminViewProvider>
