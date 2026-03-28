@@ -334,7 +334,7 @@ O módulo de grupos foi redesenhado para suportar o fluxo operacional de lançam
 2. O número de automação é adicionado como **admin** do grupo
 3. O número de automação é conectado à plataforma via QR Code
 4. Na configuração do dispositivo (InstanceConfigDialog), o usuário clica em **"Importar todos os grupos"**
-5. O sistema busca todos os grupos via Evolution API (\\`fetch-evolution-groups\\`)
+5. O sistema busca todos os grupos via Evolution API (\`fetch-evolution-groups\`)
 6. Os grupos aparecem na listagem com status **desativado** por padrão
 7. O usuário ativa cada grupo, configura tags e lead tags
 
@@ -348,7 +348,7 @@ A listagem de grupos usa formato de tabela com as seguintes colunas:
 | Tags dos grupos | Tags de categorização do grupo |
 | Tag dos leads | Tags aplicadas automaticamente aos novos leads sincronizados |
 | Telefone de envio | Número da instância conectada (exibido para identificação) |
-| JID | Identificador único do grupo no WhatsApp (\\`external_group_id\\`) |
+| JID | Identificador único do grupo no WhatsApp (\`external_group_id\`) |
 | Status | Toggle ativo/inativo |
 | Ações | Editar, detalhes, excluir |
 
@@ -359,18 +359,18 @@ A listagem de grupos usa formato de tabela com as seguintes colunas:
 - **Filtro por tag** e **busca por nome**
 
 #### Configuração do Grupo (Dialog de Edição)
-- \\`name\\` — Nome do grupo
-- \\`description\\` — Descrição
-- \\`tags\\` — Tags de categorização (SearchableTagSelect)
-- \\`lead_tags\\` — Tags aplicadas aos leads ao entrar no grupo (settings.lead_tags)
-- \\`instance_id\\` — Instância WhatsApp vinculada
-- \\`sync_new_leads\\` — Sincronizar novos leads automaticamente (boolean)
+- \`name\` — Nome do grupo
+- \`description\` — Descrição
+- \`tags\` — Tags de categorização (SearchableTagSelect)
+- \`lead_tags\` — Tags aplicadas aos leads ao entrar no grupo (settings.lead_tags)
+- \`instance_id\` — Instância WhatsApp vinculada
+- \`sync_new_leads\` — Sincronizar novos leads automaticamente (boolean)
 - Ações: Importar leads, Arquivar grupo
 
 #### Dialog de Detalhes (5 abas)
 - **Membros** — Lista de participantes com role (admin/member), ações de promoção/remoção
 - **Atividades** — Histórico de eventos do grupo (entradas, saídas, mensagens)
-- **Mensagem** — Envio de mensagens com variáveis (\\`{{grupo}}\\`, \\`{{data}}\\`, \\`{{total_membros}}\\`), modo imediato ou agendado
+- **Mensagem** — Envio de mensagens com variáveis (\`{{grupo}}\`, \`{{data}}\`, \`{{total_membros}}\`), modo imediato ou agendado
 - **Config** — Configurações do grupo WhatsApp (travar, somente admins, mensagens temporárias)
 - **Admin** — Configurações administrativas
 
@@ -383,11 +383,11 @@ Ao abrir as configurações de um dispositivo conectado:
 - Configurações de webhook, instância e reconexão
 
 ### Edge Functions
-- \\`send-whatsapp\\` — envio de mensagens
-- \\`whatsapp-webhook\\` — recepção de webhooks
-- \\`process-whatsapp-campaign\\` — processamento assíncrono de campanhas
-- \\`fetch-evolution-groups\\` — busca grupos e instâncias via Evolution API (retorna instance_name, phone_number, groups[])
-- \\`create-whatsapp-group\\` — criação de grupo via Evolution API
+- \`send-whatsapp\` — envio de mensagens
+- \`whatsapp-webhook\` — recepção de webhooks
+- \`process-whatsapp-campaign\` — processamento assíncrono de campanhas
+- \`fetch-evolution-groups\` — busca grupos e instâncias via Evolution API (retorna instance_name, phone_number, groups[])
+- \`create-whatsapp-group\` — criação de grupo via Evolution API
 
 ## 4.7 Instagram
 
@@ -590,23 +590,23 @@ Automatizar a gestão de membros em grupos de WhatsApp com base em pagamentos re
 
 ### Disponibilidade
 - Planos: Professional, Enterprise, Agência
-- Feature Gate: \\`paid_groups\\`
+- Feature Gate: \`paid_groups\`
 
 ### Rotas
-- \\`/paid-groups\\` — Configuração e gestão (autenticado, feature-gated)
+- \`/paid-groups\` — Configuração e gestão (autenticado, feature-gated)
 
 ### Tabelas
-- \\`paid_groups_config\\` — Configuração da Evolution API por organização (URL, API Key, is_active)
-- \\`paid_groups\\` — Grupos de WhatsApp importados (name, group_jid, instance_name)
-- \\`paid_group_products\\` — Produtos internos com mapeamento de gateways (gateway_mappings JSONB)
-- \\`paid_group_product_links\\` — Vínculo N:N entre produtos e grupos
-- \\`paid_group_members\\` — Membros adicionados/removidos (status, phone, added_at, removed_at)
+- \`paid_groups_config\` — Configuração da Evolution API por organização (URL, API Key, is_active)
+- \`paid_groups\` — Grupos de WhatsApp importados (name, group_jid, instance_name)
+- \`paid_group_products\` — Produtos internos com mapeamento de gateways (gateway_mappings JSONB)
+- \`paid_group_product_links\` — Vínculo N:N entre produtos e grupos
+- \`paid_group_members\` — Membros adicionados/removidos (status, phone, added_at, removed_at)
 
 ### Edge Functions
-- \\`paid-groups-webhook\\` — Handler unificado multi-gateway com parsers para 20 plataformas
-  - Query params: \\`org\\` (organization_id), \\`gateway\\` (nome do parser)
+- \`paid-groups-webhook\` — Handler unificado multi-gateway com parsers para 20 plataformas
+  - Query params: \`org\` (organization_id), \`gateway\` (nome do parser)
   - Fluxo: Parse evento → Identifica produto via gateway_mappings → Busca grupos vinculados → Adiciona/remove via Evolution API
-- \\`fetch-evolution-groups\\` — Descobre instâncias e grupos do WhatsApp automaticamente
+- \`fetch-evolution-groups\` — Descobre instâncias e grupos do WhatsApp automaticamente
   - Busca instâncias com status open/connected
   - Retorna JID, subject e tamanho de cada grupo
 
@@ -614,12 +614,12 @@ Automatizar a gestão de membros em grupos de WhatsApp com base em pagamentos re
 Stripe, Kiwify, Hotmart, Eduzz, Monetizze, PerfectPay, Braip, Guru, Lastlink, Pepper, Yampi, Ticto, Kirvano, Payt, Greenn, CartPanda, HeroSpark, AppMax, Doppus e Webhook Genérico.
 
 ### Eventos Processados
-- \\`add\\` — Compra aprovada, assinatura ativa → adiciona membro ao grupo
-- \\`remove\\` — Cancelamento, reembolso, chargeback, expiração → remove membro do grupo
+- \`add\` — Compra aprovada, assinatura ativa → adiciona membro ao grupo
+- \`remove\` — Cancelamento, reembolso, chargeback, expiração → remove membro do grupo
 
 ### RLS
-- Isolamento por \\`organization_id\\`
-- \\`is_org_member()\\` para SELECT, INSERT, UPDATE, DELETE
+- Isolamento por \`organization_id\`
+- \`is_org_member()\` para SELECT, INSERT, UPDATE, DELETE
 
 ---
 
@@ -630,32 +630,32 @@ Permitir que clientes dos usuários da plataforma abram e acompanhem tickets de 
 
 ### Disponibilidade
 - Planos: Professional, Enterprise, Agência
-- Feature Gate: \\`customer_support_center\\`
+- Feature Gate: \`customer_support_center\`
 
 ### Rotas
-- \\`/support-portal/:orgSlug\\` — Portal público (sem autenticação)
-- \\`/support-portal-settings\\` — Configurações do portal (autenticado, feature-gated)
+- \`/support-portal/:orgSlug\` — Portal público (sem autenticação)
+- \`/support-portal-settings\` — Configurações do portal (autenticado, feature-gated)
 
 ### Funcionalidades do Portal Público
 - **Abrir ticket** — Formulário com nome, e-mail, assunto, categoria e mensagem
 - **Acompanhar ticket** — Consulta por protocolo (SUP-YYYYMMDD-XXXXX) + e-mail
 - **Chat WhatsApp** — Botão direto para conversa via WhatsApp (se configurado)
-- **Protocolo automático** — Gerado no formato \\`SUP-YYYYMMDD-XXXXX\\`
+- **Protocolo automático** — Gerado no formato \`SUP-YYYYMMDD-XXXXX\`
 
-### Configurações (\\`organizations.settings.support_portal\\`)
+### Configurações (\`organizations.settings.support_portal\`)
 
 | Campo | Tipo | Default | Descrição |
 |-------|------|---------|-----------|
-| \\`welcome_message\\` | text | "Como podemos ajudar você?" | Mensagem de boas-vindas |
-| \\`categories\\` | string[] | ["Dúvida", "Problema técnico", ...] | Categorias de chamados |
-| \\`business_hours\\` | text | "Segunda a Sexta, 9h às 18h" | Horário de atendimento |
-| \\`chat_enabled\\` | boolean | false | Habilitar chat WhatsApp |
-| \\`chat_whatsapp\\` | text | "" | Número do WhatsApp |
+| \`welcome_message\` | text | "Como podemos ajudar você?" | Mensagem de boas-vindas |
+| \`categories\` | string[] | ["Dúvida", "Problema técnico", ...] | Categorias de chamados |
+| \`business_hours\` | text | "Segunda a Sexta, 9h às 18h" | Horário de atendimento |
+| \`chat_enabled\` | boolean | false | Habilitar chat WhatsApp |
+| \`chat_whatsapp\` | text | "" | Número do WhatsApp |
 
 ### Edge Function
-- \\`public-support-portal\\` — Processa tickets sem autenticação
+- \`public-support-portal\` — Processa tickets sem autenticação
   - Valida organização via slug
-  - Verifica se o plano inclui \\`customer_support_center\\`
+  - Verifica se o plano inclui \`customer_support_center\`
   - Cria/vincula contato no CRM automaticamente
   - Gera protocolo único
   - Suporta GET (consultar ticket) e POST (criar ticket)
@@ -673,38 +673,38 @@ Distribuir automaticamente usuários entre múltiplos grupos de WhatsApp via lin
 
 ### Disponibilidade
 - Planos: Professional, Enterprise, Agência
-- Feature Gate: \\`whatsapp\\`
+- Feature Gate: \`whatsapp\`
 
 ### Rotas
-- \\`/group-rotator\\` — Gestão de campanhas e grupos (autenticado)
-- \\`/r/:slug\\` — Link público de redirecionamento (sem autenticação)
+- \`/group-rotator\` — Gestão de campanhas e grupos (autenticado)
+- \`/r/:slug\` — Link público de redirecionamento (sem autenticação)
 
 ### Tabelas
-- \\`group_rotator_campaigns\\` — Campanhas com slug único, estratégia round-robin, índice atual e total de cliques
-- \\`group_rotator_entries\\` — Grupos individuais com link de convite, capacidade máxima, limite de cliques, contadores e status (pausado/ativo)
-- \\`group_rotator_clicks\\` — Log de cliques com hash do IP e user agent para analytics
+- \`group_rotator_campaigns\` — Campanhas com slug único, estratégia round-robin, índice atual e total de cliques
+- \`group_rotator_entries\` — Grupos individuais com link de convite, capacidade máxima, limite de cliques, contadores e status (pausado/ativo)
+- \`group_rotator_clicks\` — Log de cliques com hash do IP e user agent para analytics
 
 ### Edge Function
-- \\`group-rotator\\` — Endpoint público (GET) que processa o redirecionamento inteligente
+- \`group-rotator\` — Endpoint público (GET) que processa o redirecionamento inteligente
   - Busca campanha ativa por slug
   - Filtra grupos disponíveis (não pausados, não lotados, dentro do limite de cliques)
-  - Aplica round-robin: \\`current_index % available.length\\`
+  - Aplica round-robin: \`current_index % available.length\`
   - Incrementa contadores (click_count, total_clicks, current_index)
   - Registra log de clique com IP hash (SHA-256 truncado) para privacidade
-  - Retorna \\`redirect_url\\`, \\`group_name\\` e \\`campaign_name\\`
+  - Retorna \`redirect_url\`, \`group_name\` e \`campaign_name\`
 
 ### Critérios de Troca Automática
-- **Por limite de cliques**: Quando \\`click_count >= max_clicks\\` (se max_clicks > 0), o grupo é excluído da rotação
-- **Por lotação**: Quando \\`member_count >= max_capacity\\` (se max_capacity > 0), o grupo é excluído
-- **Pausa manual**: Grupos com \\`is_paused = true\\` são ignorados na distribuição
+- **Por limite de cliques**: Quando \`click_count >= max_clicks\` (se max_clicks > 0), o grupo é excluído da rotação
+- **Por lotação**: Quando \`member_count >= max_capacity\` (se max_capacity > 0), o grupo é excluído
+- **Pausa manual**: Grupos com \`is_paused = true\` são ignorados na distribuição
 
 ### Fluxo do Usuário Final
-1. Acessa link \\`/r/meu-slug\\`
-2. Frontend chama edge function \\`group-rotator/meu-slug\\`
+1. Acessa link \`/r/meu-slug\`
+2. Frontend chama edge function \`group-rotator/meu-slug\`
 3. Exibe tela de carregamento → mensagem de confirmação → redirecionamento para WhatsApp
 
 ### RLS
-- Campanhas: \\`is_org_member()\\` para CRUD autenticado + SELECT anon para campanhas ativas
+- Campanhas: \`is_org_member()\` para CRUD autenticado + SELECT anon para campanhas ativas
 - Entries: JOIN com campaign para validação de organização + anon para SELECT/UPDATE (contadores)
 - Clicks: SELECT autenticado via JOIN + INSERT anon (log público)
 
@@ -1175,30 +1175,30 @@ Realizar e receber ligações telefônicas diretamente pela plataforma com softp
 - Compra de créditos de VoIP (pacotes)
 - Vinculação automática a contatos e deals do CRM
 
-## 15.3 Tabela: \\`calls\\`
+## 15.3 Tabela: \`calls\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`organization_id\\` | uuid | Isolamento |
-| \\`user_id\\` | uuid | Quem fez/recebeu |
-| \\`phone_number\\` | text | Número discado/originário |
-| \\`direction\\` | text | inbound / outbound |
-| \\`status\\` | text | ringing, in_progress, completed, failed, missed |
-| \\`duration_seconds\\` | integer | Duração em segundos |
-| \\`recording_url\\` | text | URL da gravação |
-| \\`transcript\\` | text | Transcrição por IA |
-| \\`credits_used\\` | numeric | Créditos consumidos |
-| \\`contact_id\\` | uuid | FK contato vinculado |
-| \\`deal_id\\` | uuid | FK deal vinculado |
-| \\`notes\\` | text | Notas da ligação |
+| \`id\` | uuid | PK |
+| \`organization_id\` | uuid | Isolamento |
+| \`user_id\` | uuid | Quem fez/recebeu |
+| \`phone_number\` | text | Número discado/originário |
+| \`direction\` | text | inbound / outbound |
+| \`status\` | text | ringing, in_progress, completed, failed, missed |
+| \`duration_seconds\` | integer | Duração em segundos |
+| \`recording_url\` | text | URL da gravação |
+| \`transcript\` | text | Transcrição por IA |
+| \`credits_used\` | numeric | Créditos consumidos |
+| \`contact_id\` | uuid | FK contato vinculado |
+| \`deal_id\` | uuid | FK deal vinculado |
+| \`notes\` | text | Notas da ligação |
 
 ## 15.4 Edge Function
-- \\`voip-call\\` — Inicia chamada, gerencia status e computa créditos
-- \\`purchase-voip-credits\\` — Compra de pacotes de créditos
+- \`voip-call\` — Inicia chamada, gerencia status e computa créditos
+- \`purchase-voip-credits\` — Compra de pacotes de créditos
 
 ## 15.5 Rota
-- \\`/voip\\` — Feature Gate: \\`voip\\`
+- \`/voip\` — Feature Gate: \`voip\`
 
 ---
 
@@ -1214,10 +1214,10 @@ Facilitar a migração de dados de outras plataformas (ManyChat, ActiveCampaign,
 - **Webhook Guide** — Configuração de webhooks para sincronização contínua
 
 ## 16.3 Edge Function
-- \\`migrate-platform\\` — Processa dados de migração, cria contatos, deals e tags
+- \`migrate-platform\` — Processa dados de migração, cria contatos, deals e tags
 
 ## 16.4 Rota
-- \\`/migration\\` — Autenticado
+- \`/migration\` — Autenticado
 
 ---
 
@@ -1240,7 +1240,7 @@ Facilitar a migração de dados de outras plataformas (ManyChat, ActiveCampaign,
 - VoIP/Telefonia integrado com softphone web
 
 ## 17.2 Pontos de Atenção
-- Action \\`wait\\` nas automações registra mas não implementa delay real (necessita sistema de filas)
+- Action \`wait\` nas automações registra mas não implementa delay real (necessita sistema de filas)
 - PWA não formalizado (sem manifest / service worker)
 - Crons de verificação de domínio dependem de invocação externa
 - Rate limiting de API implementado em banco, não em edge middleware
@@ -1250,66 +1250,66 @@ Facilitar a migração de dados de outras plataformas (ManyChat, ActiveCampaign,
 - Realtime seletivo (apenas tabelas críticas)
 - Edge Functions stateless e horizontalmente escaláveis
 - TanStack Query com cache e stale time configurados
-- Paginação preparada (\\`usePaginatedQuery\\`)
+- Paginação preparada (\`usePaginatedQuery\`)
 
 ## 17.4 Edge Functions Completas
 
 | Função | Objetivo |
 |--------|----------|
-| \\`ai-chat\\` | Chat IA (assistente + agentes custom) |
-| \\`ai-builder\\` | Geração de conteúdo IA (e-mails, fluxos, brand kit, segmentos) |
-| \\`analyze-sentiment\\` | Análise de sentimento de mensagens via IA |
-| \\`create-checkout\\` | Checkout Stripe para usuários logados |
-| \\`guest-checkout\\` | Checkout para novos usuários |
-| \\`stripe-webhook\\` | Processa eventos Stripe |
-| \\`create-kiwify-checkout\\` | Checkout via Kiwify |
-| \\`customer-portal\\` | Portal de gerenciamento de assinatura Stripe |
-| \\`test-stripe-connection\\` | Teste de conexão Stripe |
-| \\`send-email\\` | Envio multi-provedor (Resend/SES/SendGrid) |
-| \\`send-whatsapp\\` | Envio WhatsApp |
-| \\`send-sms\\` | Envio SMS (Twilio/Vonage) |
-| \\`send-instagram-dm\\` | Envio Instagram DM |
-| \\`process-automation\\` | Execução de automações |
-| \\`process-sequence\\` | Processamento de sequências drip |
-| \\`process-whatsapp-campaign\\` | Processamento de campanhas WhatsApp |
-| \\`process-import\\` | Processamento de importação de contatos |
-| \\`instagram-oauth\\` | Fluxo OAuth Instagram |
-| \\`instagram-webhook\\` | Webhook Instagram |
-| \\`instagram-lookup\\` | Busca de perfil Instagram |
-| \\`whatsapp-webhook\\` | Webhook WhatsApp |
-| \\`whatsapp-templates\\` | Gestão de templates WhatsApp Business |
-| \\`telegram-webhook\\` | Webhook Telegram |
-| \\`email-inbound\\` | Recepção de e-mails |
-| \\`verify-email-domain\\` | Verificação DNS de domínio |
-| \\`verify-email-domains-cron\\` | Verificação periódica |
-| \\`evolution-qrcode\\` | QR Code para conexão WhatsApp |
-| \\`fetch-evolution-groups\\` | Busca grupos via Evolution API |
-| \\`create-whatsapp-group\\` | Criação de grupo WhatsApp |
-| \\`sync-whatsapp-reconnect\\` | Reconexão de instância WhatsApp |
-| \\`subscription-whatsapp-groups\\` | Gestão de grupos por assinatura |
-| \\`test-evolution-api\\` | Teste de conexão Evolution API |
-| \\`transcribe-audio\\` | Transcrição de áudio via IA |
-| \\`public-api\\` | API pública REST |
-| \\`webhook-inbound\\` | Webhook genérico de entrada |
-| \\`webhook-hotmart\\` | Webhook Hotmart |
-| \\`webhook-kiwify\\` | Webhook Kiwify |
-| \\`webhook-eduzz\\` | Webhook Eduzz |
-| \\`webhook-shopify\\` | Webhook Shopify |
-| \\`webhook-stripe\\` | Webhook Stripe (pagamentos) |
-| \\`paid-groups-webhook\\` | Webhook multi-gateway para grupos pagos |
-| \\`group-rotator\\` | Redirecionamento inteligente de grupos |
-| \\`admin-manage-users\\` | Gestão de usuários (admin) |
-| \\`delete-user-data\\` | Exclusão de dados (LGPD) |
-| \\`export-user-data\\` | Exportação de dados (LGPD) |
-| \\`track-event\\` | Rastreamento de eventos de sites (pixel JS) |
-| \\`predict-win\\` | Probabilidade de fechamento via IA |
-| \\`predictive-scoring\\` | Scoring preditivo de leads via IA |
-| \\`voip-call\\` | Chamadas telefônicas VoIP |
-| \\`purchase-voip-credits\\` | Compra de créditos VoIP |
-| \\`purchase-sms-credits\\` | Compra de créditos SMS |
-| \\`migrate-platform\\` | Migração de plataformas externas |
-| \\`support-agent\\` | Agente de suporte IA |
-| \\`public-support-portal\\` | Portal público de suporte white-label |
+| \`ai-chat\` | Chat IA (assistente + agentes custom) |
+| \`ai-builder\` | Geração de conteúdo IA (e-mails, fluxos, brand kit, segmentos) |
+| \`analyze-sentiment\` | Análise de sentimento de mensagens via IA |
+| \`create-checkout\` | Checkout Stripe para usuários logados |
+| \`guest-checkout\` | Checkout para novos usuários |
+| \`stripe-webhook\` | Processa eventos Stripe |
+| \`create-kiwify-checkout\` | Checkout via Kiwify |
+| \`customer-portal\` | Portal de gerenciamento de assinatura Stripe |
+| \`test-stripe-connection\` | Teste de conexão Stripe |
+| \`send-email\` | Envio multi-provedor (Resend/SES/SendGrid) |
+| \`send-whatsapp\` | Envio WhatsApp |
+| \`send-sms\` | Envio SMS (Twilio/Vonage) |
+| \`send-instagram-dm\` | Envio Instagram DM |
+| \`process-automation\` | Execução de automações |
+| \`process-sequence\` | Processamento de sequências drip |
+| \`process-whatsapp-campaign\` | Processamento de campanhas WhatsApp |
+| \`process-import\` | Processamento de importação de contatos |
+| \`instagram-oauth\` | Fluxo OAuth Instagram |
+| \`instagram-webhook\` | Webhook Instagram |
+| \`instagram-lookup\` | Busca de perfil Instagram |
+| \`whatsapp-webhook\` | Webhook WhatsApp |
+| \`whatsapp-templates\` | Gestão de templates WhatsApp Business |
+| \`telegram-webhook\` | Webhook Telegram |
+| \`email-inbound\` | Recepção de e-mails |
+| \`verify-email-domain\` | Verificação DNS de domínio |
+| \`verify-email-domains-cron\` | Verificação periódica |
+| \`evolution-qrcode\` | QR Code para conexão WhatsApp |
+| \`fetch-evolution-groups\` | Busca grupos via Evolution API |
+| \`create-whatsapp-group\` | Criação de grupo WhatsApp |
+| \`sync-whatsapp-reconnect\` | Reconexão de instância WhatsApp |
+| \`subscription-whatsapp-groups\` | Gestão de grupos por assinatura |
+| \`test-evolution-api\` | Teste de conexão Evolution API |
+| \`transcribe-audio\` | Transcrição de áudio via IA |
+| \`public-api\` | API pública REST |
+| \`webhook-inbound\` | Webhook genérico de entrada |
+| \`webhook-hotmart\` | Webhook Hotmart |
+| \`webhook-kiwify\` | Webhook Kiwify |
+| \`webhook-eduzz\` | Webhook Eduzz |
+| \`webhook-shopify\` | Webhook Shopify |
+| \`webhook-stripe\` | Webhook Stripe (pagamentos) |
+| \`paid-groups-webhook\` | Webhook multi-gateway para grupos pagos |
+| \`group-rotator\` | Redirecionamento inteligente de grupos |
+| \`admin-manage-users\` | Gestão de usuários (admin) |
+| \`delete-user-data\` | Exclusão de dados (LGPD) |
+| \`export-user-data\` | Exportação de dados (LGPD) |
+| \`track-event\` | Rastreamento de eventos de sites (pixel JS) |
+| \`predict-win\` | Probabilidade de fechamento via IA |
+| \`predictive-scoring\` | Scoring preditivo de leads via IA |
+| \`voip-call\` | Chamadas telefônicas VoIP |
+| \`purchase-voip-credits\` | Compra de créditos VoIP |
+| \`purchase-sms-credits\` | Compra de créditos SMS |
+| \`migrate-platform\` | Migração de plataformas externas |
+| \`support-agent\` | Agente de suporte IA |
+| \`public-support-portal\` | Portal público de suporte white-label |
 
 ---
 
@@ -1404,81 +1404,81 @@ Facilitar a migração de dados de outras plataformas (ManyChat, ActiveCampaign,
 ### Objetivo
 Exibir métricas de performance (entradas, saídas, conversões) diretamente sobre cada nó do canvas do Flow Builder.
 
-### Tabela: \\`flow_node_analytics\\`
+### Tabela: \`flow_node_analytics\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`automation_id\\` | uuid | FK para automations |
-| \\`node_id\\` | text | ID do nó no canvas |
-| \\`organization_id\\` | uuid | Isolamento |
-| \\`entries\\` | integer | Contatos que entraram no nó |
-| \\`exits\\` | integer | Contatos que saíram |
-| \\`conversions\\` | integer | Ações concluídas com sucesso |
-| \\`last_updated_at\\` | timestamp | Última atualização |
+| \`id\` | uuid | PK |
+| \`automation_id\` | uuid | FK para automations |
+| \`node_id\` | text | ID do nó no canvas |
+| \`organization_id\` | uuid | Isolamento |
+| \`entries\` | integer | Contatos que entraram no nó |
+| \`exits\` | integer | Contatos que saíram |
+| \`conversions\` | integer | Ações concluídas com sucesso |
+| \`last_updated_at\` | timestamp | Última atualização |
 
 ### Componente
-- \\`FlowNodeAnalyticsOverlay\\` — Overlay visual posicionado sobre cada nó
-- Hook: \\`useFlowNodeAnalytics(automationId)\\`
+- \`FlowNodeAnalyticsOverlay\` — Overlay visual posicionado sobre cada nó
+- Hook: \`useFlowNodeAnalytics(automationId)\`
 
 ### RLS
-- Isolamento por \\`organization_id\\` via \\`is_org_member()\\`
+- Isolamento por \`organization_id\` via \`is_org_member()\`
 
 ## 17.2 Timeline de Execução por Contato
 
 ### Objetivo
 Registrar cada ação executada por automação para cada contato, criando uma timeline completa.
 
-### Tabela: \\`automation_contact_timeline\\`
+### Tabela: \`automation_contact_timeline\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`automation_id\\` | uuid | FK para automations |
-| \\`execution_id\\` | uuid | FK para automation_executions |
-| \\`contact_id\\` | uuid | FK para contacts |
-| \\`node_id\\` | text | ID do nó no canvas |
-| \\`node_label\\` | text | Label legível do nó |
-| \\`action_type\\` | text | Tipo de ação (send_email, add_tag, etc.) |
-| \\`status\\` | text | completed, failed, waiting, skipped |
-| \\`details\\` | jsonb | Metadados adicionais |
-| \\`organization_id\\` | uuid | Isolamento |
-| \\`created_at\\` | timestamp | Quando ocorreu |
+| \`id\` | uuid | PK |
+| \`automation_id\` | uuid | FK para automations |
+| \`execution_id\` | uuid | FK para automation_executions |
+| \`contact_id\` | uuid | FK para contacts |
+| \`node_id\` | text | ID do nó no canvas |
+| \`node_label\` | text | Label legível do nó |
+| \`action_type\` | text | Tipo de ação (send_email, add_tag, etc.) |
+| \`status\` | text | completed, failed, waiting, skipped |
+| \`details\` | jsonb | Metadados adicionais |
+| \`organization_id\` | uuid | Isolamento |
+| \`created_at\` | timestamp | Quando ocorreu |
 
 ### Componente
-- \\`AutomationExecutionTimeline\\` — Timeline visual com ícones por tipo de ação
-- Hook: \\`useAutomationTimeline(contactId)\\`
+- \`AutomationExecutionTimeline\` — Timeline visual com ícones por tipo de ação
+- Hook: \`useAutomationTimeline(contactId)\`
 
 ### RLS
-- Isolamento por \\`organization_id\\` via \\`is_org_member()\\`
+- Isolamento por \`organization_id\` via \`is_org_member()\`
 
 ## 17.3 Scoring Preditivo com IA
 
 ### Objetivo
 Calcular probabilidade de conversão de leads usando IA, baseado em comportamento real.
 
-### Tabela: \\`predictive_lead_scores\\`
+### Tabela: \`predictive_lead_scores\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`contact_id\\` | uuid | FK para contacts |
-| \\`organization_id\\` | uuid | Isolamento |
-| \\`predicted_score\\` | numeric | Score 0-100 |
-| \\`confidence\\` | numeric | Confiança 0-1 |
-| \\`factors\\` | jsonb | Array de fatores com impacto |
-| \\`model_version\\` | text | Versão do modelo |
-| \\`calculated_at\\` | timestamp | Quando foi calculado |
+| \`id\` | uuid | PK |
+| \`contact_id\` | uuid | FK para contacts |
+| \`organization_id\` | uuid | Isolamento |
+| \`predicted_score\` | numeric | Score 0-100 |
+| \`confidence\` | numeric | Confiança 0-1 |
+| \`factors\` | jsonb | Array de fatores com impacto |
+| \`model_version\` | text | Versão do modelo |
+| \`calculated_at\` | timestamp | Quando foi calculado |
 
-### Edge Function: \\`predictive-scoring\\`
+### Edge Function: \`predictive-scoring\`
 - Coleta dados do contato: atividades, tags, deals, interações
 - Envia para Lovable AI Gateway (Gemini 2.5 Flash)
 - IA retorna score, confiança e fatores
-- Suporta cálculo individual ou em massa (\\`calculate_all\\`)
+- Suporta cálculo individual ou em massa (\`calculate_all\`)
 
 ### Componente
-- \\`PredictiveScoringDashboard\\` — Dashboard com ranking, fatores e ações
-- Hook: \\`usePredictiveScores()\\`, \\`useCalculatePredictiveScore()\\`, \\`useCalculateAllPredictiveScores()\\`
+- \`PredictiveScoringDashboard\` — Dashboard com ranking, fatores e ações
+- Hook: \`usePredictiveScores()\`, \`useCalculatePredictiveScore()\`, \`useCalculateAllPredictiveScores()\`
 
 ## 17.4 Site Tracking como Trigger
 
@@ -1486,81 +1486,81 @@ Calcular probabilidade de conversão de leads usando IA, baseado em comportament
 
 | Trigger | Canal | Descrição |
 |---------|-------|-----------|
-| \\`page_visited\\` | site | Contato visitou URL específica |
-| \\`site_event\\` | site | Evento customizado rastreado via snippet JS |
+| \`page_visited\` | site | Contato visitou URL específica |
+| \`site_event\` | site | Evento customizado rastreado via snippet JS |
 
 ### Configuração
-- \\`trigger_config.page_url\\` — URL da página monitorada
-- \\`trigger_config.event_name\\` — Nome do evento customizado
-- Integra com tabelas existentes: \\`site_events\\`, \\`site_tracking_sessions\\`
+- \`trigger_config.page_url\` — URL da página monitorada
+- \`trigger_config.event_name\` — Nome do evento customizado
+- Integra com tabelas existentes: \`site_events\`, \`site_tracking_sessions\`
 
 ## 17.5 Testes A/B de Fluxos Completos
 
-### Tabela: \\`flow_ab_tests\\`
+### Tabela: \`flow_ab_tests\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`organization_id\\` | uuid | Isolamento |
-| \\`name\\` | text | Nome do teste |
-| \\`flow_a_id\\` | uuid | FK para automations (fluxo A) |
-| \\`flow_b_id\\` | uuid | FK para automations (fluxo B) |
-| \\`split_percentage\\` | integer | % para fluxo A (rest vai para B) |
-| \\`entries_a\\` / \\`entries_b\\` | integer | Contadores de entrada |
-| \\`conversions_a\\` / \\`conversions_b\\` | integer | Contadores de conversão |
-| \\`status\\` | text | draft, running, completed |
-| \\`winner\\` | text | a, b ou null |
+| \`id\` | uuid | PK |
+| \`organization_id\` | uuid | Isolamento |
+| \`name\` | text | Nome do teste |
+| \`flow_a_id\` | uuid | FK para automations (fluxo A) |
+| \`flow_b_id\` | uuid | FK para automations (fluxo B) |
+| \`split_percentage\` | integer | % para fluxo A (rest vai para B) |
+| \`entries_a\` / \`entries_b\` | integer | Contadores de entrada |
+| \`conversions_a\` / \`conversions_b\` | integer | Contadores de conversão |
+| \`status\` | text | draft, running, completed |
+| \`winner\` | text | a, b ou null |
 
 ### Componente
-- \\`FlowABTestManager\\` — Interface para criar e monitorar testes
+- \`FlowABTestManager\` — Interface para criar e monitorar testes
 
 ## 17.6 Marketplace de Integrações
 
-### Tabela: \\`integration_catalog\\`
+### Tabela: \`integration_catalog\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`name\\` | text | Nome do conector |
-| \\`category\\` | text | Categoria (advertising, payments, etc.) |
-| \\`description\\` | text | Descrição |
-| \\`icon_url\\` | text | URL do ícone |
-| \\`status\\` | text | available, coming_soon, beta |
-| \\`config_schema\\` | jsonb | Schema de configuração |
+| \`id\` | uuid | PK |
+| \`name\` | text | Nome do conector |
+| \`category\` | text | Categoria (advertising, payments, etc.) |
+| \`description\` | text | Descrição |
+| \`icon_url\` | text | URL do ícone |
+| \`status\` | text | available, coming_soon, beta |
+| \`config_schema\` | jsonb | Schema de configuração |
 
 ### Componente
-- \\`IntegrationMarketplace\\` — Catálogo visual com busca e filtros por categoria
+- \`IntegrationMarketplace\` — Catálogo visual com busca e filtros por categoria
 
 ## 17.7 Conteúdo Condicional em E-mails
 
-### Componente: \\`EmailConditionalContent\\`
+### Componente: \`EmailConditionalContent\`
 - Tipos de condição: tag, score, status, campo customizado
 - Preview lado a lado (verdadeiro/falso)
 - Gera HTML condicional para inserção em templates
-- Integra com editor de e-mail existente (\\`EmailTemplateEditor\\`)
+- Integra com editor de e-mail existente (\`EmailTemplateEditor\`)
 
 ## 17.8 Webhooks com Retry e Dead-Letter Queue
 
-### Tabela: \\`webhook_deliveries\\`
+### Tabela: \`webhook_deliveries\`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`id\\` | uuid | PK |
-| \\`webhook_id\\` | uuid | FK para inbound_webhooks |
-| \\`organization_id\\` | uuid | Isolamento |
-| \\`payload\\` | jsonb | Dados enviados |
-| \\`endpoint_url\\` | text | URL de destino |
-| \\`status\\` | text | pending, delivered, failed, dead_letter |
-| \\`attempts\\` | integer | Tentativas realizadas |
-| \\`max_attempts\\` | integer | Máximo de tentativas |
-| \\`last_attempt_at\\` | timestamp | Última tentativa |
-| \\`next_retry_at\\` | timestamp | Próxima tentativa agendada |
-| \\`response_status\\` | integer | Status HTTP da resposta |
-| \\`response_body\\` | text | Corpo da resposta |
-| \\`error_message\\` | text | Mensagem de erro |
+| \`id\` | uuid | PK |
+| \`webhook_id\` | uuid | FK para inbound_webhooks |
+| \`organization_id\` | uuid | Isolamento |
+| \`payload\` | jsonb | Dados enviados |
+| \`endpoint_url\` | text | URL de destino |
+| \`status\` | text | pending, delivered, failed, dead_letter |
+| \`attempts\` | integer | Tentativas realizadas |
+| \`max_attempts\` | integer | Máximo de tentativas |
+| \`last_attempt_at\` | timestamp | Última tentativa |
+| \`next_retry_at\` | timestamp | Próxima tentativa agendada |
+| \`response_status\` | integer | Status HTTP da resposta |
+| \`response_body\` | text | Corpo da resposta |
+| \`error_message\` | text | Mensagem de erro |
 
 ### Componente
-- \\`WebhookDeliveryQueue\\` — Dashboard de entregas com métricas e ações manuais
+- \`WebhookDeliveryQueue\` — Dashboard de entregas com métricas e ações manuais
 
 ### Estratégia de retry
 - Backoff exponencial: 1min → 5min → 15min → 1h → 6h
@@ -1578,61 +1578,61 @@ Criar chatbots visuais com fluxo de nós para atendimento automatizado multicana
 
 | Nó | Tipo | Descrição |
 |-----|------|-----------|
-| \\`welcome\\` | Mensagem | Mensagem de boas-vindas |
-| \\`text_message\\` | Mensagem | Texto livre |
-| \\`menu\\` | Mensagem | Menu de opções numeradas |
-| \\`ask_input\\` | Coleta | Solicita dados do usuário |
-| \\`condition\\` | Lógica | Avalia regras e bifurca o fluxo |
-| \\`add_tag\\` / \\`remove_tag\\` | Ação | Gerencia tags do contato |
-| \\`webhook\\` | Ação | Chamada HTTP externa |
-| \\`delay\\` | Ação | Aguarda tempo antes de continuar |
-| \\`ai_response\\` | IA | Resposta gerada por IA |
-| \\`ai_mission\\` | IA | IA executa tarefa específica |
-| \\`transfer_department\\` | Transferência | Redireciona para departamento |
-| \\`transfer_agent\\` | Transferência | Redireciona para agente específico |
-| \\`transfer_human\\` | Transferência | Encaminha para atendimento humano |
-| \\`close_conversation\\` | Transferência | Finaliza a conversa |
-| \\`no_interaction\\` | Fallback | Ação quando não há resposta |
+| \`welcome\` | Mensagem | Mensagem de boas-vindas |
+| \`text_message\` | Mensagem | Texto livre |
+| \`menu\` | Mensagem | Menu de opções numeradas |
+| \`ask_input\` | Coleta | Solicita dados do usuário |
+| \`condition\` | Lógica | Avalia regras e bifurca o fluxo |
+| \`add_tag\` / \`remove_tag\` | Ação | Gerencia tags do contato |
+| \`webhook\` | Ação | Chamada HTTP externa |
+| \`delay\` | Ação | Aguarda tempo antes de continuar |
+| \`ai_response\` | IA | Resposta gerada por IA |
+| \`ai_mission\` | IA | IA executa tarefa específica |
+| \`transfer_department\` | Transferência | Redireciona para departamento |
+| \`transfer_agent\` | Transferência | Redireciona para agente específico |
+| \`transfer_human\` | Transferência | Encaminha para atendimento humano |
+| \`close_conversation\` | Transferência | Finaliza a conversa |
+| \`no_interaction\` | Fallback | Ação quando não há resposta |
 
 ## 18.3 Regras de Ativação (ChatbotRule)
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`name\\` | text | Nome da regra |
-| \\`departments\\` | string[] | Departamentos aplicáveis |
-| \\`officeHours\\` | object | Horário de ativação (enabled, start, end, days) |
-| \\`includeTags\\` | string[] | Tags necessárias para ativar |
-| \\`excludeTags\\` | string[] | Tags que impedem ativação |
-| \\`channels\\` | string[] | Canais aplicáveis |
-| \\`isActive\\` | boolean | Regra ativa/inativa |
+| \`name\` | text | Nome da regra |
+| \`departments\` | string[] | Departamentos aplicáveis |
+| \`officeHours\` | object | Horário de ativação (enabled, start, end, days) |
+| \`includeTags\` | string[] | Tags necessárias para ativar |
+| \`excludeTags\` | string[] | Tags que impedem ativação |
+| \`channels\` | string[] | Canais aplicáveis |
+| \`isActive\` | boolean | Regra ativa/inativa |
 
 ## 18.4 Rota
-- \\`/chatbot-builder\\` — Autenticado
+- \`/chatbot-builder\` — Autenticado
 
 ---
 
 # 19. PLANEJADOR DE FUNIL E BI
 
-## 19.1 Planejador de Funil (\\`/funnel-planner\\`)
+## 19.1 Planejador de Funil (\`/funnel-planner\`)
 Criação visual de funis de marketing/vendas com etapas tipadas.
 
 ### Tipos de Etapa
-- \\`traffic\\` — Fontes de tráfego
-- \\`landing_page\\` — Páginas de captura
-- \\`automation\\` — Fluxos de nutrição
-- \\`conversion\\` — Pontos de venda
-- \\`custom\\` — Etapas personalizadas
+- \`traffic\` — Fontes de tráfego
+- \`landing_page\` — Páginas de captura
+- \`automation\` — Fluxos de nutrição
+- \`conversion\` — Pontos de venda
+- \`custom\` — Etapas personalizadas
 
 ### Campos da Etapa
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`name\\` | text | Nome da etapa |
-| \\`type\\` | text | Tipo (traffic, landing_page, etc.) |
-| \\`description\\` | text | Descrição |
-| \\`metrics\\` | array | KPIs (label + value) |
-| \\`links\\` | array | URLs associadas |
+| \`name\` | text | Nome da etapa |
+| \`type\` | text | Tipo (traffic, landing_page, etc.) |
+| \`description\` | text | Descrição |
+| \`metrics\` | array | KPIs (label + value) |
+| \`links\` | array | URLs associadas |
 
-## 19.2 BI do Funil (\\`/funnel-bi\\`)
+## 19.2 BI do Funil (\`/funnel-bi\`)
 Dashboard analítico com funil visual, taxas de conversão, drop-off por etapa e performance por canal.
 
 ### Métricas
@@ -1648,7 +1648,7 @@ Dashboard analítico com funil visual, taxas de conversão, drop-off por etapa e
 Unificar campanhas de VoIP e SMS em uma única interface com créditos de comunicação compartilhados.
 
 ## 20.2 Rota
-- \\`/communication-campaigns\\` — Autenticado
+- \`/communication-campaigns\` — Autenticado
 
 ## 20.3 Campanhas VoIP
 - Upload de áudio (MP3/WAV)
@@ -1672,7 +1672,7 @@ Unificar campanhas de VoIP e SMS em uma única interface com créditos de comuni
 # 21. MÉTRICAS DE AUTOMAÇÃO
 
 ## 21.1 Rota
-- \\`/automation-metrics\\` — Autenticado
+- \`/automation-metrics\` — Autenticado
 
 ## 21.2 Dashboard
 - Filtro por automação específica
@@ -1684,11 +1684,11 @@ Unificar campanhas de VoIP e SMS em uma única interface com créditos de comuni
 
 # 22. COMPARTILHAMENTO DE AUTOMAÇÕES POR CÓDIGO
 
-## 22.1 Componente: \\`CampaignCodeShare\\`
+## 22.1 Componente: \`CampaignCodeShare\`
 
 ### Exportação
 - Serializa automação em JSON → Base64
-- Versão do formato: \\`v: 1\\`
+- Versão do formato: \`v: 1\`
 - Campos exportados: name, trigger_type, trigger_config, actions
 
 ### Importação
@@ -1701,28 +1701,28 @@ Unificar campanhas de VoIP e SMS em uma única interface com créditos de comuni
 
 # 23. JORNADA DE TRABALHO DO SAC
 
-## 23.1 Componente: \\`WorkingHoursConfig\\`
+## 23.1 Componente: \`WorkingHoursConfig\`
 
 ### Modos
 | Modo | Descrição |
 |------|-----------|
-| \\`always\\` | SAC disponível 24/7 |
-| \\`business_hours\\` | Horário comercial padrão |
-| \\`custom\\` | Configuração livre por dia |
+| \`always\` | SAC disponível 24/7 |
+| \`business_hours\` | Horário comercial padrão |
+| \`custom\` | Configuração livre por dia |
 
 ### Configuração por Dia
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| \\`enabled\\` | boolean | Dia ativo/inativo |
-| \\`start\\` | string | Horário de início (HH:MM) |
-| \\`end\\` | string | Horário de fim (HH:MM) |
+| \`enabled\` | boolean | Dia ativo/inativo |
+| \`start\` | string | Horário de início (HH:MM) |
+| \`end\` | string | Horário de fim (HH:MM) |
 
 ### Campos Adicionais
-- \\`timezone\\` — Fuso horário (ex: America/Sao_Paulo)
-- \\`offlineMessage\\` — Mensagem exibida fora do horário
+- \`timezone\` — Fuso horário (ex: America/Sao_Paulo)
+- \`offlineMessage\` — Mensagem exibida fora do horário
 
 ### Rota
-- Disponível em \\`/inbox-settings\\` → aba "Horários"
+- Disponível em \`/inbox-settings\` → aba "Horários"
 
 ---
 
