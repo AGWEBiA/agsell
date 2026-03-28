@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import {
-  type FlowNode,
+  type FlowNode, type FlowConnection,
   triggerOptions, actionOptions, conditionOptions, triggerTypeMap,
   TEMPLATE_VARIABLES, WEEKDAYS, nodeCategories, flowTemplates,
 } from '@/components/flow-builder/flowNodeTypes';
@@ -49,318 +49,10 @@ import { WhatsAppGroupAddNodeConfig } from '@/components/flow-builder/WhatsAppGr
 import { InstagramNodeConfig } from '@/components/flow-builder/InstagramNodeConfig';
 import { ConditionalNodeConfig } from '@/components/flow-builder/ConditionalNodeConfig';
 import { EmailTemplateEditor } from '@/components/email/EmailTemplateEditor';
+import { FlowCanvas } from '@/components/flow-builder/FlowCanvas';
 
 import { FlowNodeAnalyticsOverlay } from '@/components/automations/FlowNodeAnalyticsOverlay';
 import type { FlowNodeAnalytic } from '@/hooks/useFlowNodeAnalytics';
-
-// ─── Node Component ───
-function FlowNodeCard({ node, index, onEdit, onDelete, onAddAfter, analytics, onDrop, onDragOver, onDragLeave, isDragOver }: {
-  node: FlowNode;
-  index: number;
-  onEdit: () => void;
-  onDelete: () => void;
-  onAddAfter: () => void;
-  analytics?: FlowNodeAnalytic;
-  onDrop?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDragLeave?: () => void;
-  isDragOver?: boolean;
-}) {
-  const getTriggerInfo = () => triggerOptions.find(t => t.id === node.subtype);
-  const getActionInfo = () => [...actionOptions, ...conditionOptions].find(a => a.id === node.subtype);
-
-  const getNodeSummary = () => {
-    const c = node.config;
-    switch (node.subtype) {
-      case 'timer':
-        if (c.timer_mode === 'specific_date' && c.specific_date) return `Data: ${String(c.specific_date)}`;
-        return `${c.duration || 1} ${c.unit === 'hours' ? 'h' : c.unit === 'days' ? 'dias' : 'min'}`;
-      case 'warmup':
-        return `${c.leads_per_minute || 1} leads/min`;
-      case 'send_email_marketing':
-      case 'send_email_performance':
-        return c.subject ? `"${String(c.subject)}"` : c.message ? `"${String(c.message).slice(0, 40)}..."` : '';
-      case 'tag_filter':
-        const entryTags = (c.entry_tags as string[]) || [];
-        return entryTags.length > 0 ? `Tags: ${entryTags.join(', ')}` : '';
-      case 'conditional':
-      case 'if_tag':
-      case 'if_keyword':
-      case 'if_score': {
-        const conditions = (c.conditions as Array<{ field: string; value: string }>) || [];
-        if (conditions.length > 0) {
-          return conditions.map(cond => `${cond.field}${cond.value ? `: ${cond.value}` : ''}`).join(', ');
-        }
-        return '';
-      }
-      case 'add_to_whatsapp_group':
-        return c.group_name ? `→ ${String(c.group_name)}` : '';
-      case 'voice_torpedo':
-        return c.audio_url ? 'Áudio configurado' : '';
-      case 'send_voip_call':
-        return c.on_answer === 'connect_agent' ? 'Conectar atendente' : c.audio_url ? 'Reproduzir áudio' : '';
-      case 'parallel_channels':
-        return ((c.channels as string[]) || []).join(' + ').toUpperCase() || 'WA + Email';
-      case 'edit_whatsapp_group':
-        return c.new_name ? `→ ${String(c.new_name)}` : '';
-      case 'link_split':
-        return `${((c.links as any[]) || []).length} links`;
-      case 'note':
-        return c.text ? `"${String(c.text).slice(0, 40)}..."` : '';
-      case 'sequence_lead':
-        return c.steps ? `${(c.steps as any[]).length} msgs` : '0 lead';
-      case 'sequence_transaction':
-        return c.steps ? `${(c.steps as any[]).length} msgs` : '0 lead';
-      case 'sequence_rewarming':
-        return c.interval ? `${c.interval}min intervalo` : '0 lead';
-      case 'sequence_optin':
-        return c.steps ? `${(c.steps as any[]).length} msgs` : '0 lead';
-      default:
-        return '';
-    }
-  };
-
-  if (node.type === 'trigger') {
-    const info = getTriggerInfo();
-    if (!info) return null;
-    const Icon = info.icon;
-    return (
-      <div className="flex flex-col items-center">
-        <div
-          className={cn('relative w-full max-w-[340px] rounded-2xl p-[2px] cursor-pointer group', `bg-gradient-to-r ${info.color}`)}
-          onClick={onEdit}
-        >
-          <div className="bg-[#222240] rounded-[14px] p-4">
-            <div className="flex items-center gap-3">
-              <div className={cn('flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-br text-white shadow-lg', info.color)}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/20 text-white/70">GATILHO</Badge>
-                  <span className="text-xs text-white/50">{info.channel.toUpperCase()}</span>
-                </div>
-                <p className="font-semibold text-sm mt-0.5 text-white">{info.label}</p>
-                {node.config.keyword && <p className="text-xs text-white/50 mt-0.5">Palavra: "{String(node.config.keyword)}"</p>}
-                {node.config.post_url && <p className="text-xs text-white/50 mt-0.5 truncate">Post: {String(node.config.post_url)}</p>}
-                {node.config.story_url && <p className="text-xs text-white/50 mt-0.5 truncate">Story: {String(node.config.story_url)}</p>}
-                {node.config.form_name && <p className="text-xs text-white/50 mt-0.5">Formulário: {String(node.config.form_name)}</p>}
-              </div>
-              <Settings className="h-4 w-4 text-white/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            {/* Metric badges */}
-            {analytics && (
-              <div className="flex gap-1 mt-2">
-                <Badge className="text-[9px] px-1.5 py-0 bg-green-500/20 text-green-400 border-green-500/30">{analytics.entries_count}</Badge>
-                <Badge className="text-[9px] px-1.5 py-0 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">{analytics.conversions_count}</Badge>
-                <Badge className="text-[9px] px-1.5 py-0 bg-red-500/20 text-red-400 border-red-500/30">{analytics.errors_count}</Badge>
-              </div>
-            )}
-          </div>
-        </div>
-        <div
-          className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-        >
-          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
-          <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
-            <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
-          </button>
-          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
-        </div>
-      </div>
-    );
-  }
-
-  const info = getActionInfo();
-  if (!info) return null;
-  const Icon = info.icon;
-  const summary = getNodeSummary();
-
-  const getTypeLabel = () => {
-    if (['timer', 'warmup'].includes(node.subtype)) return node.subtype === 'timer' ? 'TIMER' : 'AQUECIMENTO';
-    if (['tag_filter'].includes(node.subtype)) return 'FILTRO';
-    if (['send_email_marketing', 'send_email_performance'].includes(node.subtype)) return 'EMAIL';
-    if (node.subtype === 'parallel_channels') return 'PARALELO';
-    if (node.subtype === 'voice_torpedo') return 'VOZ';
-    if (node.subtype === 'send_voip_call') return 'VOIP';
-    if (node.subtype === 'link_split') return 'SPLIT';
-    if (node.subtype === 'note') return 'NOTA';
-    if (node.subtype === 'edit_whatsapp_group') return 'GRUPO';
-    if (node.subtype === 'sequence_lead') return 'SEQ. LEAD';
-    if (node.subtype === 'sequence_transaction') return 'SEQ. TRANSAÇÃO';
-    if (node.subtype === 'sequence_rewarming') return 'SEQ. REAQUECIMENTO';
-    if (node.subtype === 'sequence_optin') return 'SEQ. OPT-IN';
-    if (node.type === 'condition') return 'CONDIÇÃO';
-    if (node.type === 'delay') return 'ESPERA';
-    return 'AÇÃO';
-  };
-
-  // Special rendering for note nodes
-  if (node.subtype === 'note') {
-    const noteColors: Record<string, string> = {
-      yellow: 'bg-yellow-900/30 border-yellow-700/50',
-      blue: 'bg-blue-900/30 border-blue-700/50',
-      green: 'bg-green-900/30 border-green-700/50',
-      pink: 'bg-pink-900/30 border-pink-700/50',
-    };
-    return (
-      <div className="flex flex-col items-center">
-        <div className={cn('relative w-[340px] rounded-xl border-2 p-4 cursor-pointer group transition-colors', noteColors[(node.config.color as string) || 'yellow'])} onClick={onEdit}>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-            <X className="h-3 w-3" />
-          </button>
-          <div className="flex items-center gap-2 mb-1">
-            <StickyNote className="h-4 w-4 text-yellow-400" />
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/20 text-white/60">NOTA</Badge>
-          </div>
-          <p className="text-xs text-white/70">{node.config.text ? String(node.config.text).slice(0, 120) : 'Clique para adicionar uma anotação...'}</p>
-        </div>
-        <div
-          className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-        >
-          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
-          <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
-            <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
-          </button>
-          <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-[340px] rounded-xl border border-white/10 hover:border-white/25 bg-[#222240] p-4 cursor-pointer group transition-colors shadow-lg" onClick={onEdit}>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-          <X className="h-3 w-3" />
-        </button>
-        <div className="flex items-center gap-3">
-          <div className={cn('flex items-center justify-center h-12 w-12 rounded-full shadow-lg', info.color)}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/20 text-white/60">{getTypeLabel()}</Badge>
-            <p className="font-medium text-sm mt-0.5 text-white">{info.label}</p>
-            {summary && <p className="text-xs text-white/50 mt-0.5 truncate max-w-[240px]">{summary}</p>}
-            {!summary && node.config.message && <p className="text-xs text-white/50 mt-0.5 truncate max-w-[240px]">"{String(node.config.message)}"</p>}
-            {node.config.tag_name && <p className="text-xs text-white/50 mt-0.5">Tag: {String(node.config.tag_name)}</p>}
-            {node.config.duration && !['timer', 'warmup'].includes(node.subtype) && <p className="text-xs text-white/50 mt-0.5">{String(node.config.duration)} {node.config.unit === 'minutes' ? 'min' : node.config.unit === 'hours' ? 'h' : 'dias'}</p>}
-            {/* Timer weekday badges */}
-            {node.subtype === 'timer' && node.config.has_weekday_filter && (
-              <div className="flex gap-0.5 mt-1">
-                {WEEKDAYS.map(d => {
-                  const selected = ((node.config.selected_days as string[]) || WEEKDAYS.map(w => w.key)).includes(d.key);
-                  return <Badge key={d.key} variant={selected ? 'default' : 'outline'} className={cn("text-[9px] px-1 py-0", !selected && "border-white/20 text-white/40")}>{d.label}</Badge>;
-                })}
-              </div>
-            )}
-          </div>
-          <Settings className="h-4 w-4 text-white/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-        {node.type === 'condition' && (
-          <div className="mt-3 flex gap-2 text-xs">
-            <div className="flex-1 rounded-md bg-green-900/30 p-2 text-center text-green-400 border border-green-700/30">✅ Sim</div>
-            <div className="flex-1 rounded-md bg-red-900/30 p-2 text-center text-red-400 border border-red-700/30">❌ Não</div>
-          </div>
-        )}
-        {/* Metric badges - SellFlux style */}
-        {analytics && (
-          <div className="flex gap-1 mt-2">
-            <Badge className="text-[9px] px-1.5 py-0 bg-green-500/20 text-green-400 border-green-500/30">{analytics.entries_count}</Badge>
-            <Badge className="text-[9px] px-1.5 py-0 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">{analytics.conversions_count}</Badge>
-            <Badge className="text-[9px] px-1.5 py-0 bg-red-500/20 text-red-400 border-red-500/30">{analytics.errors_count}</Badge>
-          </div>
-        )}
-      </div>
-      <div
-        className={cn("flex flex-col items-center transition-all", isDragOver && "scale-110")}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-      >
-        <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
-        <button onClick={onAddAfter} className={cn("flex items-center justify-center h-7 w-7 rounded-full border-2 border-dashed transition-all group", isDragOver ? "border-primary bg-primary/20 scale-125" : "border-white/20 hover:border-white/50 hover:bg-white/5")}>
-          <Plus className={cn("h-3.5 w-3.5", isDragOver ? "text-primary" : "text-white/40 group-hover:text-white/70")} />
-        </button>
-        <div className={cn("w-0.5 h-6 transition-colors", isDragOver ? "bg-primary" : "bg-white/10")} />
-      </div>
-    </div>
-  );
-}
-
-// ─── Add Step Dialog (Sidebar-style like SellFlux) ───
-function AddStepDialog({ open, onClose, onAdd }: {
-  open: boolean;
-  onClose: () => void;
-  onAdd: (type: 'action' | 'condition' | 'delay' | 'timer' | 'warmup' | 'note' | 'sequence', subtype: string) => void;
-}) {
-  const getNodeType = (id: string): FlowNode['type'] => {
-    if (id === 'timer') return 'timer';
-    if (id === 'warmup') return 'warmup';
-    if (id === 'wait') return 'delay';
-    if (id === 'note') return 'note';
-    if (id.startsWith('sequence_')) return 'sequence';
-    if (id === 'conditional' || conditionOptions.some(c => c.id === id)) return 'condition';
-    return 'action';
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Adicionar Passo</DialogTitle>
-          <DialogDescription>Escolha o tipo de nó para adicionar ao fluxo</DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-2">
-          <div className="space-y-4">
-            {nodeCategories.map(cat => (
-              <div key={cat.label}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat.label}</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {cat.nodes.map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => { onAdd(getNodeType(opt.id) as any, opt.id); onClose(); }}
-                      className="flex items-center gap-2.5 p-2.5 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left"
-                    >
-                      <div className={cn('flex items-center justify-center h-8 w-8 rounded-md shrink-0', opt.color)}>
-                        <opt.icon className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-xs font-medium">{opt.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Condições</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {conditionOptions.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => { onAdd('condition', opt.id); onClose(); }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-all text-left"
-                  >
-                    <div className={cn('flex items-center justify-center h-8 w-8 rounded-md shrink-0', opt.color)}>
-                      <opt.icon className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-xs font-medium">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // ─── New Campaign Modal with Import Code support ───
 function NewCampaignModal({ open, onClose, onCreate, onImportCode }: {
@@ -380,7 +72,6 @@ function NewCampaignModal({ open, onClose, onCreate, onImportCode }: {
       if (onImportCode) onImportCode(name || decoded.name || 'Fluxo Importado', importCode.trim());
       onClose();
     } catch {
-      // Try raw JSON
       try {
         JSON.parse(importCode.trim());
         if (onImportCode) onImportCode(name || 'Fluxo Importado', importCode.trim());
@@ -490,7 +181,6 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
 
   useEffect(() => { if (node) setConfig(node.config); }, [node]);
 
-  // Watch for _editing_template flag
   useEffect(() => {
     if (config._editing_template) {
       setShowEmailEditor(true);
@@ -503,7 +193,6 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
 
   const renderFields = () => {
     switch (node.subtype) {
-      // ── New enhanced nodes ──
       case 'timer':
         return <TimerNodeConfig config={config} onChange={setConfig} />;
       case 'warmup':
@@ -518,8 +207,21 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       case 'send_dm':
       case 'reply_comment':
         return <WhatsAppNodeConfig config={config} onChange={setConfig} />;
-
-      // ── Instagram triggers ──
+      case 'send_whatsapp_group':
+        return <WhatsAppGroupNodeConfig config={config} onChange={setConfig} />;
+      case 'add_to_whatsapp_group':
+        return <WhatsAppGroupAddNodeConfig config={config} onChange={setConfig} />;
+      case 'send_instagram_dm':
+      case 'send_instagram_comment_reply':
+      case 'send_instagram_story_reply':
+      case 'instagram_like_comment':
+      case 'instagram_follow_back':
+        return <InstagramNodeConfig config={config} onChange={setConfig} subtype={node.subtype} />;
+      case 'conditional':
+      case 'if_tag':
+      case 'if_keyword':
+      case 'if_score':
+        return <ConditionalNodeConfig config={config} onChange={setConfig} subtype={node.subtype} />;
       case 'instagram_comment':
         return (<div className="space-y-4"><div><Label>Palavra-chave (opcional)</Label><Input placeholder="Ex: INFO, QUERO, PROMO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para ativar com qualquer comentário</p></div></div>);
       case 'instagram_dm':
@@ -527,42 +229,41 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       case 'instagram_dm_keyword':
         return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: QUERO, INFO, PREÇO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div></div>);
       case 'instagram_comment_keyword':
-        return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: EU QUERO, INFO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div><div><Label>URL do Post (opcional)</Label><Input placeholder="https://www.instagram.com/p/..." value={String(config.post_url || '')} onChange={e => setConfig({ ...config, post_url: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para monitorar todos os posts</p></div></div>);
+        return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: EU QUERO, INFO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div><div><Label>URL do Post (opcional)</Label><Input placeholder="https://www.instagram.com/p/..." value={String(config.post_url || '')} onChange={e => setConfig({ ...config, post_url: e.target.value })} /></div></div>);
       case 'instagram_specific_post':
         return (<div className="space-y-4"><div><Label>URL do Post *</Label><Input placeholder="https://www.instagram.com/p/..." value={String(config.post_url || '')} onChange={e => setConfig({ ...config, post_url: e.target.value })} /></div><div><Label>Palavra-chave (opcional)</Label><Input placeholder="Ex: QUERO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div></div>);
       case 'instagram_story_reply':
         return (<div className="space-y-4"><div><Label>URL do Story (opcional)</Label><Input placeholder="https://www.instagram.com/stories/..." value={String(config.story_url || '')} onChange={e => setConfig({ ...config, story_url: e.target.value })} /></div><div><Label>Tipo de resposta</Label><Select value={String(config.reply_type || 'any')} onValueChange={v => setConfig({ ...config, reply_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer resposta</SelectItem><SelectItem value="text">Texto</SelectItem><SelectItem value="reaction">Reação (emoji)</SelectItem><SelectItem value="quick_reply">Resposta rápida</SelectItem></SelectContent></Select></div></div>);
       case 'instagram_story_specific':
-        return (<div className="space-y-4"><div><Label>URL ou ID do Story *</Label><Input placeholder="https://www.instagram.com/stories/usuario/123..." value={String(config.story_url || '')} onChange={e => setConfig({ ...config, story_url: e.target.value })} /></div><div><Label>ID do Story (opcional)</Label><Input placeholder="Ex: 3210987654321" value={String(config.story_id || '')} onChange={e => setConfig({ ...config, story_id: e.target.value })} /></div><div><Label>Tipo de interação</Label><Select value={String(config.interaction_type || 'any')} onValueChange={v => setConfig({ ...config, interaction_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer interação</SelectItem><SelectItem value="reply">Resposta</SelectItem><SelectItem value="reaction">Reação</SelectItem><SelectItem value="mention">Menção</SelectItem></SelectContent></Select></div></div>);
+        return (<div className="space-y-4"><div><Label>URL ou ID do Story *</Label><Input placeholder="https://www.instagram.com/stories/usuario/123..." value={String(config.story_url || '')} onChange={e => setConfig({ ...config, story_url: e.target.value })} /></div><div><Label>Tipo de interação</Label><Select value={String(config.interaction_type || 'any')} onValueChange={v => setConfig({ ...config, interaction_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer interação</SelectItem><SelectItem value="reply">Resposta</SelectItem><SelectItem value="reaction">Reação</SelectItem><SelectItem value="mention">Menção</SelectItem></SelectContent></Select></div></div>);
       case 'instagram_new_follower':
         return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Este gatilho é acionado automaticamente quando alguém começa a seguir seu perfil.</p><div><Label>Tag automática (opcional)</Label><Input placeholder="Ex: novo_seguidor" value={String(config.auto_tag || '')} onChange={e => setConfig({ ...config, auto_tag: e.target.value })} /></div></div>);
       case 'instagram_mention':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém menciona seu perfil (@usuario) nos stories.</p><div><Label>Palavra-chave na menção (opcional)</Label><Input placeholder="Ex: recomendo, amei" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para ativar com qualquer menção</p></div><div><Label>Resposta automática</Label><Select value={String(config.auto_response || 'dm')} onValueChange={v => setConfig({ ...config, auto_response: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="dm">Enviar DM de agradecimento</SelectItem><SelectItem value="none">Apenas registrar</SelectItem></SelectContent></Select></div></div>);
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém menciona seu perfil (@usuario) nos stories.</p><div><Label>Palavra-chave na menção (opcional)</Label><Input placeholder="Ex: recomendo, amei" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div></div>);
       case 'instagram_share_dm':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém compartilha seu conteúdo (post, reel ou story) via DM.</p><div><Label>Tipo de conteúdo</Label><Select value={String(config.content_type || 'any')} onValueChange={v => setConfig({ ...config, content_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer conteúdo</SelectItem><SelectItem value="post">Post</SelectItem><SelectItem value="reel">Reel</SelectItem><SelectItem value="story">Story</SelectItem></SelectContent></Select></div></div>);
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém compartilha seu conteúdo via DM.</p><div><Label>Tipo de conteúdo</Label><Select value={String(config.content_type || 'any')} onValueChange={v => setConfig({ ...config, content_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer conteúdo</SelectItem><SelectItem value="post">Post</SelectItem><SelectItem value="reel">Reel</SelectItem><SelectItem value="story">Story</SelectItem></SelectContent></Select></div></div>);
       case 'instagram_ref_url':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém clica em um link de referência que direciona para uma conversa no Instagram.</p><div><Label>Ref URL *</Label><Input placeholder="https://ig.me/m/seuusuario?ref=campanha1" value={String(config.ref_url || '')} onChange={e => setConfig({ ...config, ref_url: e.target.value })} /></div><div><Label>Parâmetro REF</Label><Input placeholder="Ex: campanha1, promo_verao" value={String(config.ref_param || '')} onChange={e => setConfig({ ...config, ref_param: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Identifica a origem do clique para segmentação</p></div></div>);
+        return (<div className="space-y-4"><div><Label>Ref URL *</Label><Input placeholder="https://ig.me/m/seuusuario?ref=campanha1" value={String(config.ref_url || '')} onChange={e => setConfig({ ...config, ref_url: e.target.value })} /></div><div><Label>Parâmetro REF</Label><Input placeholder="Ex: campanha1, promo_verao" value={String(config.ref_param || '')} onChange={e => setConfig({ ...config, ref_param: e.target.value })} /></div></div>);
       case 'instagram_ads':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém clica em um anúncio Click-to-Instagram Direct (CTD).</p><div><Label>ID do Anúncio (opcional)</Label><Input placeholder="Ex: 23851234567890" value={String(config.ad_id || '')} onChange={e => setConfig({ ...config, ad_id: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para ativar com qualquer anúncio CTD</p></div><div><Label>Campanha (opcional)</Label><Input placeholder="Ex: Black Friday 2026" value={String(config.campaign_name || '')} onChange={e => setConfig({ ...config, campaign_name: e.target.value })} /></div></div>);
-      // ── WhatsApp triggers ──
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém clica em um anúncio Click-to-Instagram Direct.</p><div><Label>ID do Anúncio (opcional)</Label><Input placeholder="Ex: 23851234567890" value={String(config.ad_id || '')} onChange={e => setConfig({ ...config, ad_id: e.target.value })} /></div></div>);
       case 'whatsapp_received':
         return (<div className="space-y-4"><div><Label>Palavra-chave (opcional)</Label><Input placeholder="Ex: OLÁ, AJUDA" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div></div>);
       case 'whatsapp_keyword':
         return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: INFO, QUERO, PROMO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div></div>);
       case 'whatsapp_automation':
-        return (<div className="space-y-4"><div><Label>Automação de origem *</Label><Select value={String(config.source_automation_id || '')} onValueChange={v => setConfig({ ...config, source_automation_id: v })}><SelectTrigger><SelectValue placeholder="Selecione uma automação" /></SelectTrigger><SelectContent>{automations.filter(a => a.trigger_type?.includes('whatsapp')).map(a => (<SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>))}{automations.filter(a => a.trigger_type?.includes('whatsapp')).length === 0 && (<SelectItem value="_none" disabled>Nenhuma automação WhatsApp encontrada</SelectItem>)}</SelectContent></Select></div></div>);
+        return (<div className="space-y-4"><div><Label>Automação de origem *</Label><Select value={String(config.source_automation_id || '')} onValueChange={v => setConfig({ ...config, source_automation_id: v })}><SelectTrigger><SelectValue placeholder="Selecione uma automação" /></SelectTrigger><SelectContent>{automations.filter(a => a.trigger_type?.includes('whatsapp')).map(a => (<SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>))}</SelectContent></Select></div></div>);
       case 'whatsapp_message_source':
-        return (<div className="space-y-4"><div><Label>Tipo de mensagem de origem</Label><Select value={String(config.message_source_type || 'any')} onValueChange={v => setConfig({ ...config, message_source_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer origem</SelectItem><SelectItem value="campaign">Campanha</SelectItem><SelectItem value="group">Grupo</SelectItem><SelectItem value="broadcast">Lista de transmissão</SelectItem><SelectItem value="direct">Mensagem direta</SelectItem></SelectContent></Select></div><div><Label>Palavra-chave (opcional)</Label><Input placeholder="Ex: COMPRAR" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div></div>);
-
-      // ── CRM triggers ──
+        return (<div className="space-y-4"><div><Label>Tipo de origem</Label><Select value={String(config.message_source_type || 'organic')} onValueChange={v => setConfig({ ...config, message_source_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="organic">Orgânica</SelectItem><SelectItem value="ads">Via Anúncio (Click-to-WhatsApp)</SelectItem><SelectItem value="qr_code">QR Code</SelectItem><SelectItem value="link">Link direto (wa.me)</SelectItem></SelectContent></Select></div></div>);
       case 'contact_created':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando um novo contato é criado no CRM.</p><div><Label>Fonte do contato (opcional)</Label><Select value={String(config.contact_source || 'any')} onValueChange={v => setConfig({ ...config, contact_source: v, ...(v !== 'formulario' ? { form_id: undefined, form_name: undefined } : {}) })}><SelectTrigger><SelectValue placeholder="Qualquer fonte" /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer fonte</SelectItem>{contactSources.map(s => (<SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ')}</SelectItem>))}</SelectContent></Select></div>{config.contact_source === 'formulario' && (<div><Label>Formulário (opcional)</Label><Select value={String(config.form_id || '')} onValueChange={v => { const form = forms.find(f => f.id === v); setConfig({ ...config, form_id: v, form_name: form?.name || '' }); }}><SelectTrigger><SelectValue placeholder="Qualquer formulário" /></SelectTrigger><SelectContent>{forms.map(f => (<SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>))}{forms.length === 0 && (<SelectItem value="_none" disabled>Nenhum formulário criado</SelectItem>)}</SelectContent></Select></div>)}</div>);
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando um novo contato é criado no CRM.</p></div>);
       case 'contact_source':
-        return (<div className="space-y-4"><div><Label>Fonte do contato *</Label><Select value={String(config.contact_source || '')} onValueChange={v => setConfig({ ...config, contact_source: v, ...(v !== 'formulario' ? { form_id: undefined, form_name: undefined } : {}) })}><SelectTrigger><SelectValue placeholder="Selecione a fonte" /></SelectTrigger><SelectContent>{contactSources.map(s => (<SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ')}</SelectItem>))}</SelectContent></Select></div>{config.contact_source === 'formulario' && (<div><Label>Formulário *</Label><Select value={String(config.form_id || '')} onValueChange={v => { const form = forms.find(f => f.id === v); setConfig({ ...config, form_id: v, form_name: form?.name || '' }); }}><SelectTrigger><SelectValue placeholder="Selecione um formulário" /></SelectTrigger><SelectContent>{forms.map(f => (<SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>))}{forms.length === 0 && (<SelectItem value="_none" disabled>Nenhum formulário criado</SelectItem>)}</SelectContent></Select></div>)}</div>);
+        return (<div className="space-y-4"><div><Label>Fonte do contato</Label><Select value={String(config.contact_source || '')} onValueChange={v => setConfig({ ...config, contact_source: v })}><SelectTrigger><SelectValue placeholder="Selecione a fonte" /></SelectTrigger><SelectContent>{contactSources.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent></Select></div></div>);
       case 'form_submitted':
-        return (<div className="space-y-4"><div><Label>Formulário *</Label><Select value={String(config.form_id || '')} onValueChange={v => { const form = forms.find(f => f.id === v); setConfig({ ...config, form_id: v, form_name: form?.name || '' }); }}><SelectTrigger><SelectValue placeholder="Selecione um formulário" /></SelectTrigger><SelectContent>{forms.map(f => (<SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>))}{forms.length === 0 && (<SelectItem value="_none" disabled>Nenhum formulário criado</SelectItem>)}</SelectContent></Select></div></div>);
-
-      // ── Payment gateway triggers ──
+        return (<div className="space-y-4"><div><Label>Formulário</Label><Select value={String(config.form_id || '')} onValueChange={v => { const f = forms?.find(f => f.id === v); setConfig({ ...config, form_id: v, form_name: f?.title || '' }); }}><SelectTrigger><SelectValue placeholder="Selecione um formulário" /></SelectTrigger><SelectContent>{forms?.map(f => (<SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>)) || []}</SelectContent></Select></div></div>);
+      case 'page_visited':
+        return (<div className="space-y-4"><div><Label>URL da Página *</Label><Input placeholder="https://seusite.com/pagina" value={String(config.page_url || '')} onChange={e => setConfig({ ...config, page_url: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.url_match || 'exact')} onValueChange={v => setConfig({ ...config, url_match: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="exact">URL Exata</SelectItem><SelectItem value="contains">Contém</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div></div>);
+      case 'site_event':
+        return (<div className="space-y-4"><div><Label>Nome do Evento *</Label><Input placeholder="Ex: button_click, video_play" value={String(config.event_name || '')} onChange={e => setConfig({ ...config, event_name: e.target.value })} /></div></div>);
       case 'gateway_purchase_approved':
       case 'gateway_boleto_generated':
       case 'gateway_boleto_paid':
@@ -571,250 +272,47 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       case 'gateway_chargeback':
       case 'gateway_subscription_canceled':
       case 'gateway_cart_abandoned':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Este gatilho é acionado automaticamente quando o evento correspondente é recebido via webhook do gateway de pagamento.</p><div><Label>Gateway</Label><Select value={String(config.gateway || 'any')} onValueChange={v => setConfig({ ...config, gateway: v, product_id: undefined, product_name: undefined, external_product_id: undefined })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer gateway</SelectItem><SelectItem value="hotmart">Hotmart</SelectItem><SelectItem value="kiwify">Kiwify</SelectItem><SelectItem value="eduzz">Eduzz</SelectItem><SelectItem value="shopify">Shopify</SelectItem></SelectContent></Select></div><div><Label>Produto</Label><Select value={String(config.product_id || 'any')} onValueChange={v => { if (v === 'any') { setConfig({ ...config, product_id: undefined, product_name: undefined, external_product_id: undefined }); } else if (v === '_manual') { setConfig({ ...config, product_id: '_manual', product_name: '', external_product_id: '' }); } else { const prod = gatewayProducts.find(p => p.id === v); setConfig({ ...config, product_id: v, product_name: prod?.product_name || '', external_product_id: prod?.external_product_id || '' }); }}}><SelectTrigger><SelectValue placeholder="Qualquer produto" /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer produto</SelectItem><SelectItem value="_manual">✏️ Inserir ID manualmente</SelectItem>{gatewayProducts.map(p => (<SelectItem key={p.id} value={p.id}>{p.product_name}{p.price ? ` — R$ ${Number(p.price).toFixed(2)}` : ''}<span className="text-xs text-muted-foreground ml-1">({p.gateway})</span></SelectItem>))}</SelectContent></Select>{(config.product_id === '_manual' || (config.external_product_id && !gatewayProducts.find(p => p.id === config.product_id))) && (<div className="space-y-2 mt-2 p-3 border rounded-md bg-muted/30"><div><Label className="text-xs">ID do Produto no Gateway *</Label><Input placeholder="Ex: 123456 ou prod_abc123" value={String(config.external_product_id || '')} onChange={e => setConfig({ ...config, external_product_id: e.target.value, product_id: '_manual' })} /></div><div><Label className="text-xs">Nome do Produto (opcional)</Label><Input placeholder="Ex: Curso de Marketing Digital" value={String(config.product_name || '')} onChange={e => setConfig({ ...config, product_name: e.target.value })} /></div><p className="text-xs text-muted-foreground">Insira o ID do produto exatamente como aparece no painel do gateway (Hotmart, Kiwify, etc).</p></div>)}{gatewayProducts.length > 0 && config.product_id !== '_manual' && (<p className="text-xs text-muted-foreground mt-1">Produtos sincronizados automaticamente via webhooks recebidos.</p>)}{gatewayProducts.length === 0 && config.product_id !== '_manual' && (<p className="text-xs text-muted-foreground mt-1">Nenhum produto recebido via webhook ainda. Selecione "Inserir ID manualmente" para configurar antes do primeiro webhook.</p>)}</div></div>);
-
-      // ── Pipeline triggers ──
+        return (<div className="space-y-4"><div><Label>Gateway</Label><Select value={String(config.gateway || 'any')} onValueChange={v => setConfig({ ...config, gateway: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer gateway</SelectItem><SelectItem value="hotmart">Hotmart</SelectItem><SelectItem value="kiwify">Kiwify</SelectItem><SelectItem value="eduzz">Eduzz</SelectItem><SelectItem value="stripe">Stripe</SelectItem><SelectItem value="shopify">Shopify</SelectItem></SelectContent></Select></div><div><Label>Produto (opcional)</Label><Select value={String(config.product_id || 'any')} onValueChange={v => setConfig({ ...config, product_id: v })}><SelectTrigger><SelectValue placeholder="Qualquer produto" /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer produto</SelectItem>{gatewayProducts.map(p => (<SelectItem key={p.id} value={p.external_product_id || p.id}>{p.name}</SelectItem>))}</SelectContent></Select></div></div>);
       case 'deal_stage_changed':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando um negócio muda de etapa no pipeline.</p><div><Label>Etapa de destino (opcional)</Label><Input placeholder="Nome da etapa" value={String(config.target_stage || '')} onChange={e => setConfig({ ...config, target_stage: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para qualquer mudança de etapa</p></div></div>);
-      case 'deal_won':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado automaticamente quando um negócio é marcado como ganho.</p><div><Label>Valor mínimo (opcional)</Label><Input type="number" placeholder="Ex: 1000" value={String(config.min_value || '')} onChange={e => setConfig({ ...config, min_value: e.target.value })} /></div></div>);
-      case 'deal_lost':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado automaticamente quando um negócio é marcado como perdido.</p><div><Label>Motivo (opcional)</Label><Input placeholder="Filtrar por motivo de perda" value={String(config.loss_reason || '')} onChange={e => setConfig({ ...config, loss_reason: e.target.value })} /></div></div>);
-
-      // ── Tag/Score triggers ──
+        return (<div className="space-y-4"><div><Label>Etapa de destino (opcional)</Label><Input placeholder="Ex: Proposta, Negociação" value={String(config.target_stage || '')} onChange={e => setConfig({ ...config, target_stage: e.target.value })} /></div></div>);
       case 'tag_added':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando uma tag específica é adicionada a um contato.</p><div><Label>Nome da Tag *</Label><Input placeholder="Ex: cliente_vip, comprador" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div></div>);
       case 'tag_removed':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando uma tag é removida de um contato.</p><div><Label>Nome da Tag *</Label><Input placeholder="Ex: inadimplente" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div></div>);
+        return (<div className="space-y-4"><div><Label>Nome da Tag *</Label><Input placeholder="Ex: lead_quente, comprador" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div></div>);
       case 'score_threshold':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando o score do contato atinge ou ultrapassa um valor.</p><div><Label>Score mínimo *</Label><Input type="number" placeholder="Ex: 80" value={String(config.min_score || '')} onChange={e => setConfig({ ...config, min_score: e.target.value })} /></div><div><Label>Direção</Label><Select value={String(config.direction || 'up')} onValueChange={v => setConfig({ ...config, direction: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="up">Subiu para o valor</SelectItem><SelectItem value="down">Desceu para o valor</SelectItem></SelectContent></Select></div></div>);
-
-      // ── Email triggers ──
-      case 'email_opened':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando o contato abre um e-mail enviado por uma campanha ou automação.</p><div><Label>Campanha (opcional)</Label><Input placeholder="Nome ou ID da campanha" value={String(config.campaign_name || '')} onChange={e => setConfig({ ...config, campaign_name: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para qualquer e-mail</p></div></div>);
-      case 'email_clicked':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando o contato clica em um link dentro do e-mail.</p><div><Label>URL do link (opcional)</Label><Input placeholder="https://..." value={String(config.link_url || '')} onChange={e => setConfig({ ...config, link_url: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para qualquer link clicado</p></div></div>);
-      case 'email_bounced':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando um e-mail retorna como bounce (hard ou soft).</p><div><Label>Tipo de bounce</Label><Select value={String(config.bounce_type || 'any')} onValueChange={v => setConfig({ ...config, bounce_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer bounce</SelectItem><SelectItem value="hard">Hard bounce</SelectItem><SelectItem value="soft">Soft bounce</SelectItem></SelectContent></Select></div></div>);
-
-      // ── Date/Inactivity triggers ──
+        return (<div className="space-y-4"><div><Label>Score mínimo *</Label><Input type="number" min={1} value={String(config.min_score || 50)} onChange={e => setConfig({ ...config, min_score: Number(e.target.value) })} /></div></div>);
       case 'date_trigger':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado em uma data específica do contato (aniversário, vencimento, etc).</p><div><Label>Campo de data *</Label><Select value={String(config.date_field || 'birthday')} onValueChange={v => setConfig({ ...config, date_field: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="birthday">Aniversário</SelectItem><SelectItem value="created_at">Data de cadastro</SelectItem><SelectItem value="custom">Campo personalizado</SelectItem></SelectContent></Select></div>{config.date_field === 'custom' && (<div><Label>Nome do campo</Label><Input placeholder="Ex: data_vencimento" value={String(config.custom_field || '')} onChange={e => setConfig({ ...config, custom_field: e.target.value })} /></div>)}<div><Label>Dias antes/depois</Label><Input type="number" placeholder="0 = no dia, -3 = 3 dias antes" value={String(config.days_offset || '0')} onChange={e => setConfig({ ...config, days_offset: e.target.value })} /></div></div>);
+        return (<div className="space-y-4"><div><Label>Campo de data</Label><Select value={String(config.date_field || 'created_at')} onValueChange={v => setConfig({ ...config, date_field: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="created_at">Data de criação</SelectItem><SelectItem value="custom_date">Campo personalizado</SelectItem></SelectContent></Select></div></div>);
       case 'inactivity_trigger':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando o contato fica sem interação por um período definido.</p><div><Label>Dias de inatividade *</Label><Input type="number" placeholder="Ex: 30" value={String(config.inactivity_days || '')} onChange={e => setConfig({ ...config, inactivity_days: e.target.value })} /></div><div><Label>Canal de referência</Label><Select value={String(config.inactivity_channel || 'any')} onValueChange={v => setConfig({ ...config, inactivity_channel: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Qualquer canal</SelectItem><SelectItem value="whatsapp">WhatsApp</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="instagram">Instagram</SelectItem></SelectContent></Select></div></div>);
-
-      // ── VoIP triggers ──
-      case 'call_completed':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando uma chamada VoIP é completada com sucesso.</p><div><Label>Duração mínima (segundos)</Label><Input type="number" placeholder="Ex: 30" value={String(config.min_duration || '')} onChange={e => setConfig({ ...config, min_duration: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">Deixe vazio para qualquer duração</p></div></div>);
-      case 'call_missed':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando uma chamada é perdida ou não atendida.</p></div>);
-
-      // ── Telegram triggers ──
-      case 'telegram_message':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando uma mensagem é recebida no Telegram.</p></div>);
-      case 'telegram_keyword':
-        return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: INFO, COMPRAR" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div></div>);
-
-      // ── WhatsApp group triggers ──
-      case 'whatsapp_group_join':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém entra em um grupo do WhatsApp.</p><div><Label>Nome do grupo (opcional)</Label><Input placeholder="Filtrar por grupo específico" value={String(config.group_name || '')} onChange={e => setConfig({ ...config, group_name: e.target.value })} /></div></div>);
-      case 'whatsapp_group_leave':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém sai de um grupo do WhatsApp.</p><div><Label>Nome do grupo (opcional)</Label><Input placeholder="Filtrar por grupo específico" value={String(config.group_name || '')} onChange={e => setConfig({ ...config, group_name: e.target.value })} /></div></div>);
-
-      // ── Simple actions ──
-      // ── New node types ──
-      case 'send_whatsapp_oficial':
-        return <WhatsAppNodeConfig config={config} onChange={setConfig} />;
-      case 'send_whatsapp_group':
-        return <WhatsAppGroupNodeConfig config={config} onChange={setConfig} />;
-      case 'add_to_whatsapp_group':
-        return <WhatsAppGroupAddNodeConfig config={config} onChange={setConfig} />;
-      case 'send_sms':
-        return (<div className="space-y-4"><div><Label>Mensagem SMS</Label><Textarea placeholder="Digite a mensagem SMS..." rows={3} maxLength={160} value={String(config.message || '')} onChange={e => setConfig({ ...config, message: e.target.value })} /><p className="text-xs text-muted-foreground mt-1">{String(config.message || '').length}/160 caracteres</p></div></div>);
-      case 'list_tag':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Lista todas as tags do lead para uso em condições subsequentes.</p><div><Label>Filtrar por prefixo (opcional)</Label><Input placeholder="Ex: campanha_" value={String(config.tag_prefix || '')} onChange={e => setConfig({ ...config, tag_prefix: e.target.value })} /></div></div>);
-      case 'full_page':
-        return (<div className="space-y-4"><div><Label>URL da página</Label><Input placeholder="https://suapagina.com/obrigado" value={String(config.page_url || '')} onChange={e => setConfig({ ...config, page_url: e.target.value })} /></div><div><Label>Tempo de exibição (segundos)</Label><Input type="number" min={1} value={String(config.display_seconds || 10)} onChange={e => setConfig({ ...config, display_seconds: parseInt(e.target.value) || 10 })} /></div></div>);
-      case 'pixel':
-        return (<div className="space-y-4"><div><Label>Evento do Pixel</Label><Select value={String(config.pixel_event || 'PageView')} onValueChange={v => setConfig({ ...config, pixel_event: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PageView">PageView</SelectItem><SelectItem value="Lead">Lead</SelectItem><SelectItem value="Purchase">Purchase</SelectItem><SelectItem value="InitiateCheckout">InitiateCheckout</SelectItem><SelectItem value="AddToCart">AddToCart</SelectItem><SelectItem value="CompleteRegistration">CompleteRegistration</SelectItem><SelectItem value="custom">Personalizado</SelectItem></SelectContent></Select></div>{config.pixel_event === 'custom' && (<div><Label>Nome do evento</Label><Input placeholder="meu_evento" value={String(config.custom_event || '')} onChange={e => setConfig({ ...config, custom_event: e.target.value })} /></div>)}</div>);
-      case 'abandonment':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Detecta leads que abandonaram o fluxo sem converter.</p><div className="flex gap-2"><div className="flex-1"><Label>Tempo de inatividade</Label><Input type="number" min={1} value={String(config.inactivity_duration || 30)} onChange={e => setConfig({ ...config, inactivity_duration: parseInt(e.target.value) || 30 })} /></div><div className="flex-1"><Label>Unidade</Label><Select value={String(config.inactivity_unit || 'minutes')} onValueChange={v => setConfig({ ...config, inactivity_unit: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="minutes">Minutos</SelectItem><SelectItem value="hours">Horas</SelectItem><SelectItem value="days">Dias</SelectItem></SelectContent></Select></div></div></div>);
-      case 'conditional':
-      case 'if_tag':
-      case 'if_keyword':
-      case 'if_score':
-        return <ConditionalNodeConfig config={config} onChange={setConfig} />;
-
-      // ── Simple actions ──
-      case 'send_email':
-        return (<div className="space-y-4"><div><Label>Assunto</Label><Input placeholder="Assunto do email" value={String(config.subject || '')} onChange={e => setConfig({ ...config, subject: e.target.value })} /></div><div><Label>Conteúdo</Label><Textarea placeholder="Conteúdo do email..." rows={4} value={String(config.content || '')} onChange={e => setConfig({ ...config, content: e.target.value })} /></div></div>);
-      case 'add_tag': case 'remove_tag':
-        return (<div><Label>Nome da Tag</Label><Input placeholder="Ex: Lead Quente" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div>);
+        return (<div className="space-y-4"><div><Label>Dias de inatividade *</Label><Input type="number" min={1} value={String(config.days || 30)} onChange={e => setConfig({ ...config, days: Number(e.target.value) })} /></div></div>);
+      case 'add_tag':
+      case 'remove_tag':
+        return (<div className="space-y-4"><div><Label>Nome da Tag</Label><Input placeholder="Ex: lead_quente" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div></div>);
       case 'update_score':
-        return (<div className="space-y-4"><div><Label>Operação</Label><Select value={String(config.operation || 'add')} onValueChange={v => setConfig({ ...config, operation: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="add">Adicionar</SelectItem><SelectItem value="subtract">Subtrair</SelectItem><SelectItem value="set">Definir</SelectItem></SelectContent></Select></div><div><Label>Pontos</Label><Input type="number" placeholder="10" value={String(config.points || '')} onChange={e => setConfig({ ...config, points: parseInt(e.target.value) || 0 })} /></div></div>);
+        return (<div className="space-y-4"><div><Label>Operação</Label><Select value={String(config.operation || 'add')} onValueChange={v => setConfig({ ...config, operation: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="add">Adicionar</SelectItem><SelectItem value="subtract">Subtrair</SelectItem><SelectItem value="set">Definir</SelectItem></SelectContent></Select></div><div><Label>Pontos</Label><Input type="number" value={String(config.points || 10)} onChange={e => setConfig({ ...config, points: Number(e.target.value) })} /></div></div>);
       case 'send_notification':
-        return (<div className="space-y-4"><div><Label>Título</Label><Input placeholder="Nova interação!" value={String(config.title || '')} onChange={e => setConfig({ ...config, title: e.target.value })} /></div><div><Label>Mensagem</Label><Textarea placeholder="Detalhes..." rows={3} value={String(config.message || '')} onChange={e => setConfig({ ...config, message: e.target.value })} /></div></div>);
+        return (<div className="space-y-4"><div><Label>Título</Label><Input placeholder="Notificação" value={String(config.title || '')} onChange={e => setConfig({ ...config, title: e.target.value })} /></div><div><Label>Mensagem</Label><Textarea rows={2} value={String(config.message || '')} onChange={e => setConfig({ ...config, message: e.target.value })} /></div></div>);
       case 'create_task':
-        return (<div className="space-y-4"><div><Label>Título da Tarefa</Label><Input placeholder="Follow-up com lead" value={String(config.title || '')} onChange={e => setConfig({ ...config, title: e.target.value })} /></div><div><Label>Prazo (dias)</Label><Input type="number" placeholder="3" value={String(config.due_days || '')} onChange={e => setConfig({ ...config, due_days: parseInt(e.target.value) || 0 })} /></div></div>);
+        return (<div className="space-y-4"><div><Label>Título da tarefa</Label><Input value={String(config.title || '')} onChange={e => setConfig({ ...config, title: e.target.value })} /></div><div><Label>Descrição</Label><Textarea rows={2} value={String(config.description || '')} onChange={e => setConfig({ ...config, description: e.target.value })} /></div></div>);
       case 'wait':
-        return (<div className="flex gap-2"><div className="flex-1"><Label>Tempo</Label><Input type="number" placeholder="1" value={String(config.duration || '')} onChange={e => setConfig({ ...config, duration: parseInt(e.target.value) || 0 })} /></div><div className="flex-1"><Label>Unidade</Label><Select value={String(config.unit || 'hours')} onValueChange={v => setConfig({ ...config, unit: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="minutes">Minutos</SelectItem><SelectItem value="hours">Horas</SelectItem><SelectItem value="days">Dias</SelectItem></SelectContent></Select></div></div>);
-      case 'send_instagram_dm':
-        return <InstagramNodeConfig config={config} onChange={setConfig} type="dm" />;
-      case 'send_instagram_comment_reply':
-        return <InstagramNodeConfig config={config} onChange={setConfig} type="comment_reply" />;
-      case 'send_instagram_story_reply':
-        return <InstagramNodeConfig config={config} onChange={setConfig} type="dm" />;
-      case 'instagram_like_comment':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Curte automaticamente o comentário que acionou o gatilho.</p><div className="flex items-center gap-2"><Switch checked={config.only_keyword !== false} onCheckedChange={v => setConfig({ ...config, only_keyword: v })} /><Label>Curtir apenas comentários com palavra-chave</Label></div></div>);
-      case 'instagram_follow_back':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Segue automaticamente o usuário que interagiu com seu perfil.</p><div className="flex items-center gap-2"><Switch checked={!!config.add_tag_on_follow} onCheckedChange={v => setConfig({ ...config, add_tag_on_follow: v })} /><Label>Adicionar tag ao seguir</Label></div>{config.add_tag_on_follow && (<div><Label>Nome da Tag</Label><Input placeholder="Ex: seguido_de_volta" value={String(config.follow_tag || '')} onChange={e => setConfig({ ...config, follow_tag: e.target.value })} /></div>)}</div>);
-      // ── New node types ──
+        return (<div className="space-y-4"><div><Label>Duração</Label><Input type="number" min={1} value={String(config.duration || 1)} onChange={e => setConfig({ ...config, duration: Number(e.target.value) })} /></div><div><Label>Unidade</Label><Select value={String(config.unit || 'minutes')} onValueChange={v => setConfig({ ...config, unit: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="minutes">Minutos</SelectItem><SelectItem value="hours">Horas</SelectItem><SelectItem value="days">Dias</SelectItem></SelectContent></Select></div></div>);
+      case 'send_sms':
+        return (<div className="space-y-4"><div><Label>Mensagem SMS</Label><Textarea rows={3} maxLength={160} placeholder="Mensagem SMS (máx 160 caracteres)" value={String(config.message || '')} onChange={e => setConfig({ ...config, message: e.target.value })} /></div><p className="text-xs text-muted-foreground">{String(config.message || '').length}/160 caracteres</p></div>);
       case 'voice_torpedo':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label>URL do Áudio (MP3) *</Label>
-              <Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} />
-              <p className="text-xs text-muted-foreground mt-1">Arquivo MP3 hospedado. Recomendado até 60s.</p>
-            </div>
-            <div>
-              <Label>Mensagem de texto (fallback SMS)</Label>
-              <Textarea rows={2} placeholder="Caso não atenda, enviar este SMS..." value={String(config.fallback_message || '')} onChange={e => setConfig({ ...config, fallback_message: e.target.value })} />
-            </div>
-            <div>
-              <Label>Créditos por chamada</Label>
-              <Select value={String(config.credits_per_call || '1')} onValueChange={v => setConfig({ ...config, credits_per_call: Number(v) })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 crédito (até 1 min)</SelectItem>
-                  <SelectItem value="2">2 créditos (até 2 min)</SelectItem>
-                  <SelectItem value="3">3 créditos (até 3 min)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={!!config.wait_answer} onCheckedChange={v => setConfig({ ...config, wait_answer: v })} />
-              <Label>Aguardar resposta do usuário</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={!!config.retry_on_busy} onCheckedChange={v => setConfig({ ...config, retry_on_busy: v })} />
-              <Label>Tentar novamente se ocupado</Label>
-            </div>
-            {config.retry_on_busy && (
-              <div>
-                <Label>Intervalo para retry (minutos)</Label>
-                <Input type="number" min={5} max={120} value={String(config.retry_interval || 30)} onChange={e => setConfig({ ...config, retry_interval: Number(e.target.value) })} />
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <Switch checked={!!config.record_call} onCheckedChange={v => setConfig({ ...config, record_call: v })} />
-              <Label>Gravar chamada</Label>
-            </div>
-          </div>
-        );
+        return (<div className="space-y-4"><div><Label>URL do Áudio (MP3)</Label><Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} /></div><div className="flex items-center gap-2"><Switch checked={!!config.retry_on_busy} onCheckedChange={v => setConfig({ ...config, retry_on_busy: v })} /><Label>Tentar novamente se ocupado</Label></div></div>);
       case 'send_voip_call':
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Realiza uma ligação VoIP para o contato do fluxo. Requer créditos VoIP.</p>
-            <div>
-              <Label>Ação ao atender</Label>
-              <Select value={String(config.on_answer || 'play_audio')} onValueChange={v => setConfig({ ...config, on_answer: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="play_audio">Reproduzir áudio</SelectItem>
-                  <SelectItem value="connect_agent">Conectar ao atendente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(config.on_answer || 'play_audio') === 'play_audio' && (
-              <div>
-                <Label>URL do Áudio (MP3)</Label>
-                <Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} />
-              </div>
-            )}
-            <div>
-              <Label>Créditos por chamada</Label>
-              <Select value={String(config.credits_per_call || '1')} onValueChange={v => setConfig({ ...config, credits_per_call: Number(v) })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 crédito</SelectItem>
-                  <SelectItem value="2">2 créditos</SelectItem>
-                  <SelectItem value="3">3 créditos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={!!config.record_call} onCheckedChange={v => setConfig({ ...config, record_call: v })} />
-              <Label>Gravar chamada</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={!!config.create_task_on_miss} onCheckedChange={v => setConfig({ ...config, create_task_on_miss: v })} />
-              <Label>Criar tarefa se não atender</Label>
-            </div>
-          </div>
-        );
+        return (<div className="space-y-4"><div><Label>Ação ao atender</Label><Select value={String(config.on_answer || 'play_audio')} onValueChange={v => setConfig({ ...config, on_answer: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="play_audio">Reproduzir áudio</SelectItem><SelectItem value="connect_agent">Conectar ao atendente</SelectItem></SelectContent></Select></div>{(config.on_answer || 'play_audio') === 'play_audio' && (<div><Label>URL do Áudio (MP3)</Label><Input placeholder="https://cdn.seusite.com/audio.mp3" value={String(config.audio_url || '')} onChange={e => setConfig({ ...config, audio_url: e.target.value })} /></div>)}</div>);
       case 'parallel_channels':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Dispara mensagens em múltiplos canais simultaneamente. Se um canal falhar, os outros continuam.</p>
-          <div className="space-y-2">
-            {['whatsapp', 'email', 'sms'].map(ch => (
-              <div key={ch} className="flex items-center gap-2">
-                <Switch checked={((config.channels as string[]) || ['whatsapp', 'email']).includes(ch)} onCheckedChange={v => {
-                  const current = (config.channels as string[]) || ['whatsapp', 'email'];
-                  setConfig({ ...config, channels: v ? [...current, ch] : current.filter(c => c !== ch) });
-                }} />
-                <Label className="capitalize">{ch}</Label>
-              </div>
-            ))}
-          </div>
-          <div><Label>Mensagem WhatsApp</Label><Textarea rows={2} value={String(config.whatsapp_message || '')} onChange={e => setConfig({ ...config, whatsapp_message: e.target.value })} /></div>
-          <div><Label>Assunto Email</Label><Input value={String(config.email_subject || '')} onChange={e => setConfig({ ...config, email_subject: e.target.value })} /></div>
-          <div><Label>Conteúdo Email</Label><Textarea rows={2} value={String(config.email_content || '')} onChange={e => setConfig({ ...config, email_content: e.target.value })} /></div>
-          <div><Label>Mensagem SMS</Label><Textarea rows={2} maxLength={160} value={String(config.sms_message || '')} onChange={e => setConfig({ ...config, sms_message: e.target.value })} /></div>
-        </div>);
-      case 'edit_whatsapp_group':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Edita automaticamente o nome, descrição ou foto do grupo.</p><div><Label>JID do Grupo</Label><Input placeholder="123456789@g.us" value={String(config.group_jid || '')} onChange={e => setConfig({ ...config, group_jid: e.target.value })} /></div><div><Label>Novo Nome (opcional)</Label><Input value={String(config.new_name || '')} onChange={e => setConfig({ ...config, new_name: e.target.value })} /></div><div><Label>Nova Descrição (opcional)</Label><Textarea rows={2} value={String(config.new_description || '')} onChange={e => setConfig({ ...config, new_description: e.target.value })} /></div><div><Label>URL Nova Foto (opcional)</Label><Input placeholder="https://..." value={String(config.new_photo_url || '')} onChange={e => setConfig({ ...config, new_photo_url: e.target.value })} /></div></div>);
-      case 'link_split':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Distribui tráfego entre múltiplos links por percentual.</p>
-          {((config.links as Array<{url: string; percentage: number}>) || [{url: '', percentage: 50}, {url: '', percentage: 50}]).map((link, i) => (
-            <div key={i} className="flex gap-2 items-end">
-              <div className="flex-1"><Label className="text-xs">URL {i + 1}</Label><Input value={link.url} onChange={e => { const links = [...((config.links as any[]) || [{url:'',percentage:50},{url:'',percentage:50}])]; links[i] = {...links[i], url: e.target.value}; setConfig({...config, links}); }} placeholder="https://..." /></div>
-              <div className="w-20"><Label className="text-xs">%</Label><Input type="number" min={0} max={100} value={link.percentage} onChange={e => { const links = [...((config.links as any[]) || [{url:'',percentage:50},{url:'',percentage:50}])]; links[i] = {...links[i], percentage: parseInt(e.target.value) || 0}; setConfig({...config, links}); }} /></div>
-              {i > 1 && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const links = ((config.links as any[]) || []).filter((_: any, j: number) => j !== i); setConfig({...config, links}); }}><X className="h-3 w-3" /></Button>}
-            </div>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => setConfig({...config, links: [...((config.links as any[]) || [{url:'',percentage:50},{url:'',percentage:50}]), {url:'', percentage:0}]})}><Plus className="h-3 w-3 mr-1" />Adicionar Link</Button>
-        </div>);
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Dispara mensagens em múltiplos canais simultaneamente.</p><div className="space-y-2">{['whatsapp', 'email', 'sms'].map(ch => (<div key={ch} className="flex items-center gap-2"><Switch checked={((config.channels as string[]) || ['whatsapp', 'email']).includes(ch)} onCheckedChange={v => { const current = (config.channels as string[]) || ['whatsapp', 'email']; setConfig({ ...config, channels: v ? [...current, ch] : current.filter(c => c !== ch) }); }} /><Label className="capitalize">{ch}</Label></div>))}</div></div>);
       case 'note':
-        return (<div className="space-y-4"><div><Label>Anotação da equipe</Label><Textarea rows={4} placeholder="Notas internas sobre este ponto do fluxo..." value={String(config.text || '')} onChange={e => setConfig({ ...config, text: e.target.value })} /></div><div><Label>Cor</Label><Select value={String(config.color || 'yellow')} onValueChange={v => setConfig({ ...config, color: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="yellow">Amarelo</SelectItem><SelectItem value="blue">Azul</SelectItem><SelectItem value="green">Verde</SelectItem><SelectItem value="pink">Rosa</SelectItem></SelectContent></Select></div></div>);
+        return (<div className="space-y-4"><div><Label>Anotação</Label><Textarea rows={4} placeholder="Notas internas..." value={String(config.text || '')} onChange={e => setConfig({ ...config, text: e.target.value })} /></div><div><Label>Cor</Label><Select value={String(config.color || 'yellow')} onValueChange={v => setConfig({ ...config, color: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="yellow">Amarelo</SelectItem><SelectItem value="blue">Azul</SelectItem><SelectItem value="green">Verde</SelectItem><SelectItem value="pink">Rosa</SelectItem></SelectContent></Select></div></div>);
       default:
         return <p className="text-sm text-muted-foreground">Nenhuma configuração adicional necessária.</p>;
     }
   };
 
   const dialogTitle = () => {
-    const titles: Record<string, string> = {
-      timer: 'Configurar Timer',
-      warmup: 'Aquecimento',
-      send_email_marketing: 'Configurar Email Marketing',
-      send_email_performance: 'Configurar Email Performance',
-      tag_filter: 'Configurar Tag',
-      send_whatsapp: 'Configurar WhatsApp',
-      send_whatsapp_oficial: 'Configurar WhatsApp Oficial',
-      send_dm: 'Configurar DM',
-      send_sms: 'Configurar SMS',
-      pixel: 'Configurar Pixel',
-      full_page: 'Configurar Full Page',
-      abandonment: 'Configurar Abandono',
-      conditional: 'Condicional',
-      list_tag: 'Listar Tag',
-      voice_torpedo: 'Torpedo de Voz',
-      send_voip_call: 'Ligação VoIP',
-      parallel_channels: 'Espinha de Peixe',
-      edit_whatsapp_group: 'Editar Grupo WhatsApp',
-      link_split: 'Link Split',
-      note: 'Anotação',
-    };
-    return titles[node.subtype] || `Configurar: ${node.label}`;
+    const info = [...triggerOptions, ...actionOptions, ...conditionOptions].find(o => o.id === node.subtype);
+    return info ? `Configurar: ${info.label}` : `Configurar: ${node.label}`;
   };
 
   return (
@@ -829,18 +327,13 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Email Template Editor Dialog */}
       <Dialog open={showEmailEditor} onOpenChange={v => { if (!v) setShowEmailEditor(false); }}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editor de E-mail</DialogTitle>
             <DialogDescription>Edite o template visual do seu e-mail marketing.</DialogDescription>
           </DialogHeader>
-          <EmailTemplateEditor
-            content={String(config.email_html || '')}
-            onChange={html => setConfig(prev => ({ ...prev, email_html: html }))}
-          />
+          <EmailTemplateEditor content={String(config.email_html || '')} onChange={html => setConfig(prev => ({ ...prev, email_html: html }))} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEmailEditor(false)}>Cancelar</Button>
             <Button onClick={() => setShowEmailEditor(false)}>Salvar Template</Button>
@@ -851,7 +344,7 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
   );
 }
 
-// ─── Trigger Selection Screen ───
+// ─── Trigger Selection (shown when canvas has no trigger) ───
 function TriggerSelector({ onSelect }: { onSelect: (triggerId: string) => void }) {
   const [filter, setFilter] = useState<string>('all');
   const filtered = triggerOptions.filter(t => filter === 'all' || t.channel === filter);
@@ -946,7 +439,7 @@ function FlowList({ onCreateNew, onEditFlow }: {
               <Workflow className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-1">Nenhum fluxo criado</h3>
-            <p className="text-muted-foreground text-sm mb-6">Crie seu primeiro fluxo de automação visual estilo ManyChat</p>
+            <p className="text-muted-foreground text-sm mb-6">Crie seu primeiro fluxo de automação visual</p>
             <Button onClick={onCreateNew}><Plus className="h-4 w-4 mr-2" />Criar Primeiro Fluxo</Button>
           </CardContent>
         </Card>
@@ -997,57 +490,30 @@ export default function FlowBuilder() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { automations, createAutomation, updateAutomation } = useAutomations();
-  const editId2 = searchParams.get('id');
-  const { data: nodeAnalytics } = useFlowNodeAnalytics(editId2 || undefined);
-
   const editId = searchParams.get('id');
   const isNew = searchParams.get('new') === '1';
+  const { data: nodeAnalytics } = useFlowNodeAnalytics(editId || undefined);
+
   const [mode, setMode] = useState<'list' | 'editor'>(editId || isNew ? 'editor' : 'list');
   const [currentFlowId, setCurrentFlowId] = useState<string | null>(editId);
-
   const [flowName, setFlowName] = useState(searchParams.get('name') || 'Meu Fluxo');
   const [nodes, setNodes] = useState<FlowNode[]>([]);
+  const [connections, setConnections] = useState<FlowConnection[]>([]);
   const [isActive, setIsActive] = useState(false);
-  const [addStepOpen, setAddStepOpen] = useState(false);
-  const [addAfterIndex, setAddAfterIndex] = useState<number>(-1);
   const [editingNode, setEditingNode] = useState<FlowNode | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [showTriggerSelector, setShowTriggerSelector] = useState(false);
 
+  const hasTrigger = nodes.some(n => n.type === 'trigger');
+
+  // Drag from sidebar
   const handleDragStart = (e: React.DragEvent, nodeType: string, subtype: string) => {
     e.dataTransfer.setData('application/flow-node', JSON.stringify({ nodeType, subtype }));
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleDrop = (e: React.DragEvent, afterIndex: number) => {
-    e.preventDefault();
-    setDragOverIndex(null);
-    const raw = e.dataTransfer.getData('application/flow-node');
-    if (!raw) return;
-    try {
-      const { nodeType, subtype } = JSON.parse(raw);
-      const info = [...actionOptions, ...conditionOptions].find(a => a.id === subtype);
-      if (!info) return;
-      const newNode: FlowNode = { id: crypto.randomUUID(), type: nodeType, subtype, label: info.label, config: {} };
-      setNodes(prev => {
-        const copy = [...prev];
-        copy.splice(afterIndex + 1, 0, newNode);
-        return copy;
-      });
-    } catch {}
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    setDragOverIndex(index);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
-
+  // Load existing flow
   useEffect(() => {
     if (currentFlowId && automations.length > 0) {
       const existing = automations.find(a => a.id === currentFlowId);
@@ -1057,17 +523,23 @@ export default function FlowBuilder() {
         const tc = existing.trigger_config as Record<string, unknown> | null;
         const originalTrigger = (tc?.original_trigger as string) || existing.trigger_type;
         const trigger = triggerOptions.find(t => t.id === originalTrigger);
+
         const triggerNode: FlowNode = {
           id: 'trigger-' + existing.id,
           type: 'trigger',
           subtype: originalTrigger,
           label: trigger?.label || originalTrigger,
-          config: { keyword: tc?.keyword, post_url: tc?.post_url, story_url: tc?.story_url, story_id: tc?.story_id, form_id: tc?.form_id, form_name: tc?.form_name, contact_source: tc?.contact_source, source_automation_id: tc?.source_automation_id, message_source_type: tc?.message_source_type, reply_type: tc?.reply_type, interaction_type: tc?.interaction_type, match_type: tc?.match_type, auto_tag: tc?.auto_tag } as Record<string, unknown>,
+          config: { keyword: tc?.keyword, post_url: tc?.post_url, story_url: tc?.story_url, form_id: tc?.form_id, form_name: tc?.form_name } as Record<string, unknown>,
+          position: (tc?.position as { x: number; y: number }) || { x: 400, y: 50 },
         };
-        const actionData = (existing.actions as Array<{ id: string; type: string; config: Record<string, unknown> }>) || [];
-        const actionNodes: FlowNode[] = actionData.map(a => {
+
+        const actionData = (existing.actions as Array<{ id: string; type: string; config: Record<string, unknown>; position?: { x: number; y: number } }>) || [];
+        const loadedNodes: FlowNode[] = [triggerNode];
+        const loadedConns: FlowConnection[] = [];
+
+        actionData.forEach((a, i) => {
           const info = [...actionOptions, ...conditionOptions].find(o => o.id === a.type);
-          return {
+          loadedNodes.push({
             id: a.id || crypto.randomUUID(),
             type: conditionOptions.some(c => c.id === a.type) ? 'condition' as const
               : ['wait'].includes(a.type) ? 'delay' as const
@@ -1077,35 +549,45 @@ export default function FlowBuilder() {
             subtype: a.type,
             label: info?.label || a.type,
             config: a.config || {},
-          };
+            position: a.position || { x: 400, y: 50 + (i + 1) * 160 },
+          });
         });
-        setNodes([triggerNode, ...actionNodes]);
+
+        // Load connections from trigger_config or auto-generate linear
+        const savedConns = (tc?.connections as FlowConnection[]) || null;
+        if (savedConns && savedConns.length > 0) {
+          loadedConns.push(...savedConns);
+        } else {
+          // Auto-generate linear connections for legacy flows
+          for (let i = 0; i < loadedNodes.length - 1; i++) {
+            loadedConns.push({
+              id: crypto.randomUUID(),
+              from: loadedNodes[i].id,
+              to: loadedNodes[i + 1].id,
+              fromPort: 'default',
+            });
+          }
+        }
+
+        setNodes(loadedNodes);
+        setConnections(loadedConns);
       }
     }
   }, [currentFlowId, automations]);
 
-  const hasTrigger = nodes.length > 0 && nodes[0].type === 'trigger';
-
   const handleSelectTrigger = (triggerId: string) => {
     const trigger = triggerOptions.find(t => t.id === triggerId);
     if (!trigger) return;
-    setNodes([{ id: crypto.randomUUID(), type: 'trigger', subtype: triggerId, label: trigger.label, config: {} }]);
-  };
-
-  const handleAddStep = (type: FlowNode['type'], subtype: string) => {
-    const info = [...actionOptions, ...conditionOptions].find(a => a.id === subtype);
-    if (!info) return;
-    const newNode: FlowNode = { id: crypto.randomUUID(), type, subtype, label: info.label, config: {} };
-    setNodes(prev => {
-      const copy = [...prev];
-      copy.splice(addAfterIndex + 1, 0, newNode);
-      return copy;
-    });
-  };
-
-  const handleDeleteNode = (index: number) => {
-    if (index === 0) { setNodes([]); return; }
-    setNodes(prev => prev.filter((_, i) => i !== index));
+    const newNode: FlowNode = {
+      id: crypto.randomUUID(),
+      type: 'trigger',
+      subtype: triggerId,
+      label: trigger.label,
+      config: {},
+      position: { x: 400, y: 80 },
+    };
+    setNodes([newNode]);
+    setShowTriggerSelector(false);
   };
 
   const handleEditNode = (node: FlowNode) => { setEditingNode(node); setEditDialogOpen(true); };
@@ -1115,26 +597,34 @@ export default function FlowBuilder() {
     setEditingNode(null);
   };
 
+  const handleDeleteNode = (nodeId: string) => {
+    setNodes(prev => prev.filter(n => n.id !== nodeId));
+    setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
+  };
+
   const handleSave = () => {
-    if (!hasTrigger || nodes.length < 2) {
+    const triggerNode = nodes.find(n => n.type === 'trigger');
+    if (!triggerNode || nodes.length < 2) {
       toast({ title: 'Fluxo incompleto', description: 'Adicione pelo menos um gatilho e uma ação.', variant: 'destructive' });
       return;
     }
 
-    const triggerNode = nodes[0];
     const trigger = triggerOptions.find(t => t.id === triggerNode.subtype);
-    const actionNodes = nodes.slice(1);
+    const actionNodes = nodes.filter(n => n.type !== 'trigger');
 
     const actions = actionNodes.map(n => ({
       id: n.id,
       type: n.subtype,
       config: n.config as Record<string, Json>,
-    })) as Json;
+      position: n.position,
+    })) as unknown as Json;
 
     const triggerConfig = {
       channel: trigger?.channel || 'instagram',
       flow_builder: true,
       original_trigger: triggerNode.subtype,
+      position: triggerNode.position,
+      connections: connections,
       ...triggerNode.config,
     } as Record<string, Json>;
 
@@ -1161,6 +651,7 @@ export default function FlowBuilder() {
           setMode('list');
           setCurrentFlowId(null);
           setNodes([]);
+          setConnections([]);
           setSearchParams({});
         },
       });
@@ -1170,20 +661,21 @@ export default function FlowBuilder() {
     setMode('list');
     setCurrentFlowId(null);
     setNodes([]);
+    setConnections([]);
     setSearchParams({});
   };
 
-  const handleCreateNew = () => {
-    setNewCampaignOpen(true);
-  };
+  const handleCreateNew = () => { setNewCampaignOpen(true); };
 
-  const handleCampaignCreate = (name: string, _method: string, _templateId?: string) => {
+  const handleCampaignCreate = (name: string) => {
     setNewCampaignOpen(false);
     setCurrentFlowId(null);
     setFlowName(name);
     setNodes([]);
+    setConnections([]);
     setIsActive(false);
     setMode('editor');
+    setShowTriggerSelector(true);
   };
 
   const handleImportCode = (name: string, code: string) => {
@@ -1191,11 +683,18 @@ export default function FlowBuilder() {
       let data: any;
       try { data = JSON.parse(atob(code)); } catch { data = JSON.parse(code); }
       if (data.nodes && Array.isArray(data.nodes)) {
+        const importedNodes = data.nodes.map((n: any, i: number) => ({
+          ...n,
+          id: crypto.randomUUID(),
+          position: n.position || { x: 400, y: 50 + i * 160 },
+        }));
         setCurrentFlowId(null);
         setFlowName(name || data.name || 'Fluxo Importado');
-        setNodes(data.nodes.map((n: any) => ({ ...n, id: crypto.randomUUID() })));
+        setNodes(importedNodes);
+        setConnections(data.connections || []);
         setIsActive(false);
         setMode('editor');
+        setShowTriggerSelector(false);
         toast({ title: '✅ Fluxo importado com sucesso!' });
       }
     } catch {
@@ -1204,7 +703,11 @@ export default function FlowBuilder() {
   };
 
   const handleExportCode = () => {
-    const exportData = { name: flowName, nodes: nodes.map(n => ({ type: n.type, subtype: n.subtype, label: n.label, config: n.config })) };
+    const exportData = {
+      name: flowName,
+      nodes: nodes.map(n => ({ type: n.type, subtype: n.subtype, label: n.label, config: n.config, position: n.position })),
+      connections,
+    };
     const code = btoa(JSON.stringify(exportData));
     navigator.clipboard.writeText(code);
     toast({ title: '📋 Código copiado!', description: 'Cole o código para duplicar este fluxo em qualquer projeto.' });
@@ -1213,12 +716,14 @@ export default function FlowBuilder() {
   const handleEditFlow = (id: string) => {
     setCurrentFlowId(id);
     setMode('editor');
+    setShowTriggerSelector(false);
   };
 
   const handleBackToList = () => {
     setMode('list');
     setCurrentFlowId(null);
     setNodes([]);
+    setConnections([]);
     setSearchParams({});
   };
 
@@ -1231,9 +736,21 @@ export default function FlowBuilder() {
     );
   }
 
+  // Editor mode
+  const getNodeType = (id: string): FlowNode['type'] => {
+    if (id === 'timer') return 'timer';
+    if (id === 'warmup') return 'warmup';
+    if (id === 'wait') return 'delay';
+    if (id === 'note') return 'note';
+    if (id.startsWith('sequence_')) return 'sequence';
+    if (id === 'conditional' || conditionOptions.some(c => c.id === id)) return 'condition';
+    return 'action';
+  };
+
   return (
-    <div className="min-h-[calc(100vh-80px)] flex flex-col animate-fade-in">
-      <div className="flex items-center justify-between border-b bg-card/50 backdrop-blur-sm px-4 py-3 sticky top-0 z-10">
+    <div className="h-[calc(100vh-64px)] flex flex-col animate-fade-in">
+      {/* Top bar */}
+      <div className="flex items-center justify-between border-b bg-card/50 backdrop-blur-sm px-4 py-3 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={handleBackToList}>
             <ArrowLeft className="h-5 w-5" />
@@ -1247,150 +764,123 @@ export default function FlowBuilder() {
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
           {nodes.length > 1 && (
-            <Button variant="outline" size="sm" onClick={handleExportCode} title="Exportar código do fluxo">
-              <Copy className="h-4 w-4 mr-2" />Exportar Código
+            <Button variant="outline" size="sm" onClick={handleExportCode}>
+              <Copy className="h-4 w-4 mr-2" />Exportar
             </Button>
           )}
           <Button onClick={handleSave} disabled={!hasTrigger || nodes.length < 2}>
-            <Save className="h-4 w-4 mr-2" />{currentFlowId ? 'Atualizar' : 'Salvar'} Fluxo
+            <Save className="h-4 w-4 mr-2" />{currentFlowId ? 'Atualizar' : 'Salvar'}
           </Button>
         </div>
       </div>
 
+      {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* SellFlux-style sidebar */}
-        {hasTrigger && (
-          <div className="w-[160px] shrink-0 border-r bg-[#1a1a2e] dark:bg-[#0d0d1a] overflow-y-auto">
-            <div className="p-2">
-              <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider px-1 mb-2">Arraste os ícones</p>
-              {nodeCategories.map(cat => (
-                <div key={cat.label} className="mb-3">
-                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">{cat.label}</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {cat.nodes.map(opt => {
-                      const getNodeType = (id: string): FlowNode['type'] => {
-                        if (id === 'timer') return 'timer';
-                        if (id === 'warmup') return 'warmup';
-                        if (id === 'wait') return 'delay';
-                        if (id === 'note') return 'note';
-                        if (id.startsWith('sequence_')) return 'sequence';
-                        if (id === 'conditional' || conditionOptions.some(c => c.id === id)) return 'condition';
-                        return 'action';
-                      };
-                      return (
-                        <button
-                          key={opt.id}
-                          draggable
-                          onDragStart={e => handleDragStart(e, getNodeType(opt.id), opt.id)}
-                          onClick={() => {
-                            setAddAfterIndex(nodes.length - 1);
-                            handleAddStep(getNodeType(opt.id) as any, opt.id);
-                          }}
-                          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
-                          title={opt.label}
-                        >
-                          <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
-                            <opt.icon className="h-3.5 w-3.5" />
-                          </div>
-                          <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              {/* Condições extras */}
-              <div className="mb-3">
-                <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">Condições</p>
+        {/* Sidebar with draggable nodes */}
+        <div className="w-[160px] shrink-0 border-r bg-[#1a1a2e] overflow-y-auto">
+          <div className="p-2">
+            <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider px-1 mb-2">Arraste para o canvas</p>
+
+            {/* Triggers section */}
+            <div className="mb-3">
+              <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">Gatilhos</p>
+              <div className="grid grid-cols-2 gap-1">
+                {triggerOptions.slice(0, 8).map(opt => (
+                  <button
+                    key={opt.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, 'trigger', opt.id)}
+                    onClick={() => handleSelectTrigger(opt.id)}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
+                    title={opt.label}
+                  >
+                    <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0 bg-gradient-to-br text-white', opt.color)}>
+                      <opt.icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action categories */}
+            {nodeCategories.map(cat => (
+              <div key={cat.label} className="mb-3">
+                <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">{cat.label}</p>
                 <div className="grid grid-cols-2 gap-1">
-                   {conditionOptions.map(opt => (
-                     <button
-                       key={opt.id}
-                       draggable
-                       onDragStart={e => handleDragStart(e, 'condition', opt.id)}
-                       onClick={() => {
-                         setAddAfterIndex(nodes.length - 1);
-                         handleAddStep('condition', opt.id);
-                       }}
-                       className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
-                       title={opt.label}
-                     >
-                       <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
-                         <opt.icon className="h-3.5 w-3.5" />
-                       </div>
-                       <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
-                     </button>
+                  {cat.nodes.map(opt => (
+                    <button
+                      key={opt.id}
+                      draggable
+                      onDragStart={e => handleDragStart(e, getNodeType(opt.id), opt.id)}
+                      className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
+                      title={opt.label}
+                    >
+                      <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
+                        <opt.icon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                    </button>
                   ))}
                 </div>
               </div>
+            ))}
+
+            {/* Conditions */}
+            <div className="mb-3">
+              <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">Condições</p>
+              <div className="grid grid-cols-2 gap-1">
+                {conditionOptions.map(opt => (
+                  <button
+                    key={opt.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, 'condition', opt.id)}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
+                    title={opt.label}
+                  >
+                    <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0', opt.color)}>
+                      <opt.icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Canvas */}
-        <ScrollArea className="flex-1">
-          <div className="flex flex-col items-center py-10 px-4 min-h-[60vh] bg-[#1a1a2e] dark:bg-[#0d0d1a]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }}>
-            {!hasTrigger ? (
-              <TriggerSelector onSelect={handleSelectTrigger} />
-            ) : (
-              <>
-                {nodes.map((node, index) => (
-                  <FlowNodeCard
-                    key={node.id}
-                    node={node}
-                    index={index}
-                    onEdit={() => handleEditNode(node)}
-                    onDelete={() => handleDeleteNode(index)}
-                    onAddAfter={() => { setAddAfterIndex(index); setAddStepOpen(true); }}
-                    analytics={nodeAnalytics?.find(a => a.node_id === node.id)}
-                    onDrop={e => handleDrop(e, index)}
-                    onDragOver={e => handleDragOver(e, index)}
-                    onDragLeave={handleDragLeave}
-                    isDragOver={dragOverIndex === index}
-                  />
-                ))}
-                {/* End drop zone */}
-                <div
-                  className={cn("flex flex-col items-center transition-all", dragOverIndex === nodes.length - 1 && "scale-110")}
-                  onDrop={e => handleDrop(e, nodes.length - 1)}
-                  onDragOver={e => handleDragOver(e, nodes.length - 1)}
-                  onDragLeave={handleDragLeave}
-                >
-                  <div className={cn("h-12 w-12 rounded-full border-2 border-dashed flex items-center justify-center transition-colors", dragOverIndex === nodes.length - 1 ? "border-primary bg-primary/20" : "border-white/20")}>
-                    <span className={cn("text-xs font-medium", dragOverIndex === nodes.length - 1 ? "text-primary" : "text-white/40")}>FIM</span>
-                  </div>
-                </div>
-              </>
-            )}
+        {!hasTrigger && showTriggerSelector ? (
+          <div className="flex-1 overflow-auto bg-background">
+            <TriggerSelector onSelect={handleSelectTrigger} />
           </div>
-        </ScrollArea>
+        ) : (
+          <FlowCanvas
+            nodes={nodes}
+            connections={connections}
+            onNodesChange={setNodes}
+            onConnectionsChange={setConnections}
+            onEditNode={handleEditNode}
+            onDeleteNode={handleDeleteNode}
+            analytics={nodeAnalytics}
+          />
+        )}
       </div>
 
-      {/* Bottom status bar - SellFlux style */}
-      {hasTrigger && (
-        <div className="flex items-center gap-6 border-t bg-[#1a1a2e] dark:bg-[#0d0d1a] px-4 py-2 text-xs text-white/50">
-          <div className="flex items-center gap-1.5">
-            <MessageSquare className="h-3.5 w-3.5" />
-            <span>2 msg/minuto</span>
-            <span className="text-white/30">Envios de WhatsApp</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Send className="h-3.5 w-3.5" />
-            <span>12 - 4000 msg/minuto</span>
-            <span className="text-white/30">Envios de WhatsApp API oficial (Limite ajustável)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span>🏛️ {nodes.length - 1}</span>
-            <span className="text-white/30">Leads na sequência</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span>⚡ 0</span>
-            <span className="text-white/30">Leads que saíram da sequência</span>
-          </div>
+      {/* Bottom status bar */}
+      <div className="flex items-center gap-6 border-t bg-[#1a1a2e] px-4 py-2 text-xs text-white/50 shrink-0">
+        <div className="flex items-center gap-1.5">
+          <span>🔗 {connections.length} conexões</span>
         </div>
-      )}
+        <div className="flex items-center gap-1.5">
+          <span>📦 {nodes.length} nós</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="h-3.5 w-3.5" />
+          <span>Arraste nós da barra lateral • Conecte arrastando dos pontos de saída • Duplo clique para editar</span>
+        </div>
+      </div>
 
-      <AddStepDialog open={addStepOpen} onClose={() => setAddStepOpen(false)} onAdd={handleAddStep} />
       <NodeConfigDialog node={editingNode} open={editDialogOpen} onClose={() => { setEditDialogOpen(false); setEditingNode(null); }} onSave={handleSaveNodeConfig} />
     </div>
   );
