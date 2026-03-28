@@ -823,27 +823,49 @@ export default function FlowBuilder() {
           <div className="p-2">
             <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider px-1 mb-2">Arraste para o canvas</p>
 
-            {/* Triggers section */}
-            <div className="mb-3">
-              <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">Gatilhos</p>
-              <div className="grid grid-cols-2 gap-1">
-                {triggerOptions.slice(0, 8).map(opt => (
-                  <button
-                    key={opt.id}
-                    draggable
-                    onDragStart={e => handleDragStart(e, 'trigger', opt.id)}
-                    onClick={() => handleSelectTrigger(opt.id)}
-                    className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
-                    title={opt.label}
-                  >
-                    <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0 bg-gradient-to-br text-white', opt.color)}>
-                      <opt.icon className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Triggers grouped by channel */}
+            {(() => {
+              const channelGroups: Record<string, typeof triggerOptions> = {};
+              const channelLabels: Record<string, string> = {
+                instagram: '📸 Instagram',
+                whatsapp: '💬 WhatsApp',
+                crm: '👤 CRM / Tags',
+                email: '📧 E-mail',
+                pagamento: '💳 Pagamento',
+                site: '🌐 Site',
+                voip: '📞 VoIP',
+                telegram: '✈️ Telegram',
+              };
+              triggerOptions.forEach(opt => {
+                const ch = opt.channel || 'outros';
+                if (!channelGroups[ch]) channelGroups[ch] = [];
+                channelGroups[ch].push(opt);
+              });
+              return Object.entries(channelGroups).map(([channel, opts]) => (
+                <div key={channel} className="mb-3">
+                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">
+                    {channelLabels[channel] || channel}
+                  </p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {opts.map(opt => (
+                      <button
+                        key={opt.id}
+                        draggable
+                        onDragStart={e => handleDragStart(e, 'trigger', opt.id)}
+                        onClick={() => handleSelectTrigger(opt.id)}
+                        className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group"
+                        title={opt.description || opt.label}
+                      >
+                        <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shrink-0 bg-gradient-to-br text-white', opt.color)}>
+                          <opt.icon className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight truncate w-full">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
 
             {/* Action categories */}
             {nodeCategories.map(cat => (
