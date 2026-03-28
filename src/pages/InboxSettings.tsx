@@ -4,7 +4,8 @@ import { AssignmentRulesConfig } from '@/components/inbox/AssignmentRulesConfig'
 import { CsatConfig } from '@/components/inbox/CsatConfig';
 import { SacAgentsManager } from '@/components/inbox/SacAgentsManager';
 import { QuickRepliesManager } from '@/components/inbox/QuickRepliesManager';
-import { Users, Star, UserCheck, Zap } from 'lucide-react';
+import { WorkingHoursConfig } from '@/components/inbox/WorkingHoursConfig';
+import { Users, Star, UserCheck, Zap, Clock } from 'lucide-react';
 
 export default function InboxSettings() {
   return (
@@ -22,6 +23,10 @@ export default function InboxSettings() {
             <UserCheck className="h-4 w-4" />
             Atendentes
           </TabsTrigger>
+          <TabsTrigger value="hours" className="gap-2">
+            <Clock className="h-4 w-4" />
+            Horários
+          </TabsTrigger>
           <TabsTrigger value="replies" className="gap-2">
             <Zap className="h-4 w-4" />
             Respostas Rápidas
@@ -37,6 +42,7 @@ export default function InboxSettings() {
         </TabsList>
 
         <TabsContent value="agents"><SacAgentsManager /></TabsContent>
+        <TabsContent value="hours"><WorkingHoursConfig /></TabsContent>
         <TabsContent value="replies"><QuickRepliesManager /></TabsContent>
         <TabsContent value="assignment"><AssignmentRulesConfig /></TabsContent>
         <TabsContent value="csat"><CsatConfig /></TabsContent>
