@@ -1770,8 +1770,8 @@ export default function TechnicalManual() {
       .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mt-8 mb-3 text-foreground">$1</h2>')
       .replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mt-6 mb-2 text-foreground">$1</h3>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(new RegExp('\x60\x60\x60(\\w*)\\n([\\s\\S]*?)\x60\x60\x60', 'g'), '<pre class="bg-muted rounded-lg p-4 my-4 overflow-x-auto text-sm font-mono border border-border"><code>$2</code></pre>')
-      .replace(new RegExp('\x60([^\x60]+)\x60', 'g'), '<code class="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary">$1</code>')
+      .replace(/\\`\\`\\`(\w*)\n([\s\S]*?)\\`\\`\\`/g, '<pre class="bg-muted rounded-lg p-4 my-4 overflow-x-auto text-sm font-mono border border-border"><code>$2</code></pre>')
+      .replace(/\\`([^\\`]+)\\`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary">$1</code>')
       .replace(/^\| (.+) \|$/gm, function(match) {
         var cells = match.split('|').filter(function(c) { return c.trim(); });
         var isHeader = cells.some(function(c) { return /^[-]+$/.test(c.trim()); });
