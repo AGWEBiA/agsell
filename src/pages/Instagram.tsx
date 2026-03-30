@@ -66,7 +66,7 @@ const automationCategories: { value: AutomationCategory; label: string }[] = [
   { value: 'story', label: 'Stories' },
 ];
 
-const INSTAGRAM_APP_ID = "1231864369151883";
+const INSTAGRAM_APP_ID = "912565888176650";
 const META_OAUTH_VERSION = "v25.0";
 const INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,pages_show_list,pages_read_engagement,business_management";
 
