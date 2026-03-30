@@ -389,7 +389,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
         )}
       </div>
 
-      <ScrollArea className="h-[calc(100vh-8rem)]">
+      <ScrollArea className="h-[calc(100vh-4rem-3rem)]">
         <nav className="space-y-1 p-2" aria-label="Menu principal">
           {filteredSections.map((section) => {
             if (section.items.length === 0) return null;
