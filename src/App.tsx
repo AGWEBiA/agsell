@@ -36,6 +36,7 @@ const SubscriptionExpired = React.lazy(() => import("./pages/SubscriptionExpired
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = React.lazy(() => import("./pages/TermsOfService"));
 const ApiDocs = React.lazy(() => import("./pages/ApiDocs"));
+const DataDeletion = React.lazy(() => import("./pages/DataDeletion"));
 const FormView = React.lazy(() => import("./pages/FormView"));
 const TicketTracker = React.lazy(() => import("./pages/TicketTracker"));
 const AgencyInvite = React.lazy(() => import("./pages/AgencyInvite"));
