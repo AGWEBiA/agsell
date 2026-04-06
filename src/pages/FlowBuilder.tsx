@@ -807,7 +807,7 @@ export default function FlowBuilder() {
   if (mode === 'list') {
     return (
       <>
-        <FlowList onCreateNew={handleCreateNew} onEditFlow={handleEditFlow} />
+        <FlowList onCreateNew={handleCreateNew} onEditFlow={handleEditFlow} channelFilter={channelFilter} />
         <NewCampaignModal open={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} onCreate={handleCampaignCreate} onImportCode={handleImportCode} />
       </>
     );
