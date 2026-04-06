@@ -860,6 +860,11 @@ export default function FlowBuilder() {
 
             {/* Triggers grouped by channel */}
             {(() => {
+              const groupTriggerIds = ['whatsapp_group_join', 'whatsapp_group_leave'];
+              const availableTriggers = isGroupMode
+                ? triggerOptions.filter(t => groupTriggerIds.includes(t.id))
+                : triggerOptions;
+
               const channelGroups: Record<string, typeof triggerOptions> = {};
               const channelLabels: Record<string, string> = {
                 instagram: '📸 Instagram',
@@ -871,7 +876,7 @@ export default function FlowBuilder() {
                 voip: '📞 VoIP',
                 telegram: '✈️ Telegram',
               };
-              triggerOptions.forEach(opt => {
+              availableTriggers.forEach(opt => {
                 const ch = opt.channel || 'outros';
                 if (!channelGroups[ch]) channelGroups[ch] = [];
                 channelGroups[ch].push(opt);
@@ -879,7 +884,7 @@ export default function FlowBuilder() {
               return Object.entries(channelGroups).map(([channel, opts]) => (
                 <div key={channel} className="mb-3">
                   <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider px-1 mb-1">
-                    {channelLabels[channel] || channel}
+                    {isGroupMode ? '💬 Gatilhos de Grupo' : (channelLabels[channel] || channel)}
                   </p>
                   <div className="grid grid-cols-2 gap-1">
                     {opts.map(opt => (
