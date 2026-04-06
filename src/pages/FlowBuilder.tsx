@@ -387,7 +387,7 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
   );
 }
 
-// ─── Channel-specific config ───
+// ─── Channel-specific config (v2) ───
 const channelConfig: Record<string, {
   triggerChannels: string[];
   triggerIds?: string[];
