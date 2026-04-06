@@ -975,7 +975,7 @@ export default function FlowBuilder() {
         {/* Canvas */}
         {!hasTrigger && showTriggerSelector ? (
           <div className="flex-1 overflow-auto bg-background">
-            <TriggerSelector onSelect={handleSelectTrigger} />
+            <TriggerSelector onSelect={handleSelectTrigger} channelFilter={channelFilter} />
           </div>
         ) : (
           <FlowCanvas
