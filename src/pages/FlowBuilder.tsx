@@ -709,7 +709,7 @@ export default function FlowBuilder() {
       setCurrentFlowId(null);
       setNodes([]);
       setConnections([]);
-      setSearchParams({});
+      setSearchParams(channelFilter ? { channel: channelFilter } : {});
     };
 
     if (currentFlowId) {
