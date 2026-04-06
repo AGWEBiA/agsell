@@ -851,7 +851,8 @@ export default function FlowBuilder() {
     setConnections([]);
     setIsActive(false);
     setMode('editor');
-    setShowTriggerSelector(true);
+    const cfg = channelFilter ? channelConfig[channelFilter] : null;
+    setShowTriggerSelector(!cfg?.noTriggerSelector);
   };
 
   const handleImportCode = (name: string, code: string) => {
