@@ -410,9 +410,9 @@ const channelConfig: Record<string, {
   },
   groups: {
     triggerChannels: [],
-    triggerIds: ['whatsapp_group_join', 'whatsapp_group_leave'],
+    triggerIds: ['tag_added', 'tag_removed', 'whatsapp_group_join', 'whatsapp_group_leave'],
     title: 'Fluxos de Grupo',
-    subtitle: 'Automações para grupos de WhatsApp',
+    subtitle: 'Automações para grupos de WhatsApp (inicie sempre com uma Tag)',
     allowedActions: [
       'timer', 'send_whatsapp_group', 'add_tag', 'remove_tag', 'wait', 'conditional', 'tag_filter',
       'note', 'send_notification', 'create_task', 'add_to_whatsapp_group', 'edit_whatsapp_group',
