@@ -241,18 +241,33 @@ export function WhatsAppGroupMessages({ currentInstanceId }: { currentInstanceId
                 {groups.length === 0 ? (
                   <p className="text-xs text-muted-foreground">Nenhum grupo sincronizado. Sincronize seus grupos primeiro.</p>
                 ) : (
-                  <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-1">
-                    {groups.map(group => (
-                      <label key={group.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
-                        <Checkbox
-                          checked={newMessage.target_groups.includes(group.external_group_id || group.id)}
-                          onCheckedChange={() => toggleGroupSelection(group.external_group_id || group.id)}
-                        />
-                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="truncate">{group.name}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">{group.member_count} membros</span>
-                      </label>
-                    ))}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="p-2 border-b">
+                      <Input
+                        placeholder="Buscar grupos..."
+                        value={groupSearch}
+                        onChange={(e) => setGroupSearch(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="max-h-40 overflow-y-auto p-2 space-y-1">
+                      {groups
+                        .filter(g => g.name.toLowerCase().includes(groupSearch.toLowerCase()))
+                        .map(group => (
+                          <label key={group.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                            <Checkbox
+                              checked={newMessage.target_groups.includes(group.external_group_id || group.id)}
+                              onCheckedChange={() => toggleGroupSelection(group.external_group_id || group.id)}
+                            />
+                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="truncate">{group.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">{group.member_count} membros</span>
+                          </label>
+                        ))}
+                      {groups.filter(g => g.name.toLowerCase().includes(groupSearch.toLowerCase())).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-2">Nenhum grupo encontrado</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
