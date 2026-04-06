@@ -460,14 +460,23 @@ function TriggerSelector({ onSelect, channelFilter }: { onSelect: (triggerId: st
 }
 
 // ─── Flow List ───
-function FlowList({ onCreateNew, onEditFlow }: {
+function FlowList({ onCreateNew, onEditFlow, channelFilter }: {
   onCreateNew: () => void;
   onEditFlow: (id: string) => void;
+  channelFilter?: string | null;
 }) {
   const { automations, isLoading, toggleAutomation, deleteAutomation } = useAutomations();
+  const isGroupMode = channelFilter === 'groups';
+  const groupTriggerIds = ['whatsapp_group_join', 'whatsapp_group_leave'];
+
   const flows = automations.filter(a => {
     const tc = a.trigger_config as Record<string, unknown> | null;
-    return tc?.flow_builder === true;
+    if (tc?.flow_builder !== true) return false;
+    if (isGroupMode) {
+      const originalTrigger = tc?.original_trigger as string | undefined;
+      return originalTrigger ? groupTriggerIds.includes(originalTrigger) : false;
+    }
+    return true;
   });
 
   const getTriggerLabel = (a: typeof automations[0]) => {
@@ -486,9 +495,9 @@ function FlowList({ onCreateNew, onEditFlow }: {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-3">
-            <Workflow className="h-7 w-7 text-primary" />Meus Fluxos
+            <Workflow className="h-7 w-7 text-primary" />{isGroupMode ? 'Fluxos de Grupo' : 'Meus Fluxos'}
           </h1>
-          <p className="text-muted-foreground mt-1">Gerencie seus fluxos de automação visual</p>
+          <p className="text-muted-foreground mt-1">{isGroupMode ? 'Gerencie fluxos de automação para grupos WhatsApp' : 'Gerencie seus fluxos de automação visual'}</p>
         </div>
         <Button onClick={onCreateNew} size="lg"><Plus className="h-5 w-5 mr-2" />Novo Fluxo</Button>
       </div>
