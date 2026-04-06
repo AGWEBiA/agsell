@@ -410,15 +410,16 @@ const channelConfig: Record<string, {
     ],
   },
   groups: {
-    triggerChannels: ['whatsapp', 'crm', 'pagamento', 'site', 'email'],
+    triggerChannels: [],
+    triggerIds: [],
     title: 'Fluxos de Grupo',
-    subtitle: 'Crie fluxos com qualquer gatilho → adicione tags → insira leads em grupos',
+    subtitle: 'Arraste Tag para iniciar → Timer → Adicionar ao grupo',
     allowedActions: [
-      'timer', 'send_whatsapp_group', 'add_tag', 'remove_tag', 'wait', 'conditional', 'tag_filter',
-      'note', 'send_notification', 'create_task', 'add_to_whatsapp_group', 'edit_whatsapp_group',
-      'send_whatsapp', 'send_email_performance', 'send_email_marketing',
+      'timer', 'send_whatsapp_group', 'add_tag', 'remove_tag',
+      'note', 'add_to_whatsapp_group', 'edit_whatsapp_group',
     ],
-  },
+    noTriggerSelector: true,
+  } as any,
   email: {
     triggerChannels: ['email', 'crm', 'pagamento', 'site'],
     title: 'Fluxos de E-mail',
