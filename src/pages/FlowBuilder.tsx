@@ -51,6 +51,7 @@ import { ConditionalNodeConfig } from '@/components/flow-builder/ConditionalNode
 import { SequenceNodeConfig } from '@/components/flow-builder/SequenceNodeConfig';
 import { EmailTemplateEditor } from '@/components/email/EmailTemplateEditor';
 import { FlowCanvas } from '@/components/flow-builder/FlowCanvas';
+import { SearchableTagSelect } from '@/components/whatsapp/SearchableTagSelect';
 
 import { FlowNodeAnalyticsOverlay } from '@/components/automations/FlowNodeAnalyticsOverlay';
 import type { FlowNodeAnalytic } from '@/hooks/useFlowNodeAnalytics';
@@ -344,9 +345,9 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       case 'telegram_keyword':
         return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: /promo, INFO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem><SelectItem value="command">Comando (/cmd)</SelectItem></SelectContent></Select></div></div>);
       case 'whatsapp_group_join':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém entra em um grupo do WhatsApp.</p><div><Label>Grupo específico (opcional)</Label><Input placeholder="Nome ou ID do grupo" value={String(config.group_name || '')} onChange={e => setConfig({ ...config, group_name: e.target.value })} /></div><div><Label>Tag automática (opcional)</Label><Input placeholder="Ex: membro_grupo" value={String(config.auto_tag || '')} onChange={e => setConfig({ ...config, auto_tag: e.target.value })} /></div></div>);
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém entra em um grupo do WhatsApp.</p><div><Label>Grupo específico (opcional)</Label><Input placeholder="Nome ou ID do grupo" value={String(config.group_name || '')} onChange={e => setConfig({ ...config, group_name: e.target.value })} /></div><div><Label className="font-semibold">Tag(s) do grupo</Label><p className="text-xs text-muted-foreground mb-1">Selecione as tags associadas a este grupo para filtrar os leads.</p><SearchableTagSelect selectedTags={(config.group_tags as string[]) || []} onTagsChange={tags => setConfig({ ...config, group_tags: tags })} placeholder="Buscar ou criar tag do grupo..." /></div><div><Label>Tag automática ao entrar (opcional)</Label><Input placeholder="Ex: membro_grupo" value={String(config.auto_tag || '')} onChange={e => setConfig({ ...config, auto_tag: e.target.value })} /></div></div>);
       case 'whatsapp_group_leave':
-        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém sai de um grupo do WhatsApp.</p><div><Label>Grupo específico (opcional)</Label><Input placeholder="Nome ou ID do grupo" value={String(config.group_name || '')} onChange={e => setConfig({ ...config, group_name: e.target.value })} /></div><div><Label>Tag de saída (opcional)</Label><Input placeholder="Ex: saiu_grupo" value={String(config.exit_tag || '')} onChange={e => setConfig({ ...config, exit_tag: e.target.value })} /></div></div>);
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Acionado quando alguém sai de um grupo do WhatsApp.</p><div><Label>Grupo específico (opcional)</Label><Input placeholder="Nome ou ID do grupo" value={String(config.group_name || '')} onChange={e => setConfig({ ...config, group_name: e.target.value })} /></div><div><Label className="font-semibold">Tag(s) do grupo</Label><p className="text-xs text-muted-foreground mb-1">Selecione as tags associadas a este grupo para filtrar os leads.</p><SearchableTagSelect selectedTags={(config.group_tags as string[]) || []} onTagsChange={tags => setConfig({ ...config, group_tags: tags })} placeholder="Buscar ou criar tag do grupo..." /></div><div><Label>Tag de saída (opcional)</Label><Input placeholder="Ex: saiu_grupo" value={String(config.exit_tag || '')} onChange={e => setConfig({ ...config, exit_tag: e.target.value })} /></div></div>);
       default:
         return <p className="text-sm text-muted-foreground">Nenhuma configuração adicional necessária.</p>;
     }
@@ -677,6 +678,14 @@ export default function FlowBuilder() {
       ...triggerNode.config,
     } as Record<string, Json>;
 
+    const navigateToList = () => {
+      setMode('list');
+      setCurrentFlowId(null);
+      setNodes([]);
+      setConnections([]);
+      setSearchParams({});
+    };
+
     if (currentFlowId) {
       updateAutomation.mutate({
         id: currentFlowId,
@@ -685,8 +694,12 @@ export default function FlowBuilder() {
         trigger_config: triggerConfig,
         actions,
         is_active: isActive,
+      }, {
+        onSuccess: () => {
+          toast({ title: '✅ Fluxo atualizado!' });
+          navigateToList();
+        },
       });
-      toast({ title: '✅ Fluxo atualizado!' });
     } else {
       createAutomation.mutate({
         name: flowName,
@@ -697,21 +710,10 @@ export default function FlowBuilder() {
       }, {
         onSuccess: () => {
           toast({ title: '✅ Fluxo criado!' });
-          setMode('list');
-          setCurrentFlowId(null);
-          setNodes([]);
-          setConnections([]);
-          setSearchParams({});
+          navigateToList();
         },
       });
-      return;
     }
-
-    setMode('list');
-    setCurrentFlowId(null);
-    setNodes([]);
-    setConnections([]);
-    setSearchParams({});
   };
 
   const handleCreateNew = () => { setNewCampaignOpen(true); };
