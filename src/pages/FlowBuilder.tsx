@@ -1242,10 +1242,10 @@ export default function FlowBuilder() {
                   <span className="text-[9px] text-white/60 group-hover:text-white/90 text-center leading-tight pointer-events-none">Nota</span>
                 </div>
 
-                {/* GERENCIAR GRUPOS button */}
+                {/* GERENCIAR GRUPOS button — opens inline dialog */}
                 <div className="mt-4 px-1">
                   <button
-                    onClick={() => navigate('/whatsapp?tab=groups')}
+                    onClick={() => setShowGroupsDialog(true)}
                     className="w-full flex flex-col items-center gap-1.5 p-3 rounded-xl bg-green-600 hover:bg-green-500 transition-colors text-white"
                   >
                     <MessageSquare className="h-5 w-5" />
