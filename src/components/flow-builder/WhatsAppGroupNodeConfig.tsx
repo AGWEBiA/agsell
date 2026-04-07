@@ -17,7 +17,7 @@ interface WhatsAppGroupNodeConfigProps {
 export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeConfigProps) {
   const selectedTags = (config.target_tags as string[]) || [];
   const [searchQuery, setSearchQuery] = useState('');
-  const { tags: orgTags = [] } = useTags();
+  const { data: orgTags = [] } = useTags();
 
   const filteredTags = useMemo(() => {
     if (!searchQuery.trim()) return orgTags;
