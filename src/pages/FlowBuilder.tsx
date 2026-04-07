@@ -680,6 +680,7 @@ export default function FlowBuilder() {
   const [showTriggerSelector, setShowTriggerSelector] = useState(false);
   const [sidebarDragPayload, setSidebarDragPayload] = useState<{ nodeType: FlowNode['type']; subtype: string } | null>(null);
   const loadedAutomationSnapshotRef = useRef<string | null>(null);
+  const isDraggingFromSidebarRef = useRef(false);
 
   const hasTrigger = nodes.some(n => n.type === 'trigger');
   const isGroupsChannel = channelFilter === 'groups';
@@ -724,6 +725,7 @@ export default function FlowBuilder() {
       flushSync(() => setShowTriggerSelector(false));
     }
 
+    isDraggingFromSidebarRef.current = true;
     const payload = { nodeType: nodeType as FlowNode['type'], subtype };
     setSidebarDragPayload(payload);
     e.dataTransfer.clearData();
@@ -734,6 +736,11 @@ export default function FlowBuilder() {
 
   // Click to add node (fallback for drag-and-drop)
   const handleClickToAdd = (nodeType: string, subtype: string) => {
+    // If we just finished a drag, ignore the click event
+    if (isDraggingFromSidebarRef.current) {
+      isDraggingFromSidebarRef.current = false;
+      return;
+    }
     const allOptions = [...triggerOptions, ...actionOptions, ...conditionOptions];
     const info = allOptions.find(a => a.id === subtype);
     if (!info) return;
@@ -1186,7 +1193,7 @@ export default function FlowBuilder() {
                             draggable="true"
                             unselectable="on"
                             onDragStart={e => handleDragStart(e, 'trigger', opt.id)}
-                            onClick={() => handleSelectTrigger(opt.id)}
+                            onClick={() => handleClickToAdd('trigger', opt.id)}
                             className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group select-none"
                             title={opt.description || opt.label}
                             role="button"
@@ -1291,7 +1298,7 @@ export default function FlowBuilder() {
             onDeleteNode={handleDeleteNode}
             analytics={nodeAnalytics}
             sidebarDragPayload={sidebarDragPayload}
-            onSidebarDragConsume={() => setSidebarDragPayload(null)}
+            onSidebarDragConsume={() => { setSidebarDragPayload(null); setTimeout(() => { isDraggingFromSidebarRef.current = false; }, 100); }}
           />
           {/* Trigger selector overlay when no trigger exists (not for groups) */}
           {!hasTrigger && showTriggerSelector && !isGroupsChannel && (
