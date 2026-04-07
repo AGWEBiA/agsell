@@ -680,6 +680,7 @@ export default function FlowBuilder() {
   const [showTriggerSelector, setShowTriggerSelector] = useState(false);
   const [sidebarDragPayload, setSidebarDragPayload] = useState<{ nodeType: FlowNode['type']; subtype: string } | null>(null);
   const loadedAutomationSnapshotRef = useRef<string | null>(null);
+  const isDraggingFromSidebarRef = useRef(false);
 
   const hasTrigger = nodes.some(n => n.type === 'trigger');
   const isGroupsChannel = channelFilter === 'groups';
@@ -724,6 +725,7 @@ export default function FlowBuilder() {
       flushSync(() => setShowTriggerSelector(false));
     }
 
+    isDraggingFromSidebarRef.current = true;
     const payload = { nodeType: nodeType as FlowNode['type'], subtype };
     setSidebarDragPayload(payload);
     e.dataTransfer.clearData();
