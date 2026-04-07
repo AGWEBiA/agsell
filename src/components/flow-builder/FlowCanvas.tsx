@@ -35,7 +35,7 @@ export function FlowCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Canvas transform state
-  const [offset, setOffset] = useState<FlowNodePosition>({ x: 0, y: 0 });
+  const [offset, setOffset] = useState<FlowNodePosition>({ x: 50, y: 50 });
   const [scale, setScale] = useState(1);
 
   // Dragging states
