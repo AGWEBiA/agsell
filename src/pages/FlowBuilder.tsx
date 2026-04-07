@@ -318,7 +318,85 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
       case 'list_tag':
         return (<div className="space-y-4"><div><Label>Nome da Tag *</Label><Input placeholder="Ex: comprador, lead_quente" value={String(config.tag_name || '')} onChange={e => setConfig({ ...config, tag_name: e.target.value })} /></div><div><Label>Ação</Label><Select value={String(config.list_action || 'list')} onValueChange={v => setConfig({ ...config, list_action: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="list">Listar contatos com tag</SelectItem><SelectItem value="count">Contar contatos com tag</SelectItem><SelectItem value="filter">Filtrar fluxo por tag</SelectItem></SelectContent></Select></div></div>);
       case 'edit_whatsapp_group':
-        return (<div className="space-y-4"><div><Label>Ação no grupo</Label><Select value={String(config.group_action || 'update_name')} onValueChange={v => setConfig({ ...config, group_action: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="update_name">Alterar nome</SelectItem><SelectItem value="update_description">Alterar descrição</SelectItem><SelectItem value="update_photo">Alterar foto</SelectItem><SelectItem value="remove_member">Remover membro</SelectItem></SelectContent></Select></div>{config.group_action === 'update_name' && (<div><Label>Novo nome</Label><Input placeholder="Nome do grupo" value={String(config.new_name || '')} onChange={e => setConfig({ ...config, new_name: e.target.value })} /></div>)}{config.group_action === 'update_description' && (<div><Label>Nova descrição</Label><Textarea rows={3} placeholder="Descrição do grupo" value={String(config.new_description || '')} onChange={e => setConfig({ ...config, new_description: e.target.value })} /></div>)}</div>);
+        return (
+          <div className="space-y-4">
+            {/* Warning */}
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-amber-500 font-bold">⚠ Atenção</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Caso o nome do seu grupo contenha o caractere especial '#' (hashtag), quando você alterar o nome do grupo, o caractere especial '#' (hashtag) permanecerá junto com os elementos que o seguem.
+              </p>
+            </div>
+
+            {/* Alterar Imagem */}
+            <div className={cn("rounded-lg border p-4 transition-colors", config.change_image ? "border-green-500/40 bg-green-500/10" : "border-border bg-muted/30")}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Alterar Imagem do Grupo</p>
+                    <p className="text-xs text-muted-foreground">Ative para alterar imagem do grupo.</p>
+                  </div>
+                </div>
+                <Switch checked={!!config.change_image} onCheckedChange={v => setConfig({ ...config, change_image: v })} />
+              </div>
+              {config.change_image && (
+                <div className="mt-3">
+                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center">
+                    <Input type="url" placeholder="URL da imagem (JPG/JPEG)" value={String(config.image_url || '')} onChange={e => setConfig({ ...config, image_url: e.target.value })} />
+                    <p className="text-xs text-amber-500 mt-2">Somente imagens em formato JPG ou JPEG são suportados!</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Alterar Nome */}
+            <div className={cn("rounded-lg border p-4 transition-colors", config.change_name ? "border-green-500/40 bg-green-500/10" : "border-border bg-muted/30")}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Alterar Nome do Grupo</p>
+                    <p className="text-xs text-muted-foreground">Ative para alterar o nome do grupo</p>
+                  </div>
+                </div>
+                <Switch checked={!!config.change_name} onCheckedChange={v => setConfig({ ...config, change_name: v })} />
+              </div>
+              {config.change_name && (
+                <div className="mt-3">
+                  <div className="relative">
+                    <Input placeholder="Novo nome" maxLength={100} value={String(config.new_name || '')} onChange={e => setConfig({ ...config, new_name: e.target.value })} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{String(config.new_name || '').length}/100</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Alterar Descrição */}
+            <div className={cn("rounded-lg border p-4 transition-colors", config.change_description ? "border-green-500/40 bg-green-500/10" : "border-border bg-muted/30")}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Alterar Descrição do Grupo</p>
+                    <p className="text-xs text-muted-foreground">Ative para alterar a descrição do grupo</p>
+                  </div>
+                </div>
+                <Switch checked={!!config.change_description} onCheckedChange={v => setConfig({ ...config, change_description: v })} />
+              </div>
+              {config.change_description && (
+                <div className="mt-3">
+                  <div className="relative">
+                    <Textarea rows={3} placeholder="Nova descrição" maxLength={2048} value={String(config.new_description || '')} onChange={e => setConfig({ ...config, new_description: e.target.value })} />
+                    <span className="absolute right-3 bottom-2 text-xs text-muted-foreground">{String(config.new_description || '').length}/2048</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
       case 'full_page':
         return (<div className="space-y-4"><div><Label>URL da página *</Label><Input placeholder="https://seusite.com/oferta" value={String(config.page_url || '')} onChange={e => setConfig({ ...config, page_url: e.target.value })} /></div><div><Label>Tempo de exibição (segundos)</Label><Input type="number" min={0} value={String(config.display_seconds || 0)} onChange={e => setConfig({ ...config, display_seconds: Number(e.target.value) })} /><p className="text-xs text-muted-foreground mt-1">0 = até o usuário fechar</p></div></div>);
       case 'pixel':
