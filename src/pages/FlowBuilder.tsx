@@ -1066,7 +1066,7 @@ export default function FlowBuilder() {
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar with draggable nodes */}
-        <div className={cn("shrink-0 border-r bg-[#1a1a2e] overflow-y-auto", isGroupsChannel ? "w-[80px]" : "w-[160px]")}>
+        <div className={cn("shrink-0 border-r bg-[#1a1a2e] overflow-y-auto overflow-x-hidden", isGroupsChannel ? "w-[80px]" : "w-[160px]")} style={{ touchAction: 'none' }}>
           <div className="p-2">
             {isGroupsChannel ? (
               /* ── Groups channel: SellFlux-style flat vertical list ── */
@@ -1315,7 +1315,7 @@ export default function FlowBuilder() {
         </div>
 
         {/* Canvas - always rendered for drag-drop support */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0 }}>
           <FlowCanvas
             nodes={nodes}
             connections={connections}
