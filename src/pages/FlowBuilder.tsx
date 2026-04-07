@@ -413,7 +413,7 @@ const channelConfig: Record<string, {
   },
   groups: {
     triggerChannels: [],
-    triggerIds: [],
+    triggerIds: ['tag_added', 'tag_removed'],
     title: 'Fluxos de Grupo',
     subtitle: 'Arraste Tag para iniciar → Timer → Adicionar ao grupo',
     allowedActions: [
@@ -463,7 +463,7 @@ const channelConfig: Record<string, {
 function getChannelTriggers(channelFilter: string | null): typeof triggerOptions {
   if (!channelFilter || !channelConfig[channelFilter]) return triggerOptions;
   const cfg = channelConfig[channelFilter];
-  if (cfg.triggerIds) return triggerOptions.filter(t => cfg.triggerIds!.includes(t.id));
+  if (cfg.triggerIds?.length) return triggerOptions.filter(t => cfg.triggerIds!.includes(t.id));
   return triggerOptions.filter(t => cfg.triggerChannels.includes(t.channel));
 }
 
