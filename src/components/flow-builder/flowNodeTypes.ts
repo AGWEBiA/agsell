@@ -107,7 +107,7 @@ export const nodeCategories = [
     nodes: [
       { id: 'send_whatsapp', label: 'WhatsApp', icon: MessageSquare, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
       { id: 'send_whatsapp_oficial', label: 'WhatsApp Oficial', icon: MessageSquare, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-      { id: 'send_whatsapp_group', label: 'WhatsApp p/ sessão', icon: Users, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+      { id: 'send_whatsapp_group', label: 'WhatsApp', icon: Users, color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
       { id: 'send_sms', label: 'SMS', icon: Smartphone, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300' },
       { id: 'send_email_performance', label: 'Performance', icon: MailCheck, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
       { id: 'send_email_marketing', label: 'Marketing', icon: Mail, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },

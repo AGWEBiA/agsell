@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Info, Tag, Users, X, Plus } from 'lucide-react';
+import { Info, Tag, Users, X, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TEMPLATE_VARIABLES } from './flowNodeTypes';
+import { useTags } from '@/hooks/useTags';
 
 interface WhatsAppGroupNodeConfigProps {
   config: Record<string, unknown>;
@@ -13,22 +14,39 @@ interface WhatsAppGroupNodeConfigProps {
 }
 
 export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeConfigProps) {
-  const tags = (config.target_tags as string[]) || [];
-  const tagInput = String(config._tag_input || '');
+  const selectedTags = (config.target_tags as string[]) || [];
+  const [searchQuery, setSearchQuery] = useState('');
+  const { tags: orgTags = [] } = useTags();
+
+  const filteredTags = useMemo(() => {
+    if (!searchQuery.trim()) return orgTags;
+    const q = searchQuery.toLowerCase();
+    return orgTags.filter(t => t.name.toLowerCase().includes(q));
+  }, [orgTags, searchQuery]);
 
   const insertVariable = (key: string) => {
     const current = String(config.message || '');
     onChange({ ...config, message: current + key });
   };
 
-  const addTag = () => {
-    const trimmed = tagInput.trim().toLowerCase();
-    if (!trimmed || tags.includes(trimmed)) { onChange({ ...config, _tag_input: '' }); return; }
-    onChange({ ...config, target_tags: [...tags, trimmed], _tag_input: '' });
+  const toggleTag = (tagName: string) => {
+    const lower = tagName.toLowerCase();
+    if (selectedTags.includes(lower)) {
+      onChange({ ...config, target_tags: selectedTags.filter(t => t !== lower) });
+    } else {
+      onChange({ ...config, target_tags: [...selectedTags, lower] });
+    }
+  };
+
+  const addCustomTag = () => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed || selectedTags.includes(trimmed)) return;
+    onChange({ ...config, target_tags: [...selectedTags, trimmed] });
+    setSearchQuery('');
   };
 
   const removeTag = (tag: string) => {
-    onChange({ ...config, target_tags: tags.filter(t => t !== tag) });
+    onChange({ ...config, target_tags: selectedTags.filter(t => t !== tag) });
   };
 
   return (
@@ -49,21 +67,50 @@ export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeC
         <Label className="flex items-center gap-2">
           <Tag className="h-4 w-4" /> Tags dos Grupos Alvo
         </Label>
-        <div className="flex gap-2">
+
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Digite uma tag e pressione Enter..."
-            value={tagInput}
-            onChange={e => onChange({ ...config, _tag_input: e.target.value })}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-            className="flex-1"
+            placeholder="Buscar tags existentes..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag(); } }}
+            className="pl-9"
+            onPointerDown={e => e.stopPropagation()}
           />
-          <Button type="button" variant="outline" size="sm" onClick={addTag} disabled={!tagInput.trim()}>
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
-        {tags.length > 0 ? (
+
+        {/* Tag list from org */}
+        {filteredTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-md border p-2">
+            {filteredTags.map(tag => {
+              const isSelected = selectedTags.includes(tag.name.toLowerCase());
+              return (
+                <Badge
+                  key={tag.id}
+                  variant={isSelected ? 'default' : 'outline'}
+                  className="cursor-pointer text-xs gap-1 transition-colors"
+                  onClick={() => toggleTag(tag.name)}
+                >
+                  <Tag className="h-3 w-3" />{tag.name}
+                  {isSelected && <X className="h-3 w-3 ml-0.5" />}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
+
+        {searchQuery.trim() && filteredTags.length === 0 && (
+          <Button type="button" variant="outline" size="sm" onClick={addCustomTag} className="w-full text-xs gap-1">
+            <Plus className="h-3 w-3" /> Criar tag "{searchQuery.trim()}"
+          </Button>
+        )}
+
+        {/* Selected tags */}
+        {selectedTags.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
-            {tags.map(tag => (
+            {selectedTags.map(tag => (
               <Badge key={tag} variant="secondary" className="text-xs gap-1">
                 <Tag className="h-3 w-3" />{tag}
                 <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive">
@@ -72,7 +119,7 @@ export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeC
               </Badge>
             ))}
             <span className="text-xs text-muted-foreground self-center ml-1">
-              → {tags.length} tag(s) = grupos com essas tags receberão a mensagem
+              → {selectedTags.length} tag(s) = grupos com essas tags receberão a mensagem
             </span>
           </div>
         ) : (
