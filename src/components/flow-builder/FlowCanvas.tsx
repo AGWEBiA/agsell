@@ -107,6 +107,8 @@ export function FlowCanvas({
     setIsPanning(false);
     setDraggingNodeId(null);
     setDragNodeStart(null);
+    setResizingNodeId(null);
+    setResizeStart(null);
     if (connectingFrom) {
       setConnectingFrom(null);
     }
