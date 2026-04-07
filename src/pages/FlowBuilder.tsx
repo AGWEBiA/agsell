@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -679,9 +679,44 @@ export default function FlowBuilder() {
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [showTriggerSelector, setShowTriggerSelector] = useState(false);
   const [sidebarDragPayload, setSidebarDragPayload] = useState<{ nodeType: FlowNode['type']; subtype: string } | null>(null);
+  const loadedAutomationSnapshotRef = useRef<string | null>(null);
 
   const hasTrigger = nodes.some(n => n.type === 'trigger');
   const isGroupsChannel = channelFilter === 'groups';
+
+  useEffect(() => {
+    if (editId) {
+      loadedAutomationSnapshotRef.current = null;
+      setMode('editor');
+      setCurrentFlowId(editId);
+      setNodes([]);
+      setConnections([]);
+      setShowTriggerSelector(false);
+      setSidebarDragPayload(null);
+      return;
+    }
+
+    if (isNew) {
+      loadedAutomationSnapshotRef.current = null;
+      setMode('editor');
+      setCurrentFlowId(null);
+      setNodes([]);
+      setConnections([]);
+      setIsActive(false);
+      setShowTriggerSelector(false);
+      setSidebarDragPayload(null);
+      return;
+    }
+
+    loadedAutomationSnapshotRef.current = null;
+    setMode('list');
+    setCurrentFlowId(null);
+    setNodes([]);
+    setConnections([]);
+    setIsActive(false);
+    setShowTriggerSelector(false);
+    setSidebarDragPayload(null);
+  }, [editId, isNew, channelFilter]);
 
   // Drag from sidebar
   const handleDragStart = (e: React.DragEvent, nodeType: string, subtype: string) => {
@@ -721,6 +756,18 @@ export default function FlowBuilder() {
     if (currentFlowId && automations.length > 0) {
       const existing = automations.find(a => a.id === currentFlowId);
       if (existing) {
+        const snapshot = JSON.stringify({
+          id: existing.id,
+          name: existing.name,
+          is_active: existing.is_active,
+          trigger_type: existing.trigger_type,
+          trigger_config: existing.trigger_config,
+          actions: existing.actions,
+        });
+
+        if (loadedAutomationSnapshotRef.current === snapshot) return;
+        loadedAutomationSnapshotRef.current = snapshot;
+
         setFlowName(existing.name);
         setIsActive(existing.is_active ?? false);
         const tc = existing.trigger_config as Record<string, unknown> | null;
@@ -781,6 +828,7 @@ export default function FlowBuilder() {
   const handleSelectTrigger = (triggerId: string) => {
     const trigger = triggerOptions.find(t => t.id === triggerId);
     if (!trigger) return;
+    loadedAutomationSnapshotRef.current = null;
     const newNode: FlowNode = {
       id: crypto.randomUUID(),
       type: 'trigger',
@@ -832,6 +880,7 @@ export default function FlowBuilder() {
     } as Record<string, Json>;
 
     const navigateToList = () => {
+      loadedAutomationSnapshotRef.current = null;
       setMode('list');
       setCurrentFlowId(null);
       setNodes([]);
@@ -873,6 +922,7 @@ export default function FlowBuilder() {
   const handleCreateNew = () => { setNewCampaignOpen(true); };
 
   const handleCampaignCreate = (name: string) => {
+    loadedAutomationSnapshotRef.current = null;
     setNewCampaignOpen(false);
     setCurrentFlowId(null);
     setFlowName(name);
@@ -894,6 +944,7 @@ export default function FlowBuilder() {
           id: crypto.randomUUID(),
           position: n.position || { x: 400, y: 50 + i * 160 },
         }));
+        loadedAutomationSnapshotRef.current = null;
         setCurrentFlowId(null);
         setFlowName(name || data.name || 'Fluxo Importado');
         setNodes(importedNodes);
@@ -921,12 +972,16 @@ export default function FlowBuilder() {
   };
 
   const handleEditFlow = (id: string) => {
+    loadedAutomationSnapshotRef.current = null;
+    setNodes([]);
+    setConnections([]);
     setCurrentFlowId(id);
     setMode('editor');
     setShowTriggerSelector(false);
   };
 
   const handleBackToList = () => {
+    loadedAutomationSnapshotRef.current = null;
     setMode('list');
     setCurrentFlowId(null);
     setNodes([]);
