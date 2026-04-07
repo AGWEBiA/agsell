@@ -25,7 +25,7 @@ import {
   Tag, Star, Bell, Clock, CheckSquare, GitBranch,
   Settings, X, Play, Pause, MoreVertical,
   Workflow, Timer, Flame, MailCheck, Filter, Code,
-  Copy, Share2, StickyNote, Volume2, Split, Pencil,
+  Copy, Share2, StickyNote, Volume2, Split, Pencil, Users,
 } from 'lucide-react';
 import {
   DropdownMenu,
