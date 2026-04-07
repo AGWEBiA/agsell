@@ -338,8 +338,30 @@ export function FlowCanvas({
           })()}
         </svg>
 
-        {/* Nodes */}
-        {nodes.map(node => (
+        {/* Notes rendered first (behind other nodes) */}
+        {nodes.filter(n => n.subtype === 'note').map(node => (
+          <CanvasNode
+            key={node.id}
+            node={node}
+            onMouseDown={(e) => handleNodeDragStart(node.id, e)}
+            onEdit={() => onEditNode(node)}
+            onDelete={() => onDeleteNode(node.id)}
+            onPortMouseDown={() => {}}
+            onInputMouseUp={() => {}}
+            isConnecting={false}
+            onResizeStart={(e) => {
+              setResizingNodeId(node.id);
+              setResizeStart({
+                w: (node.config.width as number) || 260,
+                h: (node.config.height as number) || 120,
+                mouseX: e.clientX,
+                mouseY: e.clientY,
+              });
+            }}
+          />
+        ))}
+        {/* Regular nodes */}
+        {nodes.filter(n => n.subtype !== 'note').map(node => (
           <CanvasNode
             key={node.id}
             node={node}
