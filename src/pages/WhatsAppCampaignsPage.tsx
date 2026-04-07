@@ -232,6 +232,9 @@ export default function WhatsAppCampaignsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(campaign)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
                         {campaign.status === 'draft' && (
                           <DropdownMenuItem onClick={() => startCampaign(campaign.id)}>
                             <Play className="h-4 w-4 mr-2" /> Iniciar
@@ -249,7 +252,12 @@ export default function WhatsAppCampaignsPage() {
                         )}
                         {['running', 'paused'].includes(campaign.status) && (
                           <DropdownMenuItem onClick={() => stopCampaign(campaign.id)} className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" /> Cancelar
+                            <StopCircle className="h-4 w-4 mr-2" /> Cancelar
+                          </DropdownMenuItem>
+                        )}
+                        {['draft', 'completed', 'cancelled'].includes(campaign.status) && (
+                          <DropdownMenuItem onClick={() => deleteCampaign(campaign.id)} className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
