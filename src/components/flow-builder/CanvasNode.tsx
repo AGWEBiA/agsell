@@ -180,9 +180,7 @@ export function CanvasNode({
             className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity"
             onMouseDown={(e) => {
               e.stopPropagation();
-              // Signal resize via a custom handler on the parent
-              const onResizeStart = (node as any).__onResizeStart;
-              if (onResizeStart) onResizeStart(e);
+              onResizeStart?.(e);
             }}
             style={{ borderRight: `3px solid ${colors.border}`, borderBottom: `3px solid ${colors.border}`, borderRadius: '0 0 10px 0' }}
           />
