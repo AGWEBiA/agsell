@@ -44,6 +44,10 @@ export function FlowCanvas({
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [dragNodeStart, setDragNodeStart] = useState<{ nodePos: FlowNodePosition; mousePos: FlowNodePosition } | null>(null);
 
+  // Resize state for note nodes
+  const [resizingNodeId, setResizingNodeId] = useState<string | null>(null);
+  const [resizeStart, setResizeStart] = useState<{ w: number; h: number; mouseX: number; mouseY: number } | null>(null);
+
   // Connection drawing
   const [connectingFrom, setConnectingFrom] = useState<{ nodeId: string; port: 'default' | 'yes' | 'no' } | null>(null);
   const [connectingMouse, setConnectingMouse] = useState<FlowNodePosition>({ x: 0, y: 0 });
@@ -83,15 +87,28 @@ export function FlowCanvas({
           : n
       ));
     }
+    if (resizingNodeId && resizeStart) {
+      const dx = (e.clientX - resizeStart.mouseX) / scale;
+      const dy = (e.clientY - resizeStart.mouseY) / scale;
+      const newW = Math.max(160, resizeStart.w + dx);
+      const newH = Math.max(80, resizeStart.h + dy);
+      onNodesChange(currentNodes => currentNodes.map(n =>
+        n.id === resizingNodeId
+          ? { ...n, config: { ...n.config, width: newW, height: newH } }
+          : n
+      ));
+    }
     if (connectingFrom) {
       setConnectingMouse(screenToCanvas(e.clientX, e.clientY));
     }
-  }, [isPanning, panStart, draggingNodeId, dragNodeStart, scale, onNodesChange, connectingFrom, screenToCanvas]);
+  }, [isPanning, panStart, draggingNodeId, dragNodeStart, scale, onNodesChange, connectingFrom, screenToCanvas, resizingNodeId, resizeStart]);
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsPanning(false);
     setDraggingNodeId(null);
     setDragNodeStart(null);
+    setResizingNodeId(null);
+    setResizeStart(null);
     if (connectingFrom) {
       setConnectingFrom(null);
     }
@@ -321,8 +338,30 @@ export function FlowCanvas({
           })()}
         </svg>
 
-        {/* Nodes */}
-        {nodes.map(node => (
+        {/* Notes rendered first (behind other nodes) */}
+        {nodes.filter(n => n.subtype === 'note').map(node => (
+          <CanvasNode
+            key={node.id}
+            node={node}
+            onMouseDown={(e) => handleNodeDragStart(node.id, e)}
+            onEdit={() => onEditNode(node)}
+            onDelete={() => onDeleteNode(node.id)}
+            onPortMouseDown={() => {}}
+            onInputMouseUp={() => {}}
+            isConnecting={false}
+            onResizeStart={(e) => {
+              setResizingNodeId(node.id);
+              setResizeStart({
+                w: (node.config.width as number) || 260,
+                h: (node.config.height as number) || 120,
+                mouseX: e.clientX,
+                mouseY: e.clientY,
+              });
+            }}
+          />
+        ))}
+        {/* Regular nodes */}
+        {nodes.filter(n => n.subtype !== 'note').map(node => (
           <CanvasNode
             key={node.id}
             node={node}

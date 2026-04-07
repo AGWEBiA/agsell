@@ -14,6 +14,7 @@ interface CanvasNodeProps {
   onInputMouseUp: () => void;
   isConnecting: boolean;
   analytics?: { entries_count: number; conversions_count: number; errors_count: number };
+  onResizeStart?: (e: React.MouseEvent) => void;
 }
 
 export function CanvasNode({
@@ -25,6 +26,7 @@ export function CanvasNode({
   onInputMouseUp,
   isConnecting,
   analytics,
+  onResizeStart,
 }: CanvasNodeProps) {
   if (!node.position) return null;
 
@@ -112,33 +114,42 @@ export function CanvasNode({
     e.stopPropagation();
   };
 
-  // Note node special rendering
+  // Note node special rendering — sticky annotation (like n8n), NOT connectable
   if (node.subtype === 'note') {
-    const noteColors: Record<string, string> = {
-      yellow: 'bg-yellow-900/30 border-yellow-700/50',
-      blue: 'bg-blue-900/30 border-blue-700/50',
-      green: 'bg-green-900/30 border-green-700/50',
-      pink: 'bg-pink-900/30 border-pink-700/50',
+    const noteColorMap: Record<string, { bg: string; border: string; text: string }> = {
+      yellow: { bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.4)', text: 'rgba(250,204,21,0.9)' },
+      green: { bg: 'rgba(74,222,128,0.15)', border: 'rgba(74,222,128,0.4)', text: 'rgba(74,222,128,0.9)' },
+      blue: { bg: 'rgba(96,165,250,0.15)', border: 'rgba(96,165,250,0.4)', text: 'rgba(96,165,250,0.9)' },
+      pink: { bg: 'rgba(244,114,182,0.15)', border: 'rgba(244,114,182,0.4)', text: 'rgba(244,114,182,0.9)' },
+      red: { bg: 'rgba(248,113,113,0.15)', border: 'rgba(248,113,113,0.4)', text: 'rgba(248,113,113,0.9)' },
+      purple: { bg: 'rgba(192,132,252,0.15)', border: 'rgba(192,132,252,0.4)', text: 'rgba(192,132,252,0.9)' },
     };
+    const colorKey = (node.config.color as string) || 'yellow';
+    const colors = noteColorMap[colorKey] || noteColorMap.yellow;
+    const noteW = (node.config.width as number) || 260;
+    const noteH = (node.config.height as number) || 120;
+
     return (
       <div
-        className="absolute select-none"
-        style={{ left: node.position.x, top: node.position.y, width: NODE_WIDTH }}
+        className="absolute select-none group"
+        style={{
+          left: node.position.x,
+          top: node.position.y,
+          width: noteW,
+          height: noteH,
+          zIndex: 0,
+        }}
       >
-        {/* Input port */}
         <div
-          className={cn("absolute -top-3 left-1/2 -translate-x-1/2 h-6 w-6 rounded-full border-2 flex items-center justify-center z-10 transition-all",
-            isConnecting ? "border-primary bg-primary/30 scale-125 cursor-crosshair" : "border-white/20 bg-[#1a1a2e]"
-          )}
-          onMouseUp={onInputMouseUp}
-        >
-          <div className="h-2 w-2 rounded-full bg-white/40" />
-        </div>
-        <div
-          className={cn('relative rounded-xl border-2 p-4 cursor-move group transition-colors', noteColors[(node.config.color as string) || 'yellow'])}
+          className="w-full h-full rounded-xl cursor-move relative"
+          style={{
+            backgroundColor: colors.bg,
+            border: `2px solid ${colors.border}`,
+          }}
           onMouseDown={onMouseDown}
           onDoubleClick={onEdit}
         >
+          {/* Delete button */}
           <button
             onClick={handleDeleteClick}
             onMouseDown={handleDeleteMouseDown}
@@ -146,20 +157,33 @@ export function CanvasNode({
           >
             <X className="h-3 w-3" />
           </button>
-          <div className="flex items-center gap-2 mb-1">
-            <StickyNote className="h-4 w-4 text-yellow-400" />
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/20 text-white/60">NOTA</Badge>
-          </div>
-          <p className="text-xs text-white/70">{node.config.text ? String(node.config.text).slice(0, 120) : 'Duplo clique para editar...'}</p>
-        </div>
-        {/* Output port */}
-        <div className="flex justify-center mt-1">
-          <div
-            className="h-5 w-5 rounded-full border-2 border-white/20 bg-[#1a1a2e] flex items-center justify-center cursor-crosshair hover:border-primary hover:bg-primary/20 transition-all"
-            onMouseDown={(e) => onPortMouseDown('default', e)}
+          {/* Settings button */}
+          <button
+            onClick={handleSettingsClick}
+            onMouseDown={handleSettingsMouseDown}
+            className="absolute top-2 right-2 h-6 w-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10"
           >
-            <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
+            <Settings className="h-3.5 w-3.5" style={{ color: colors.text }} />
+          </button>
+          {/* Content */}
+          <div className="p-3 h-full flex flex-col">
+            <div className="flex items-center gap-1.5 mb-1">
+              <StickyNote className="h-3.5 w-3.5" style={{ color: colors.text }} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: colors.text }}>Nota</span>
+            </div>
+            <p className="text-xs text-white/70 flex-1 overflow-hidden leading-relaxed">
+              {node.config.text ? String(node.config.text) : 'Duplo clique para editar...'}
+            </p>
           </div>
+          {/* Resize handle — bottom-right corner */}
+          <div
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onResizeStart?.(e);
+            }}
+            style={{ borderRight: `3px solid ${colors.border}`, borderBottom: `3px solid ${colors.border}`, borderRadius: '0 0 10px 0' }}
+          />
         </div>
       </div>
     );
