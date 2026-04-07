@@ -65,7 +65,7 @@ export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeC
       {/* Target Tags */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Tag className="h-4 w-4" /> Tags dos Grupos Alvo
+          <TagIcon className="h-4 w-4" /> Tags dos Grupos Alvo
         </Label>
 
         {/* Search input */}
@@ -93,7 +93,7 @@ export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeC
                   className="cursor-pointer text-xs gap-1 transition-colors"
                   onClick={() => toggleTag(tag.name)}
                 >
-                  <Tag className="h-3 w-3" />{tag.name}
+                  <TagIcon className="h-3 w-3" />{tag.name}
                   {isSelected && <X className="h-3 w-3 ml-0.5" />}
                 </Badge>
               );
@@ -112,7 +112,7 @@ export function WhatsAppGroupNodeConfig({ config, onChange }: WhatsAppGroupNodeC
           <div className="flex flex-wrap gap-1.5">
             {selectedTags.map(tag => (
               <Badge key={tag} variant="secondary" className="text-xs gap-1">
-                <Tag className="h-3 w-3" />{tag}
+                <TagIcon className="h-3 w-3" />{tag}
                 <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive">
                   <X className="h-3 w-3" />
                 </button>
