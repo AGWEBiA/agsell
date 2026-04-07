@@ -922,6 +922,9 @@ export default function FlowBuilder() {
           toast({ title: '✅ Fluxo atualizado!' });
           navigateToList();
         },
+        onError: (err: Error) => {
+          toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+        },
       });
     } else {
       createAutomation.mutate({
@@ -934,6 +937,9 @@ export default function FlowBuilder() {
         onSuccess: () => {
           toast({ title: '✅ Fluxo criado!' });
           navigateToList();
+        },
+        onError: (err: Error) => {
+          toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
         },
       });
     }
