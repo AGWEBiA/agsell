@@ -92,7 +92,7 @@ export function CanvasNode({
   const summary = getNodeSummary();
   const colorClass = node.type === 'trigger' ? `bg-gradient-to-br ${(info as any).color}` : (info as any).color;
   const isCondition = node.type === 'condition';
-  const NODE_WIDTH = 320;
+  const NODE_WIDTH = 220;
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -207,7 +207,7 @@ export function CanvasNode({
       {/* Node body */}
       <div
         className={cn(
-          'relative rounded-xl border hover:border-white/25 bg-[#222240] p-4 cursor-move group transition-colors shadow-lg',
+          'relative rounded-xl border hover:border-white/25 bg-[#222240] p-3 cursor-move group transition-colors shadow-lg',
           node.type === 'trigger' ? 'border-2 p-[2px]' : 'border-white/10',
           node.type === 'trigger' && `bg-gradient-to-r ${(info as any).color}`
         )}
@@ -224,7 +224,7 @@ export function CanvasNode({
         </button>
 
         {node.type === 'trigger' ? (
-          <div className="bg-[#222240] rounded-[10px] p-4">
+          <div className="bg-[#222240] rounded-[10px] p-3">
             <InnerContent />
           </div>
         ) : (
@@ -270,41 +270,37 @@ export function CanvasNode({
   function InnerContent() {
     return (
       <>
-        <div className="flex items-center gap-3">
-          <div className={cn('flex items-center justify-center h-12 w-12 rounded-full shadow-lg shrink-0', node.type === 'trigger' ? `bg-gradient-to-br text-white ${(info as any).color}` : colorClass)}>
-            <Icon className="h-5 w-5" />
+        <div className="flex items-center gap-2">
+          <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg shadow-md shrink-0', node.type === 'trigger' ? `bg-gradient-to-br text-white ${(info as any).color}` : colorClass)}>
+            <Icon className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/20 text-white/60">{getTypeLabel()}</Badge>
-              {node.type === 'trigger' && (info as any).channel && (
-                <span className="text-xs text-white/50">{String((info as any).channel).toUpperCase()}</span>
-              )}
+            <div className="flex items-center gap-1.5">
+              <Badge variant="outline" className="text-[8px] px-1 py-0 border-white/20 text-white/60">{getTypeLabel()}</Badge>
             </div>
-            <p className="font-semibold text-sm mt-0.5 text-white">{info.label}</p>
-            {summary && <p className="text-xs text-white/50 mt-0.5 truncate max-w-[200px]">{summary}</p>}
-            {node.config.keyword && <p className="text-xs text-white/50 mt-0.5">Palavra: "{String(node.config.keyword)}"</p>}
+            <p className="font-semibold text-xs mt-0.5 text-white truncate">{info.label}</p>
+            {summary && <p className="text-[10px] text-white/50 mt-0.5 truncate">{summary}</p>}
           </div>
           <button
             onClick={handleSettingsClick}
             onMouseDown={handleSettingsMouseDown}
-            className="h-8 w-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hover:bg-white/10"
+            className="h-6 w-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hover:bg-white/10"
             title="Configurar"
           >
-            <Settings className="h-4 w-4 text-white/50 hover:text-white" />
+            <Settings className="h-3.5 w-3.5 text-white/50 hover:text-white" />
           </button>
         </div>
         {isCondition && (
-          <div className="mt-3 flex gap-2 text-xs">
-            <div className="flex-1 rounded-md bg-green-900/30 p-2 text-center text-green-400 border border-green-700/30">✅ Sim</div>
-            <div className="flex-1 rounded-md bg-red-900/30 p-2 text-center text-red-400 border border-red-700/30">❌ Não</div>
+          <div className="mt-2 flex gap-1.5 text-[10px]">
+            <div className="flex-1 rounded-md bg-green-900/30 p-1.5 text-center text-green-400 border border-green-700/30">✅ Sim</div>
+            <div className="flex-1 rounded-md bg-red-900/30 p-1.5 text-center text-red-400 border border-red-700/30">❌ Não</div>
           </div>
         )}
         {analytics && (
-          <div className="flex gap-1 mt-2">
-            <Badge className="text-[9px] px-1.5 py-0 bg-green-500/20 text-green-400 border-green-500/30">{analytics.entries_count}</Badge>
-            <Badge className="text-[9px] px-1.5 py-0 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">{analytics.conversions_count}</Badge>
-            <Badge className="text-[9px] px-1.5 py-0 bg-red-500/20 text-red-400 border-red-500/30">{analytics.errors_count}</Badge>
+          <div className="flex gap-1 mt-1.5">
+            <Badge className="text-[8px] px-1 py-0 bg-green-500/20 text-green-400 border-green-500/30">{analytics.entries_count}</Badge>
+            <Badge className="text-[8px] px-1 py-0 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">{analytics.conversions_count}</Badge>
+            <Badge className="text-[8px] px-1 py-0 bg-red-500/20 text-red-400 border-red-500/30">{analytics.errors_count}</Badge>
           </div>
         )}
       </>

@@ -224,8 +224,8 @@ export function FlowCanvas({
   const getNodePort = (nodeId: string, port: 'input' | 'default' | 'yes' | 'no'): FlowNodePosition => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node?.position) return { x: 0, y: 0 };
-    const w = 320;
-    const h = node.type === 'condition' ? 120 : 80;
+    const w = 220;
+    const h = node.type === 'condition' ? 90 : 60;
     if (port === 'input') return { x: node.position.x + w / 2, y: node.position.y };
     if (port === 'yes') return { x: node.position.x + w * 0.3, y: node.position.y + h };
     if (port === 'no') return { x: node.position.x + w * 0.7, y: node.position.y + h };
