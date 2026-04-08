@@ -842,29 +842,21 @@ export default function FlowBuilder() {
 
   // Drag from sidebar
   const handleDragStart = (e: React.DragEvent, nodeType: string, subtype: string) => {
-    if (showTriggerSelector) {
-      flushSync(() => setShowTriggerSelector(false));
-    }
-
+    // IMPORTANT: Do NOT use flushSync here — synchronous re-renders during
+    // dragstart kill the native HTML5 drag operation in many browsers.
     const payload = { nodeType: nodeType as FlowNode['type'], subtype };
     isDraggingFromSidebarRef.current = true;
-    flushSync(() => setSidebarDragPayload(payload));
 
-    // Set drag data in multiple formats for cross-browser compatibility
-    try {
-      e.dataTransfer.clearData();
-    } catch {
-      // Some browsers throw on clearData
-    }
+    // Set drag data BEFORE any state updates
     e.dataTransfer.setData('application/flow-node', JSON.stringify(payload));
     e.dataTransfer.setData('text/plain', JSON.stringify(payload));
-    e.dataTransfer.effectAllowed = 'copyMove';
+    e.dataTransfer.effectAllowed = 'copy';
 
-    // Create a small drag image
-    const dragEl = e.currentTarget.querySelector('div') as HTMLElement;
-    if (dragEl) {
-      e.dataTransfer.setDragImage(dragEl, 20, 20);
-    }
+    // Defer state updates to after the drag event is fully initialized
+    requestAnimationFrame(() => {
+      setSidebarDragPayload(payload);
+      if (showTriggerSelector) setShowTriggerSelector(false);
+    });
   };
 
   const handleDragEnd = () => {
