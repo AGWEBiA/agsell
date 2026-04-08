@@ -1019,7 +1019,6 @@ export default function FlowBuilder() {
       }, {
         onSuccess: () => {
           toast({ title: '✅ Fluxo atualizado!' });
-          navigateToList();
         },
         onError: (err: Error) => {
           toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
@@ -1033,9 +1032,11 @@ export default function FlowBuilder() {
         actions,
         is_active: isActive,
       }, {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           toast({ title: '✅ Fluxo criado!' });
-          navigateToList();
+          if (data?.id) {
+            setCurrentFlowId(data.id);
+          }
         },
         onError: (err: Error) => {
           toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
