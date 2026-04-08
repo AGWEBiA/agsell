@@ -368,6 +368,7 @@ export function FlowCanvas({
           <CanvasNode
             key={node.id}
             node={node}
+            nodeScale={nodeScale}
             onMouseDown={(e) => handleNodeDragStart(node.id, e)}
             onEdit={() => onEditNode(node)}
             onDelete={() => onDeleteNode(node.id)}
@@ -390,6 +391,7 @@ export function FlowCanvas({
           <CanvasNode
             key={node.id}
             node={node}
+            nodeScale={nodeScale}
             onMouseDown={(e) => handleNodeDragStart(node.id, e)}
             onEdit={() => onEditNode(node)}
             onDelete={() => onDeleteNode(node.id)}
