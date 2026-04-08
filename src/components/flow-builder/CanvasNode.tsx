@@ -94,7 +94,7 @@ export function CanvasNode({
   const summary = getNodeSummary();
   const colorClass = node.type === 'trigger' ? `bg-gradient-to-br ${(info as any).color}` : (info as any).color;
   const isCondition = node.type === 'condition';
-  const NODE_WIDTH = 220;
+  const NODE_WIDTH = Math.round(220 * nodeScale);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
