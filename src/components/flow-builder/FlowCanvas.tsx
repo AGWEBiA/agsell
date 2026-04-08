@@ -18,6 +18,8 @@ interface FlowCanvasProps {
   analytics?: Array<{ node_id: string; entries_count: number; conversions_count: number; errors_count: number }>;
   sidebarDragPayload?: { nodeType: FlowNode['type']; subtype: string } | null;
   onSidebarDragConsume?: () => void;
+  nodeScale?: number;
+  onNodeScaleChange?: (scale: number) => void;
 }
 
 export function FlowCanvas({
