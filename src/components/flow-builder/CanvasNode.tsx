@@ -18,6 +18,38 @@ interface CanvasNodeProps {
   nodeScale?: number;
 }
 
+// Map subtypes to icon background colors (SellFlux style)
+const ICON_BG_COLORS: Record<string, string> = {
+  // WhatsApp related
+  send_whatsapp: 'bg-green-600',
+  send_whatsapp_group: 'bg-green-600',
+  whatsapp_received: 'bg-green-600',
+  whatsapp_keyword: 'bg-green-600',
+  whatsapp_automation: 'bg-green-600',
+  add_to_whatsapp_group: 'bg-green-600',
+  // Tags
+  tag_added: 'bg-zinc-700',
+  tag_removed: 'bg-zinc-700',
+  add_tag: 'bg-zinc-700',
+  remove_tag: 'bg-zinc-700',
+  // Timer
+  timer: 'bg-zinc-800',
+  // Edit group
+  edit_whatsapp_group: 'bg-zinc-600',
+  // Email
+  send_email_marketing: 'bg-blue-600',
+  send_email_performance: 'bg-blue-600',
+  // Instagram
+  instagram_comment: 'bg-pink-600',
+  instagram_dm: 'bg-pink-600',
+  send_instagram_dm: 'bg-pink-600',
+  // Conditions
+  conditional: 'bg-amber-600',
+  if_tag: 'bg-amber-600',
+  if_keyword: 'bg-amber-600',
+  if_score: 'bg-amber-600',
+};
+
 export function CanvasNode({
   node,
   onMouseDown,
@@ -35,22 +67,6 @@ export function CanvasNode({
   const getTriggerInfo = () => triggerOptions.find(t => t.id === node.subtype);
   const getActionInfo = () => [...actionOptions, ...conditionOptions].find(a => a.id === node.subtype);
 
-  const getTypeLabel = () => {
-    if (node.type === 'trigger') return 'GATILHO';
-    if (['timer', 'warmup'].includes(node.subtype)) return node.subtype === 'timer' ? 'TIMER' : 'AQUECIMENTO';
-    if (['tag_filter'].includes(node.subtype)) return 'FILTRO';
-    if (['send_email_marketing', 'send_email_performance'].includes(node.subtype)) return 'EMAIL';
-    if (node.subtype === 'parallel_channels') return 'PARALELO';
-    if (node.subtype === 'voice_torpedo') return 'VOZ';
-    if (node.subtype === 'send_voip_call') return 'VOIP';
-    if (node.subtype === 'link_split') return 'SPLIT';
-    if (node.subtype === 'note') return 'NOTA';
-    if (['sequence_transaction', 'sequence_lead', 'sequence_rewarming', 'sequence_optin'].includes(node.subtype)) return 'SEQUÊNCIA';
-    if (node.type === 'condition') return 'CONDIÇÃO';
-    if (node.type === 'delay') return 'ESPERA';
-    return 'AÇÃO';
-  };
-
   const getNodeSummary = () => {
     const c = node.config;
     const statusLabels: Record<string, string> = {
@@ -61,26 +77,12 @@ export function CanvasNode({
     };
     switch (node.subtype) {
       case 'timer':
-        if (c.timer_mode === 'specific_date' && c.specific_date) return `Data: ${String(c.specific_date)}`;
+        if (c.timer_mode === 'specific_date' && c.specific_date) return `Em ${String(c.specific_date)}`;
         return `${c.duration || 1} ${c.unit === 'hours' ? 'h' : c.unit === 'days' ? 'dias' : 'min'}`;
       case 'warmup': return `${c.leads_per_minute || 1} leads/min`;
       case 'send_email_marketing':
       case 'send_email_performance':
         return c.subject ? `"${String(c.subject)}"` : '';
-      case 'sequence_transaction':
-        if (c.entry_status || c.exit_status) {
-          const entry = statusLabels[String(c.entry_status)] || String(c.entry_status || '');
-          const exit = statusLabels[String(c.exit_status)] || String(c.exit_status || '');
-          return `${entry} → ${exit}`;
-        }
-        return '';
-      case 'sequence_lead':
-        if (c.entry_status) return `${statusLabels[String(c.entry_status)] || String(c.entry_status)} → ${statusLabels[String(c.exit_status)] || String(c.exit_status || '')}`;
-        return '';
-      case 'sequence_rewarming':
-        return c.inactivity_days ? `${c.inactivity_days} dias inativo` : '';
-      case 'sequence_optin':
-        return c.optin_type === 'double' ? 'Double Opt-in' : 'Single Opt-in';
       default:
         if (c.message) return `"${String(c.message).slice(0, 30)}..."`;
         if (c.tag_name) return `Tag: ${String(c.tag_name)}`;
@@ -92,9 +94,8 @@ export function CanvasNode({
   if (!info) return null;
   const Icon = info.icon;
   const summary = getNodeSummary();
-  const colorClass = node.type === 'trigger' ? `bg-gradient-to-br ${(info as any).color}` : (info as any).color;
   const isCondition = node.type === 'condition';
-  const NODE_WIDTH = Math.round(220 * nodeScale);
+  const NODE_WIDTH = Math.round(180 * nodeScale);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -116,7 +117,7 @@ export function CanvasNode({
     e.stopPropagation();
   };
 
-  // Note node special rendering — sticky annotation (like n8n), NOT connectable
+  // Note node special rendering
   if (node.subtype === 'note') {
     const noteColorMap: Record<string, { bg: string; border: string; text: string }> = {
       yellow: { bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.4)', text: 'rgba(250,204,21,0.9)' },
@@ -151,7 +152,6 @@ export function CanvasNode({
           onMouseDown={onMouseDown}
           onDoubleClick={onEdit}
         >
-          {/* Delete button */}
           <button
             onClick={handleDeleteClick}
             onMouseDown={handleDeleteMouseDown}
@@ -159,7 +159,6 @@ export function CanvasNode({
           >
             <X className="h-3 w-3" />
           </button>
-          {/* Settings button */}
           <button
             onClick={handleSettingsClick}
             onMouseDown={handleSettingsMouseDown}
@@ -167,7 +166,6 @@ export function CanvasNode({
           >
             <Settings className="h-3.5 w-3.5" style={{ color: colors.text }} />
           </button>
-          {/* Content */}
           <div className="p-3 h-full flex flex-col">
             <div className="flex items-center gap-1.5 mb-1">
               <StickyNote className="h-3.5 w-3.5" style={{ color: colors.text }} />
@@ -177,7 +175,6 @@ export function CanvasNode({
               {node.config.text ? String(node.config.text) : 'Duplo clique para editar...'}
             </p>
           </div>
-          {/* Resize handle — bottom-right corner */}
           <div
             className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity"
             onMouseDown={(e) => {
@@ -191,6 +188,24 @@ export function CanvasNode({
     );
   }
 
+  // ── SellFlux-style node: centered icon, label below, badges ──
+  const iconBg = ICON_BG_COLORS[node.subtype] || 'bg-zinc-700';
+  const iconBoxSize = Math.round(44 * nodeScale);
+  const iconInnerSize = Math.round(22 * nodeScale);
+  const fontSize = Math.max(9, Math.round(11 * nodeScale));
+  const summaryFontSize = Math.max(8, Math.round(9 * nodeScale));
+
+  // Count groups or relevant info for subtitle
+  const getSubtitle = () => {
+    const c = node.config;
+    if (c.groups && Array.isArray(c.groups)) return `${(c.groups as unknown[]).length} grupo${(c.groups as unknown[]).length !== 1 ? 's' : ''}`;
+    if (c.group_jid) return '1 grupo';
+    if (summary) return summary;
+    return '';
+  };
+
+  const subtitle = getSubtitle();
+
   return (
     <div
       className="absolute select-none"
@@ -198,45 +213,90 @@ export function CanvasNode({
     >
       {/* Input port */}
       <div
-        className={cn("absolute -top-3 left-1/2 -translate-x-1/2 h-6 w-6 rounded-full border-2 flex items-center justify-center z-10 transition-all",
+        className={cn("absolute -top-3 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full border-2 flex items-center justify-center z-10 transition-all",
           isConnecting ? "border-primary bg-primary/30 scale-125 cursor-crosshair" : "border-white/20 bg-[#1a1a2e]"
         )}
         onMouseUp={onInputMouseUp}
       >
-        <div className="h-2 w-2 rounded-full bg-white/40" />
+        <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
       </div>
 
-      {/* Node body */}
+      {/* Node body — SellFlux centered style */}
       <div
-        className={cn(
-          'relative rounded-xl border hover:border-white/25 bg-[#222240] p-3 cursor-move group transition-colors shadow-lg',
-          node.type === 'trigger' ? 'border-2 p-[2px]' : 'border-white/10',
-          node.type === 'trigger' && `bg-gradient-to-r ${(info as any).color}`
-        )}
+        className="relative rounded-xl cursor-move group transition-colors"
         onMouseDown={onMouseDown}
         onDoubleClick={onEdit}
       >
-        {/* Delete button - positioned relative to node body */}
+        {/* Delete button */}
         <button
           onClick={handleDeleteClick}
           onMouseDown={handleDeleteMouseDown}
-          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20"
+          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20"
         >
-          <X className="h-3 w-3" />
+          <X className="h-2.5 w-2.5" />
         </button>
 
-        {node.type === 'trigger' ? (
-          <div className="bg-[#222240] rounded-[10px] p-3">
-            <InnerContent />
+        {/* Settings button */}
+        <button
+          onClick={handleSettingsClick}
+          onMouseDown={handleSettingsMouseDown}
+          className="absolute -top-2 -left-2 h-5 w-5 rounded-full bg-white/10 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-white/20"
+        >
+          <Settings className="h-2.5 w-2.5 text-white/70" />
+        </button>
+
+        {/* Centered icon box */}
+        <div className="flex flex-col items-center">
+          <div
+            className={cn('rounded-xl flex items-center justify-center shadow-lg', iconBg)}
+            style={{ width: iconBoxSize, height: iconBoxSize }}
+          >
+            <Icon style={{ width: iconInnerSize, height: iconInnerSize }} className="text-white" />
           </div>
-        ) : (
-          <InnerContent />
-        )}
+
+          {/* Label + subtitle */}
+          <p
+            className="font-semibold text-white text-center mt-1.5 leading-tight truncate w-full"
+            style={{ fontSize }}
+          >
+            {info.label}
+            {subtitle && (
+              <span className="text-white/50 font-normal"> | {subtitle}</span>
+            )}
+          </p>
+
+          {/* Timer extra info */}
+          {node.subtype === 'timer' && node.config.days && Array.isArray(node.config.days) && (
+            <p className="text-white/30 text-center truncate w-full" style={{ fontSize: summaryFontSize }}>
+              {(node.config.days as string[]).map(d => {
+                const day = WEEKDAYS.find(w => w.value === d);
+                return day ? day.label.slice(0, 3) + '.' : d;
+              }).join(', ')}
+            </p>
+          )}
+
+          {/* Analytics badges — SellFlux colored badges */}
+          {analytics && (
+            <div className="flex gap-1 mt-1.5">
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[16px] rounded text-[8px] font-bold px-1 bg-green-600 text-white">{analytics.entries_count}</span>
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[16px] rounded text-[8px] font-bold px-1 bg-yellow-500 text-white">{analytics.conversions_count}</span>
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[16px] rounded text-[8px] font-bold px-1 bg-red-600 text-white">{analytics.errors_count}</span>
+            </div>
+          )}
+
+          {/* Condition branches */}
+          {isCondition && (
+            <div className="mt-1.5 flex gap-1.5 w-full">
+              <div className="flex-1 rounded bg-green-900/40 py-0.5 text-center text-green-400 text-[9px] border border-green-700/30">✅ Sim</div>
+              <div className="flex-1 rounded bg-red-900/40 py-0.5 text-center text-red-400 text-[9px] border border-red-700/30">❌ Não</div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Output ports */}
       {isCondition ? (
-        <div className="flex justify-between px-8 mt-1">
+        <div className="flex justify-between px-6 mt-1">
           <div
             className="flex flex-col items-center gap-0.5 cursor-crosshair"
             onMouseDown={(e) => onPortMouseDown('yes', e)}
@@ -244,7 +304,6 @@ export function CanvasNode({
             <div className="h-5 w-5 rounded-full border-2 border-green-500/50 bg-[#1a1a2e] flex items-center justify-center hover:border-green-400 hover:bg-green-500/20 transition-all">
               <div className="h-1.5 w-1.5 rounded-full bg-green-400" />
             </div>
-            <span className="text-[9px] text-green-400/70">Sim</span>
           </div>
           <div
             className="flex flex-col items-center gap-0.5 cursor-crosshair"
@@ -253,7 +312,6 @@ export function CanvasNode({
             <div className="h-5 w-5 rounded-full border-2 border-red-500/50 bg-[#1a1a2e] flex items-center justify-center hover:border-red-400 hover:bg-red-500/20 transition-all">
               <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
             </div>
-            <span className="text-[9px] text-red-400/70">Não</span>
           </div>
         </div>
       ) : (
@@ -268,48 +326,4 @@ export function CanvasNode({
       )}
     </div>
   );
-
-  function InnerContent() {
-    const iconBoxSize = nodeScale <= 0.8 ? 'h-6 w-6' : nodeScale >= 1.2 ? 'h-10 w-10' : 'h-8 w-8';
-    const iconSize = nodeScale <= 0.8 ? 'h-3 w-3' : nodeScale >= 1.2 ? 'h-5 w-5' : 'h-4 w-4';
-    const labelSize = nodeScale <= 0.8 ? 'text-[10px]' : nodeScale >= 1.2 ? 'text-sm' : 'text-xs';
-    const badgeSize = nodeScale <= 0.8 ? 'text-[7px]' : 'text-[8px]';
-    return (
-      <>
-        <div className="flex items-center gap-2">
-          <div className={cn(`flex items-center justify-center ${iconBoxSize} rounded-lg shadow-md shrink-0`, node.type === 'trigger' ? `bg-gradient-to-br text-white ${(info as any).color}` : colorClass)}>
-            <Icon className={iconSize} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <Badge variant="outline" className={`${badgeSize} px-1 py-0 border-white/20 text-white/60`}>{getTypeLabel()}</Badge>
-            </div>
-            <p className={`font-semibold ${labelSize} mt-0.5 text-white truncate`}>{info.label}</p>
-            {summary && <p className="text-[10px] text-white/50 mt-0.5 truncate">{summary}</p>}
-          </div>
-          <button
-            onClick={handleSettingsClick}
-            onMouseDown={handleSettingsMouseDown}
-            className="h-6 w-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hover:bg-white/10"
-            title="Configurar"
-          >
-            <Settings className="h-3.5 w-3.5 text-white/50 hover:text-white" />
-          </button>
-        </div>
-        {isCondition && (
-          <div className="mt-2 flex gap-1.5 text-[10px]">
-            <div className="flex-1 rounded-md bg-green-900/30 p-1.5 text-center text-green-400 border border-green-700/30">✅ Sim</div>
-            <div className="flex-1 rounded-md bg-red-900/30 p-1.5 text-center text-red-400 border border-red-700/30">❌ Não</div>
-          </div>
-        )}
-        {analytics && (
-          <div className="flex gap-1 mt-1.5">
-            <Badge className="text-[8px] px-1 py-0 bg-green-500/20 text-green-400 border-green-500/30">{analytics.entries_count}</Badge>
-            <Badge className="text-[8px] px-1 py-0 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">{analytics.conversions_count}</Badge>
-            <Badge className="text-[8px] px-1 py-0 bg-red-500/20 text-red-400 border-red-500/30">{analytics.errors_count}</Badge>
-          </div>
-        )}
-      </>
-    );
-  }
 }

@@ -843,17 +843,27 @@ export default function FlowBuilder() {
 
   // Drag from sidebar
   const handleDragStart = (e: React.DragEvent, nodeType: string, subtype: string) => {
-    // IMPORTANT: Do NOT use flushSync here — synchronous re-renders during
-    // dragstart kill the native HTML5 drag operation in many browsers.
     const payload = { nodeType: nodeType as FlowNode['type'], subtype };
     isDraggingFromSidebarRef.current = true;
 
-    // Set drag data BEFORE any state updates
+    // Set drag data immediately — this MUST happen synchronously in dragstart
     e.dataTransfer.setData('application/flow-node', JSON.stringify(payload));
     e.dataTransfer.setData('text/plain', JSON.stringify(payload));
-    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.effectAllowed = 'copyMove';
 
-    // Defer state updates to after the drag event is fully initialized
+    // Create a visible drag image from the dragged element
+    const el = e.currentTarget as HTMLElement;
+    const clone = el.cloneNode(true) as HTMLElement;
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.opacity = '0.8';
+    document.body.appendChild(clone);
+    e.dataTransfer.setDragImage(clone, 20, 20);
+    requestAnimationFrame(() => {
+      document.body.removeChild(clone);
+    });
+
+    // Defer React state updates
     requestAnimationFrame(() => {
       setSidebarDragPayload(payload);
       if (showTriggerSelector) setShowTriggerSelector(false);
@@ -1377,7 +1387,7 @@ export default function FlowBuilder() {
                             onDragStart={e => handleDragStart(e, getNodeType(opt.id), opt.id)}
                             onDragEnd={handleDragEnd}
                             onClick={() => handleClickToAdd(getNodeType(opt.id), opt.id)}
-                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group select-none"
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group select-none"
                             title={opt.label}
                             role="button"
                             tabIndex={0}
@@ -1413,7 +1423,7 @@ export default function FlowBuilder() {
                             onDragStart={e => handleDragStart(e, 'condition', opt.id)}
                             onDragEnd={handleDragEnd}
                             onClick={() => handleClickToAdd('condition', opt.id)}
-                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group select-none"
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all cursor-grab active:cursor-grabbing group select-none"
                             title={opt.label}
                             role="button"
                             tabIndex={0}

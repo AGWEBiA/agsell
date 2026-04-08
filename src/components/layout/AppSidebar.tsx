@@ -161,7 +161,7 @@ const menuSections: MenuSection[] = [
     label: 'Ajuda',
     icon: HelpCircle,
     items: [
-      { label: 'Suporte AG Sell', icon: Headphones, path: '/support-center' },
+      { label: 'Suporte IA', icon: MessageSquare, path: '/support-center' },
       { label: 'Central de Ajuda', icon: HelpCircle, path: '/help-center' },
       { label: 'Guia do Sistema', icon: BookOpen, path: '/system-guide' },
       { label: 'Migração de Dados', icon: ArrowRightLeft, path: '/migration' },

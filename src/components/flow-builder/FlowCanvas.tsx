@@ -230,7 +230,7 @@ export function FlowCanvas({
       subtype: droppedNode.subtype,
       label: info.label,
       config: {},
-      position: { x: pos.x - 110, y: pos.y - 30 },
+      position: { x: pos.x - 90, y: pos.y - 30 },
     };
     onNodesChange(currentNodes => [...currentNodes, newNode]);
     onSidebarDragConsume?.();
@@ -251,11 +251,11 @@ export function FlowCanvas({
   const getNodePort = (nodeId: string, port: 'input' | 'default' | 'yes' | 'no'): FlowNodePosition => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node?.position) return { x: 0, y: 0 };
-    const w = Math.round(220 * nodeScale);
-    const h = node.type === 'condition' ? Math.round(90 * nodeScale) : Math.round(60 * nodeScale);
+    const w = Math.round(180 * nodeScale);
+    const h = Math.round(70 * nodeScale);
     if (port === 'input') return { x: node.position.x + w / 2, y: node.position.y };
-    if (port === 'yes') return { x: node.position.x + w * 0.3, y: node.position.y + h };
-    if (port === 'no') return { x: node.position.x + w * 0.7, y: node.position.y + h };
+    if (port === 'yes') return { x: node.position.x + w * 0.2, y: node.position.y + h };
+    if (port === 'no') return { x: node.position.x + w * 0.8, y: node.position.y + h };
     return { x: node.position.x + w / 2, y: node.position.y + h };
   };
 

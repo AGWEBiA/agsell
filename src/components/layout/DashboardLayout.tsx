@@ -4,7 +4,7 @@ import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { cn } from '@/lib/utils';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
-import { SupportAgentChat } from '@/components/support/SupportAgentChat';
+
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAdminView } from '@/contexts/AdminViewContext';
@@ -147,7 +147,7 @@ export function DashboardLayout() {
         onClose={() => setShowOrgPicker(false)}
       />
 
-      <SupportAgentChat />
+      
     </div>
   );
 }
