@@ -44,13 +44,14 @@ serve(async (req) => {
           .update({ status: 'processing' })
           .eq('id', step.id);
 
-        // Resume automation from the scheduled step
-        const authToken = step.auth_token || serviceKey;
+        // Always use service role key for internal cron calls
+        // User JWT tokens expire and cannot be used for delayed resumption
         const resp = await fetch(`${supabaseUrl}/functions/v1/process-automation`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
+            'Authorization': `Bearer ${serviceKey}`,
+            'X-Internal-Cron': 'true',
           },
           body: JSON.stringify({
             automation_id: step.automation_id,
