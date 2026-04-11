@@ -781,7 +781,6 @@ export type Database = {
       automation_scheduled_steps: {
         Row: {
           actions: Json
-          auth_token: string | null
           automation_id: string
           contact_id: string | null
           created_at: string
@@ -794,7 +793,6 @@ export type Database = {
         }
         Insert: {
           actions?: Json
-          auth_token?: string | null
           automation_id: string
           contact_id?: string | null
           created_at?: string
@@ -807,7 +805,6 @@ export type Database = {
         }
         Update: {
           actions?: Json
-          auth_token?: string | null
           automation_id?: string
           contact_id?: string | null
           created_at?: string

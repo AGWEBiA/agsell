@@ -40,12 +40,19 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const isInternalCron = req.headers.get('X-Internal-Cron') === 'true' && token === supabaseServiceKey;
+
+    // For internal cron calls (scheduled step resumptions), skip user JWT validation
+    // since the original user token will have expired by the time the cron fires.
+    // The service role key is used instead and validated above.
+    if (!isInternalCron) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const payload: ExecutionPayload = await req.json();
@@ -430,7 +437,6 @@ serve(async (req) => {
                 scheduled_at: scheduledAt,
                 status: 'pending',
                 actions: remainingActions,
-                auth_token: token,
               });
 
               // Update execution to waiting
