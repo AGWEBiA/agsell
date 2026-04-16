@@ -250,13 +250,22 @@ export default function Vendas() {
               </div>
             </div>
 
-            {/* Right — Animated demo player */}
+            {/* Right — Presentation video */}
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-br from-primary/30 via-transparent to-orange-500/20 rounded-[2rem] blur-2xl opacity-60" />
-              <div className="relative">
-                <PlatformDemoPlayer />
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black aspect-video">
+                <video
+                  src="/videos/agsell-presentation.mp4"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster="/placeholder.svg"
+                  className="w-full h-full object-cover"
+                >
+                  <track kind="captions" />
+                </video>
               </div>
-              <p className="text-center text-xs text-white/30 mt-4 italic">Tour ao vivo da plataforma — 4 módulos em destaque</p>
+              <p className="text-center text-xs text-white/30 mt-4 italic">Apresentação oficial — narração + tour pela plataforma</p>
             </div>
           </div>
         </div>
