@@ -1,14 +1,14 @@
 import { Composition } from "remotion";
 import { MainVideo } from "./MainVideo";
 import { MetaDemoVideo } from "./MetaDemoVideo";
-import { AgsellPresentation } from "./AgsellPresentation";
+import { AgsellPresentationVideo } from "./AgsellPresentationVideo";
 
 // AgsellPresentation: 7 scenes (210+240+300+300+300+210+240) - 6 transitions*12 = 1728 frames
 export const RemotionRoot = () => (
   <>
     <Composition
       id="agsell-presentation"
-      component={AgsellPresentation}
+      component={AgsellPresentationVideo}
       durationInFrames={1728}
       fps={30}
       width={1920}
