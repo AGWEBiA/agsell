@@ -7,7 +7,7 @@
       "dependencies": {
         "@remotion/bundler": "^4.0.438",
         "@remotion/cli": "^4.0.438",
-        "@remotion/compositor-linux-x64-musl": "^4.0.438",
+        "@remotion/compositor-linux-x64-musl": "^4.0.448",
         "@remotion/fonts": "^4.0.438",
         "@remotion/google-fonts": "^4.0.438",
         "@remotion/player": "^4.0.438",
@@ -129,7 +129,7 @@
 
     "@remotion/compositor-linux-x64-gnu": ["@remotion/compositor-linux-x64-gnu@4.0.438", "", { "os": "linux", "cpu": "x64" }, "sha512-IhEOAYphOLETvq8dWllii201YOteukoS2hCwj4jgv39A5slIbyBxUS6TfuFzel2PghwcJDxNLKzbbJAJ0P89ng=="],
 
-    "@remotion/compositor-linux-x64-musl": ["@remotion/compositor-linux-x64-musl@4.0.438", "", { "os": "linux", "cpu": "x64" }, "sha512-qOmPquSwDTcP8JkdjbLdnbjZv+5BLRSo3BOqIGIcA5MBPOs2fZGM4MAFtO1Cd7IP6M2rzwawcVzplHbWUjn9FA=="],
+    "@remotion/compositor-linux-x64-musl": ["@remotion/compositor-linux-x64-musl@4.0.448", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@remotion/compositor-linux-x64-musl/-/compositor-linux-x64-musl-4.0.448.tgz", { "os": "linux", "cpu": "x64" }, "sha512-7OK/AtkKWFFrzgZF7Ti6Ld9vIsQ4Uh61k9iKPsmAw0f3CeXHJIuG0m3uhcLoqaBsD35fnL9D12vHgXPHpHyjng=="],
 
     "@remotion/compositor-win32-x64-msvc": ["@remotion/compositor-win32-x64-msvc@4.0.438", "", { "os": "win32", "cpu": "x64" }, "sha512-uso+PNYVQax2wZekkDsfPQrrRT35wySGf6sC2CbQXiwBeHAtsksZZlPpM/N00Rg227ew9jVit7pevdxwt7AD6A=="],
 
@@ -514,6 +514,8 @@
     "yauzl": ["yauzl@2.10.0", "", { "dependencies": { "buffer-crc32": "~0.2.3", "fd-slicer": "~1.1.0" } }, "sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g=="],
 
     "zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
+
+    "@remotion/renderer/@remotion/compositor-linux-x64-musl": ["@remotion/compositor-linux-x64-musl@4.0.438", "", { "os": "linux", "cpu": "x64" }, "sha512-qOmPquSwDTcP8JkdjbLdnbjZv+5BLRSo3BOqIGIcA5MBPOs2fZGM4MAFtO1Cd7IP6M2rzwawcVzplHbWUjn9FA=="],
 
     "@remotion/renderer/source-map": ["source-map@0.8.0-beta.0", "", { "dependencies": { "whatwg-url": "^7.0.0" } }, "sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA=="],
 
