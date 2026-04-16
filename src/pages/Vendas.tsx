@@ -258,8 +258,8 @@ export default function Vendas() {
                   src="/videos/agsell-presentation.mp4"
                   controls
                   playsInline
-                  preload="metadata"
-                  poster="/placeholder.svg"
+                  preload="none"
+                  poster="/videos/agsell-presentation-thumb.jpg"
                   className="w-full h-full object-cover"
                 >
                   <track kind="captions" />
