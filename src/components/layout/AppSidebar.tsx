@@ -203,19 +203,27 @@ function SectionHeader({
     <button
       onClick={onToggle}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors',
+        'group relative flex w-full items-center gap-2 rounded-md pl-4 pr-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] transition-all',
         hasActiveItem
-          ? 'text-primary'
-          : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/75'
+          ? 'text-foreground bg-sidebar-accent/40'
+          : 'text-sidebar-foreground/70 hover:text-foreground hover:bg-sidebar-accent/30'
       )}
       aria-expanded={isOpen}
       aria-label={`${isOpen ? 'Recolher' : 'Expandir'} seção ${section.label}`}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" />
+      {/* Faixa lateral vermelha (hub indicator) */}
+      <span
+        className={cn(
+          'absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all',
+          hasActiveItem ? 'h-6 bg-primary' : 'h-3 bg-primary/40 group-hover:h-5 group-hover:bg-primary/70'
+        )}
+        aria-hidden="true"
+      />
+      <Icon className={cn('h-4 w-4 shrink-0', hasActiveItem ? 'text-primary' : 'text-sidebar-foreground/55 group-hover:text-primary/80')} />
       <span className="flex-1 text-left">{section.label}</span>
       <ChevronDown
         className={cn(
-          'h-3 w-3 shrink-0 transition-transform duration-200',
+          'h-3.5 w-3.5 shrink-0 transition-transform duration-200',
           isOpen ? 'rotate-0' : '-rotate-90'
         )}
       />
