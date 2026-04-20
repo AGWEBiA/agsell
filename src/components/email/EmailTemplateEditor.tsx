@@ -863,13 +863,13 @@ export function EmailTemplateEditor({ content, onChange }: EmailTemplateEditorPr
   };
 
   return (
-    <div className="grid grid-cols-12 gap-4 h-[650px]">
+    <div className="grid grid-cols-12 gap-4 h-[min(80vh,750px)] min-h-[550px]">
       {/* Sidebar - Blocks */}
-      <div className="col-span-2 border rounded-lg flex flex-col overflow-hidden">
-        <div className="p-3 border-b">
+      <div className="col-span-3 lg:col-span-2 border rounded-lg flex flex-col overflow-hidden min-h-0">
+        <div className="p-3 border-b shrink-0">
           <p className="font-medium text-sm">Blocos</p>
         </div>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-2 space-y-3">
             {blockCategories.map(cat => (
               <div key={cat.label}>
