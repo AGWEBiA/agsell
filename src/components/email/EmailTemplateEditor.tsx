@@ -903,8 +903,8 @@ export function EmailTemplateEditor({ content, onChange }: EmailTemplateEditorPr
       </div>
 
       {/* Canvas */}
-      <div className="col-span-7 border rounded-lg flex flex-col">
-        <div className="p-3 border-b flex items-center justify-between">
+      <div className="col-span-6 lg:col-span-7 border rounded-lg flex flex-col min-h-0 overflow-hidden">
+        <div className="p-3 border-b flex items-center justify-between shrink-0">
           <p className="font-medium text-sm">Editor</p>
           <div className="flex gap-1">
             {[
@@ -919,7 +919,7 @@ export function EmailTemplateEditor({ content, onChange }: EmailTemplateEditorPr
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           {viewMode === 'edit' && (
             <div className="p-4 space-y-2">
               {blocks.length === 0 ? (
