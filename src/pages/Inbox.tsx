@@ -364,7 +364,7 @@ export default function Inbox() {
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold">Atendimento — Inbox Central</h1>
+          <h1 className="text-base font-semibold">SAC — Atendimento Central</h1>
           <Button variant="default" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setNovaConversaOpen(true)}>
             <Plus className="h-3 w-3" />
             Nova Conversa
@@ -602,6 +602,15 @@ export default function Inbox() {
                     <Ticket className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger><TooltipContent>Abrir Ticket</TooltipContent></Tooltip>
+                {/* Seletor de instância WhatsApp */}
+                {selectedConversation.channel === 'whatsapp' && availableSacInstances.length > 0 && (
+                  <SacWhatsAppInstanceSelector
+                    instances={availableSacInstances}
+                    value={selectedWhatsappInstanceId}
+                    onChange={handleWhatsappInstanceChange}
+                    className="hidden sm:block"
+                  />
+                )}
                 {/* IA */}
                 <SendIAButton
                   conversationId={selectedConversation.id}
