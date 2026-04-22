@@ -100,17 +100,46 @@ export function useInbox() {
       queryClient.refetchQueries({ queryKey: conversationsQueryKey, exact: true, type: 'active' });
     };
 
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let failCount = 0;
+
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+        failCount = 0;
         refreshConversations();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
+        failCount = 0;
         refreshConversations();
       })
-      .subscribe();
+      .on('system', {}, (payload: any) => {
+        if (payload?.extension === 'postgres_changes' && payload?.status === 'error') {
+          failCount++;
+          console.warn('[Inbox Realtime] Error detected, failCount:', failCount);
+          // Auto-reload on repeated failures
+          if (failCount >= 2) {
+            refreshConversations();
+            failCount = 0;
+          }
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+          console.warn('[Inbox Realtime] Status:', status, '— scheduling reconnect');
+          refreshConversations();
+          if (!reconnectTimer) {
+            reconnectTimer = setTimeout(() => {
+              reconnectTimer = null;
+              supabase.removeChannel(channel);
+              // The effect cleanup + re-run handles resubscription
+            }, 5000);
+          }
+        }
+      });
 
     return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       supabase.removeChannel(channel);
     };
   }, [conversationsQueryKey, currentOrganization?.id, queryClient, user?.id]);

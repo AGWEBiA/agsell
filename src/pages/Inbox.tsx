@@ -13,7 +13,7 @@ import {
   FileAudio, File as FileIcon, X, Loader2,
   Hash, ChevronLeft, Inbox as InboxIcon, User, Ticket,
   BarChart3, Brain, Calendar, Users, CheckCircle2,
-  ArrowDownToLine, Instagram, AlertCircle, Clock,
+  ArrowDownToLine, Instagram, AlertCircle, Clock, Bug, Filter,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useInbox } from '@/hooks/useInbox';
@@ -25,6 +25,7 @@ import { SendIAButton } from '@/components/inbox/SendIAButton';
 import { AudioTranscription } from '@/components/inbox/AudioTranscription';
 import { ContactInfoPanel } from '@/components/inbox/ContactInfoPanel';
 import { SacWhatsAppInstanceSelector } from '@/components/inbox/SacWhatsAppInstanceSelector';
+import { InboxDebugPanel } from '@/components/inbox/InboxDebugPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupportTickets } from '@/hooks/useSupportTickets';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
@@ -135,6 +136,8 @@ export default function Inbox() {
   const [ncNewPhone, setNcNewPhone] = useState('');
   const [isCreatingContact, setIsCreatingContact] = useState(false);
   const [selectedWhatsappInstanceId, setSelectedWhatsappInstanceId] = useState('auto');
+  const [instanceFilter, setInstanceFilter] = useState('all');
+  const [showDebug, setShowDebug] = useState(false);
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
   const sacInstances = (activeInstances || []).filter((instance: any) => instance.config?.use_for_sac === true);
@@ -182,11 +185,19 @@ export default function Inbox() {
         if (c.channel !== channelFilter) return false;
       }
     }
+    // Instance filter
+    if (instanceFilter !== 'all') {
+      const meta = getConversationMetadata(c);
+      const convInstanceId = meta.whatsapp_instance_id || meta.whatsapp_manual_instance_id || '';
+      if (convInstanceId !== instanceFilter) return false;
+    }
     if (!searchQuery) return true;
     const name = `${c.contacts?.first_name || ''} ${c.contacts?.last_name || ''}`.toLowerCase();
     const protocol = (c as any).protocol_number?.toLowerCase() || '';
     const phone = c.contacts?.phone?.toLowerCase() || '';
-    return name.includes(searchQuery.toLowerCase()) || protocol.includes(searchQuery.toLowerCase()) || phone.includes(searchQuery.toLowerCase());
+    const whatsapp = c.contacts?.whatsapp?.toLowerCase() || '';
+    const q = searchQuery.toLowerCase();
+    return name.includes(q) || protocol.includes(q) || phone.includes(q) || whatsapp.includes(q);
   });
 
   const channelCounts = {
@@ -506,16 +517,42 @@ export default function Inbox() {
             ))}
           </div>
 
-          {/* Search */}
-          <div className="p-2 shrink-0">
+          {/* Search & Instance Filter */}
+          <div className="p-2 space-y-1.5 shrink-0">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar chats..."
+                placeholder="Buscar nome, telefone, protocolo..."
                 className="pl-8 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Select value={instanceFilter} onValueChange={setInstanceFilter}>
+                <SelectTrigger className="h-7 text-[10px] flex-1 bg-muted/30 border-0">
+                  <Filter className="h-3 w-3 mr-1 shrink-0" />
+                  <SelectValue placeholder="Instância" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas instâncias</SelectItem>
+                  {(instances || []).map((inst: any) => (
+                    <SelectItem key={inst.id} value={inst.id}>
+                      {inst.name || inst.instance_name || inst.phone_number || 'Sem nome'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Tooltip><TooltipTrigger asChild>
+                <Button
+                  variant={showDebug ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => setShowDebug(!showDebug)}
+                >
+                  <Bug className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger><TooltipContent>Debug SAC</TooltipContent></Tooltip>
             </div>
           </div>
 
@@ -797,8 +834,15 @@ export default function Inbox() {
           </div>
         )}
 
+        {/* Debug Panel */}
+        {showDebug && (
+          <div className="w-80 border-l shrink-0 hidden sm:flex flex-col overflow-hidden bg-background">
+            <InboxDebugPanel conversationId={selectedId} onClose={() => setShowDebug(false)} />
+          </div>
+        )}
+
         {/* Right Panel — Contact Info (desktop only) */}
-        {selectedConversation && (
+        {selectedConversation && !showDebug && (
           <div className="w-72 border-l shrink-0 hidden xl:flex flex-col overflow-hidden bg-background">
             <ContactInfoPanel
               conversation={selectedConversation}
