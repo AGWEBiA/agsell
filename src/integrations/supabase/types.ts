@@ -5748,6 +5748,39 @@ export type Database = {
           },
         ]
       }
+      unknown_whatsapp_instances: {
+        Row: {
+          acknowledged: boolean
+          created_at: string
+          first_seen_at: string
+          id: string
+          instance_name: string
+          last_seen_at: string
+          message_count: number
+          sample_phone: string | null
+        }
+        Insert: {
+          acknowledged?: boolean
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          instance_name: string
+          last_seen_at?: string
+          message_count?: number
+          sample_phone?: string | null
+        }
+        Update: {
+          acknowledged?: boolean
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          instance_name?: string
+          last_seen_at?: string
+          message_count?: number
+          sample_phone?: string | null
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_name: string
@@ -6764,6 +6797,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "whatsapp_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_webhook_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          instance_name: string | null
+          organization_id: string | null
+          phone: string | null
+          processed_at: string
+          routing_status: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          instance_name?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          processed_at?: string
+          routing_status?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          instance_name?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          processed_at?: string
+          routing_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_webhook_logs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
