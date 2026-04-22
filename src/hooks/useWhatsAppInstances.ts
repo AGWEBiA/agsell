@@ -263,7 +263,7 @@ export function useWhatsAppInstances() {
   const deleteInstance = useMutation({
     mutationFn: async (id: string) => {
       // Find the instance to get its name for Evolution API logout
-      const instance = instances.find(i => i.id === id);
+      const instance = (instancesQuery.data || []).find(i => i.id === id);
       const instanceName = instance?.instance_name || 
         (instance?.config as Record<string, unknown>)?.instance_name as string;
 
