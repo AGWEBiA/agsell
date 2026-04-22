@@ -581,7 +581,7 @@ export default function Inbox() {
                   const isUser = message.sender_type === 'user';
                   return (
                     <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-xl px-3 py-2 ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                      <div className={`max-w-[70%] rounded-xl px-3 py-2 ${isUser ? 'bg-emerald-900/60 text-foreground' : 'bg-muted'}`}>
                         {isUser && message.sender_name && (
                           <p className="text-[10px] font-semibold mb-0.5 opacity-75">{message.sender_name}</p>
                         )}
@@ -604,7 +604,7 @@ export default function Inbox() {
                         {message.content && !(msgType !== 'text' && message.content.startsWith('📎')) && (
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                         )}
-                        <div className={`flex items-center justify-end gap-1 mt-0.5 text-[10px] ${isUser ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                        <div className={`flex items-center justify-end gap-1 mt-0.5 text-[10px] ${isUser ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                           <span>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                           {isUser && <CheckCheck className="h-2.5 w-2.5" />}
                         </div>
