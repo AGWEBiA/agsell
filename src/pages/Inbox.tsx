@@ -273,29 +273,43 @@ export default function Inbox() {
       })
     : contacts.slice(0, 10);
 
-  const handleNovaConversaStart = () => {
+  const startConversationAndOpen = async (
+    payload: Parameters<typeof createConversation.mutateAsync>[0],
+    successMessage = 'Atendimento iniciado!'
+  ) => {
+    const conversation = await createConversation.mutateAsync(payload);
+
+    if (conversation?.id) {
+      setSelectedId(conversation.id);
+      setQueueTab('todos');
+    }
+
+    resetNovaConversa();
+    toast.success(successMessage);
+  };
+
+  const handleNovaConversaStart = async () => {
     if (!ncSelectedContact) { toast.error('Selecione um contato'); return; }
     if (ncChannel === 'whatsapp' && availableSacInstances.length > 0 && !ncDeviceId) {
       setNcStep('device');
       return;
     }
-    createConversation.mutate({
+
+    await startConversationAndOpen({
       contact_id: ncSelectedContact,
       channel: ncChannel,
       metadata: ncChannel === 'whatsapp' && ncDeviceId ? { whatsapp_manual_instance_id: ncDeviceId } : undefined,
     });
-    resetNovaConversa();
   };
 
-  const handleDeviceSelected = (deviceId: string) => {
+  const handleDeviceSelected = async (deviceId: string) => {
     setNcDeviceId(deviceId);
     if (ncSelectedContact) {
-      createConversation.mutate({
+      await startConversationAndOpen({
         contact_id: ncSelectedContact,
         channel: ncChannel,
         metadata: { whatsapp_manual_instance_id: deviceId },
       });
-      resetNovaConversa();
     }
   };
 
@@ -323,9 +337,10 @@ export default function Inbox() {
         setNcStep('device');
         toast.success('Contato criado! Selecione a instância.');
       } else {
-        createConversation.mutate({ contact_id: contact.id, channel: ncChannel });
-        resetNovaConversa();
-        toast.success('Contato criado e atendimento iniciado!');
+        await startConversationAndOpen(
+          { contact_id: contact.id, channel: ncChannel },
+          'Contato criado e atendimento iniciado!'
+        );
       }
     } catch (e: any) {
       toast.error('Erro: ' + e.message);

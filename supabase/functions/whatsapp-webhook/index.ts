@@ -377,10 +377,29 @@ Deno.serve(async (req) => {
         .eq("integration_type", "evolution_api")
         .eq("is_active", true);
 
+      const incomingInstanceId = typeof data.instanceId === "string"
+        ? data.instanceId.trim()
+        : (typeof body.instanceId === "string" ? body.instanceId.trim() : "");
+
+      const normalizeIdentifier = (value: string) => value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\s_-]+/g, "");
+
       const integration = (activeIntegrations || []).find((item) => {
         const config = (item.config || {}) as Record<string, unknown>;
-        const configuredInstance = typeof config.instance_name === "string" ? config.instance_name : "";
-        return normalizeInstanceName(configuredInstance) === normalizedIncomingInstance;
+        const candidates = [
+          typeof config.instance_name === "string" ? config.instance_name : "",
+          typeof item.name === "string" ? item.name : "",
+          typeof config.instance_id === "string" ? config.instance_id : "",
+          typeof config.evolution_instance_id === "string" ? config.evolution_instance_id : "",
+        ].filter(Boolean);
+
+        return candidates.some((candidate) => {
+          const normalizedCandidate = normalizeIdentifier(String(candidate));
+          return normalizedCandidate === normalizedIncomingInstance || (!!incomingInstanceId && String(candidate) === incomingInstanceId);
+        });
       });
       const integrationConfig = integration ? (integration.config || {}) as Record<string, string> : {};
 
@@ -571,6 +590,8 @@ Deno.serve(async (req) => {
               mediaMimeType,
               messageType: hasMedia ? messageType : "text",
               fileName,
+              sourceInstanceId: integration.id,
+              sourceInstanceName: integration.name || instanceName,
             });
           }
         }
