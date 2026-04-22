@@ -179,7 +179,14 @@ export function useInbox() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true }),
+    onSuccess: (conversation) => {
+      queryClient.setQueryData(conversationsQueryKey, (current: any[] | undefined) => {
+        if (!conversation) return current ?? [];
+        const existing = (current ?? []).filter((item) => item.id !== conversation.id);
+        return [{ ...conversation, contacts: null, messages: [] }, ...existing];
+      });
+      queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true });
+    },
     onError: (e) => toast.error('Erro ao criar conversa: ' + e.message),
   });
 
@@ -252,7 +259,23 @@ export function useInbox() {
 
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true }),
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(conversationsQueryKey, (current: any[] | undefined) => {
+        if (!newMessage) return current ?? [];
+
+        return (current ?? []).map((conversation) => {
+          if (conversation.id !== newMessage.conversation_id) return conversation;
+
+          const nextMessages = [...(conversation.messages ?? []), newMessage];
+          return {
+            ...conversation,
+            messages: nextMessages,
+            last_message_at: newMessage.created_at ?? new Date().toISOString(),
+          };
+        });
+      });
+      queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true });
+    },
     onError: (e) => toast.error('Erro ao enviar mensagem: ' + e.message),
   });
 
