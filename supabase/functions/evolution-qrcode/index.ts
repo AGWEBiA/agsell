@@ -143,18 +143,24 @@ Deno.serve(async (req) => {
     try {
       if (action === "create") {
         await saveUserOnIntegration();
-        return await createInstanceAndFetchQRCode(
+        const result = await createInstanceAndFetchQRCode(
           baseUrl,
           apiKey,
           instanceName,
           supabaseUrl,
           controller.signal,
         );
+        // Sync the real instance name back to DB
+        const resultBody = await result.clone().json().catch(() => ({}));
+        if (resultBody.success && resultBody.instance_name) {
+          await syncInstanceMetadata(resultBody.instance_name, resultBody.instance?.instanceId);
+        }
+        return result;
       }
 
       if (action === "connect" || action === "qrcode") {
         await saveUserOnIntegration();
-        return await getQRCode(
+        const result = await getQRCode(
           baseUrl,
           apiKey,
           instanceName,
@@ -162,6 +168,12 @@ Deno.serve(async (req) => {
           controller.signal,
           true,
         );
+        // Sync the real instance name back to DB
+        const resultBody = await result.clone().json().catch(() => ({}));
+        if (resultBody.success && resultBody.instance_name) {
+          await syncInstanceMetadata(resultBody.instance_name);
+        }
+        return result;
       }
 
       if (action === "status") {
