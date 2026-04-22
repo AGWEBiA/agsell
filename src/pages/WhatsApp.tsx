@@ -28,7 +28,8 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { updateInstance } = useWhatsAppInstances();
+  const { updateInstance, deleteInstance } = useWhatsAppInstances();
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [name, setName] = useState(instance?.name || '');
   const [messagesPerMinute, setMessagesPerMinute] = useState(
     parseInt(instance?.config?.messages_per_minute as string || '2000', 10)
