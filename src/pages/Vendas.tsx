@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';
 import { PlatformDemoPlayer } from '@/components/vendas/PlatformDemoPlayer';
 import { VendasPlansBox } from '@/components/vendas/VendasPlansBox';
+import { WhatsAppFloatingButton } from '@/components/vendas/WhatsAppFloatingButton';
 import {
   ArrowRight, Check, Star, MessageSquare, Mail, Bot,
   BarChart3, Users, Workflow, Phone, Instagram, Send, Brain,
