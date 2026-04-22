@@ -553,6 +553,10 @@ export default function WhatsApp() {
           <WhatsAppGroupMessages currentInstanceId={selectedInstanceId} />
         </TabsContent>
 
+        <TabsContent value="webhook">
+          <WhatsAppWebhookLogs />
+        </TabsContent>
+
         <TabsContent value="audit">
           <WhatsAppAuditLog />
         </TabsContent>
