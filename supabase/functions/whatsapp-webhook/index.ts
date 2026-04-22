@@ -398,7 +398,14 @@ Deno.serve(async (req) => {
 
         return candidates.some((candidate) => {
           const normalizedCandidate = normalizeIdentifier(String(candidate));
-          return normalizedCandidate === normalizedIncomingInstance || (!!incomingInstanceId && String(candidate) === incomingInstanceId);
+          // Exact match
+          if (normalizedCandidate === normalizedIncomingInstance) return true;
+          // instanceId match
+          if (!!incomingInstanceId && String(candidate) === incomingInstanceId) return true;
+          // Substring/suffix match: "suporte" matches "atendimentoesuporte"
+          if (normalizedIncomingInstance.length >= 4 && normalizedCandidate.includes(normalizedIncomingInstance)) return true;
+          if (normalizedCandidate.length >= 4 && normalizedIncomingInstance.includes(normalizedCandidate)) return true;
+          return false;
         });
       });
 
