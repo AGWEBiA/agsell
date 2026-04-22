@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { WhatsAppFloatingButton } from '@/components/vendas/WhatsAppFloatingButton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';
@@ -763,6 +764,7 @@ function CTASlide({ active }: { active: boolean }) {
           </p>
         </AnimatedItem>
       </div>
+      <WhatsAppFloatingButton />
     </SlideContainer>
   );
 }

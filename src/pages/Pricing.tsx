@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WhatsAppFloatingButton } from '@/components/vendas/WhatsAppFloatingButton';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -707,6 +708,7 @@ export default function Pricing() {
         open={showCheckout}
         onOpenChange={setShowCheckout}
       />
+      <WhatsAppFloatingButton />
     </div>
   );
 }
