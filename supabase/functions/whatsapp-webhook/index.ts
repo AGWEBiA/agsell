@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
 
       const { data: activeIntegrations } = await supabase
         .from("organization_integrations")
-        .select("id, name, organization_id, config")
+        .select("id, name, organization_id, config, user_id")
         .eq("integration_type", "evolution_api")
         .eq("is_active", true);
 
@@ -404,14 +404,19 @@ Deno.serve(async (req) => {
       const integrationConfig = integration ? (integration.config || {}) as Record<string, string> : {};
 
       if (integration) {
-        const { data: orgOwner } = await supabase
-          .from("organization_members")
-          .select("user_id")
-          .eq("organization_id", integration.organization_id)
-          .eq("role", "owner")
-          .maybeSingle();
+        // Use the user_id stored on the integration (who connected it), fallback to org owner
+        let userId = (integration as any).user_id as string | null;
+        
+        if (!userId) {
+          const { data: orgOwner } = await supabase
+            .from("organization_members")
+            .select("user_id")
+            .eq("organization_id", integration.organization_id)
+            .eq("role", "owner")
+            .maybeSingle();
+          userId = orgOwner?.user_id || null;
+        }
 
-        const userId = orgOwner?.user_id;
         if (userId) {
           const keyData = data.key || data.message?.key || {};
           const messageData = data.message || data;

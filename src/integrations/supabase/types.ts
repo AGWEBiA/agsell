@@ -3314,6 +3314,7 @@ export type Database = {
           name: string
           organization_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           catalog_id?: string | null
@@ -3326,6 +3327,7 @@ export type Database = {
           name: string
           organization_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           catalog_id?: string | null
@@ -3338,6 +3340,7 @@ export type Database = {
           name?: string
           organization_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {

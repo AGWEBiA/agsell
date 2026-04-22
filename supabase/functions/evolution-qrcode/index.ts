@@ -10,6 +10,7 @@ interface QRCodeRequest {
   organization_id?: string;
   instance_name: string;
   action?: "create" | "connect" | "status" | "qrcode" | "logout" | "delete";
+  integration_id?: string;
 }
 
 interface EvolutionConfig {
@@ -78,8 +79,39 @@ Deno.serve(async (req) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
 
+    // Save user_id on the integration record when connecting
+    const saveUserOnIntegration = async () => {
+      if (body.integration_id) {
+        await supabase
+          .from("organization_integrations")
+          .update({ user_id: user.id } as any)
+          .eq("id", body.integration_id);
+      } else if (body.organization_id) {
+        // Find integration by instance name and update
+        const { data: integrations } = await supabase
+          .from("organization_integrations")
+          .select("id, config")
+          .eq("organization_id", body.organization_id)
+          .in("integration_type", ["evolution_api", "whatsapp_business"])
+          .eq("is_active", true);
+        const normalize = (v: string) => v.toLowerCase().replace(/[\s_-]+/g, "");
+        const target = normalize(body.instance_name.trim());
+        const match = (integrations || []).find((r: any) => {
+          const name = r.config?.instance_name?.trim();
+          return !!name && normalize(name) === target;
+        });
+        if (match) {
+          await supabase
+            .from("organization_integrations")
+            .update({ user_id: user.id } as any)
+            .eq("id", match.id);
+        }
+      }
+    };
+
     try {
       if (action === "create") {
+        await saveUserOnIntegration();
         return await createInstanceAndFetchQRCode(
           baseUrl,
           apiKey,
@@ -90,6 +122,7 @@ Deno.serve(async (req) => {
       }
 
       if (action === "connect" || action === "qrcode") {
+        await saveUserOnIntegration();
         return await getQRCode(
           baseUrl,
           apiKey,

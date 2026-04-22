@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
 
@@ -77,6 +78,7 @@ const extractPhoneFromConfig = (config: Record<string, unknown>): string | undef
 export function useWhatsAppInstances() {
   const { currentOrganization } = useOrganization();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch all WhatsApp instances for the organization
   const instancesQuery = useQuery({
@@ -160,7 +162,8 @@ export function useWhatsAppInstances() {
           integration_type: data.integration_type,
           config: config as unknown as Json,
           is_active: true,
-        })
+          user_id: user?.id,
+        } as any)
         .select()
         .single();
 
