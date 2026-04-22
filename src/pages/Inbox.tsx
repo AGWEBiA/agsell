@@ -640,18 +640,28 @@ export default function Inbox() {
 
             {/* Message Input */}
             <div className="p-2.5 border-t shrink-0">
-              <div className="flex items-center gap-1 max-w-3xl mx-auto">
+              <div className="flex items-end gap-1 max-w-3xl mx-auto">
                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" onChange={handleFileSelect} />
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => fileInputRef.current?.click()}>
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <AudioTranscription onTranscription={(text) => setMessageInput(prev => prev + text)} />
-                <Input
+                <textarea
                   placeholder="Digite uma mensagem..."
-                  className="flex-1 h-9 text-sm rounded-full bg-muted/50 border-0 focus-visible:ring-1 px-4"
+                  className="flex-1 min-h-[36px] max-h-[120px] py-2 text-sm rounded-2xl bg-muted/50 border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring px-4 resize-none overflow-y-auto"
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                  onChange={(e) => {
+                    setMessageInput(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  rows={1}
                 />
                 <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                   <PopoverTrigger asChild>
