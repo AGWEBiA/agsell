@@ -185,10 +185,13 @@ export function useWhatsAppInstances() {
       if (error) throw error;
       return newInstance;
     },
-    onSuccess: () => {
+    onSuccess: (newInstance) => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp_instances'] });
       queryClient.invalidateQueries({ queryKey: ['organization_integrations'] });
       toast.success('Instância WhatsApp criada com sucesso!');
+      if (currentOrganization?.id) {
+        logWhatsAppAudit(currentOrganization.id, 'connect', { instance_name: newInstance.name, integration_type: newInstance.integration_type });
+      }
     },
     onError: (error) => {
       toast.error('Erro ao criar instância: ' + error.message);
