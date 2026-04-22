@@ -17,9 +17,10 @@ export function useInbox() {
   const { user } = useAuth();
   const { currentOrganization } = useOrganization();
   const queryClient = useQueryClient();
+  const conversationsQueryKey = ['conversations', currentOrganization?.id ?? null, user?.id ?? null] as const;
 
   const conversationsQuery = useQuery({
-    queryKey: ['conversations', currentOrganization?.id, user?.id],
+    queryKey: conversationsQueryKey,
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -90,20 +91,25 @@ export function useInbox() {
       ? `inbox-realtime-${currentOrganization.id}`
       : `inbox-realtime-${user.id}`;
 
+    const refreshConversations = () => {
+      queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true });
+      queryClient.refetchQueries({ queryKey: conversationsQueryKey, exact: true, type: 'active' });
+    };
+
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        refreshConversations();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        refreshConversations();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentOrganization?.id, queryClient, user?.id]);
+  }, [conversationsQueryKey, currentOrganization?.id, queryClient, user?.id]);
 
   const createConversation = useMutation({
     mutationFn: async (conversation: { contact_id: string; channel: string; metadata?: Record<string, any> | null }) => {
@@ -170,7 +176,7 @@ export function useInbox() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true }),
     onError: (e) => toast.error('Erro ao criar conversa: ' + e.message),
   });
 
@@ -243,7 +249,7 @@ export function useInbox() {
 
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true }),
     onError: (e) => toast.error('Erro ao enviar mensagem: ' + e.message),
   });
 
@@ -256,7 +262,7 @@ export function useInbox() {
         .eq('is_read', false);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true }),
   });
 
   const updateConversation = useMutation({
@@ -271,7 +277,7 @@ export function useInbox() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: conversationsQueryKey, exact: true });
       toast.success('Ticket atualizado!');
     },
     onError: (e) => toast.error('Erro: ' + e.message),
