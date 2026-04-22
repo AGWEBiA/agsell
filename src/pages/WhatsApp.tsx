@@ -36,7 +36,7 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
   const [useForSac, setUseForSac] = useState(
     instance?.config?.use_for_sac === true
   );
-  const webhookUrl = `${window.location.origin}/api/whatsapp-webhook`;
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
   const token = (instance?.config?.webhook_token as string) || instance?.id?.slice(0, 16) || '';
 
   React.useEffect(() => {
@@ -141,8 +141,8 @@ function InstanceConfigDialog({ instance, open, onOpenChange }: {
             </div>
           </div>
 
-          {/* Webhook - only official */}
-          {instance.integration_type === 'whatsapp_business' && (
+          {/* Webhook */}
+          {(instance.integration_type === 'whatsapp_business' || instance.integration_type === 'evolution_api') && (
             <>
               <div className="space-y-2">
                 <Label>Webhook URL</Label>

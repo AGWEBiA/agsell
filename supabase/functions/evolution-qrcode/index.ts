@@ -341,14 +341,14 @@ async function deleteInstance(
   });
 }
 
-async function registerSyncWebhook(
+async function registerInboundWebhook(
   baseUrl: string,
   apiKey: string,
   instanceName: string,
   supabaseUrl: string,
 ) {
   try {
-    const syncWebhookUrl = `${supabaseUrl}/functions/v1/sync-whatsapp-reconnect`;
+    const inboundWebhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
 
     await fetch(`${baseUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
       method: "POST",
@@ -357,14 +357,17 @@ async function registerSyncWebhook(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: syncWebhookUrl,
-        webhook_by_events: true,
-        webhook_base64: false,
-        events: ["CONNECTION_UPDATE"],
+        webhook: {
+          enabled: true,
+          url: inboundWebhookUrl,
+          webhookByEvents: false,
+          webhookBase64: false,
+          events: ["MESSAGES_UPSERT", "GROUP_PARTICIPANTS_UPDATE", "CONNECTION_UPDATE"],
+        },
       }),
     });
   } catch (e) {
-    console.error(`Failed to register sync webhook for ${instanceName}:`, e);
+    console.error(`Failed to register inbound webhook for ${instanceName}:`, e);
   }
 }
 
@@ -400,7 +403,7 @@ async function createInstanceAndFetchQRCode(
       /already|já existe|exist/i.test(message);
 
     if (alreadyExists) {
-      await registerSyncWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
+      await registerInboundWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
       return await getQRCode(
         baseUrl,
         apiKey,
@@ -418,7 +421,7 @@ async function createInstanceAndFetchQRCode(
     });
   }
 
-  await registerSyncWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
+  await registerInboundWebhook(baseUrl, apiKey, instanceName, supabaseUrl);
 
   const qr = (createData as Record<string, unknown>)?.qrcode as Record<string, unknown> | undefined;
   if (qr?.base64 || qr?.pairingCode) {
@@ -465,6 +468,7 @@ async function getQRCode(
 
     const statusData = await statusRes.json();
     if (statusData?.instance?.state === "open") {
+      await registerInboundWebhook(baseUrl, apiKey, candidate, supabaseUrl);
       return jsonResponse({
         success: true,
         action: "connected",
