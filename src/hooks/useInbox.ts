@@ -5,6 +5,14 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
+const getConversationMetadata = (conversation: any): Record<string, any> => {
+  if (!conversation?.metadata || typeof conversation.metadata !== 'object' || Array.isArray(conversation.metadata)) {
+    return {};
+  }
+
+  return conversation.metadata as Record<string, any>;
+};
+
 export function useInbox() {
   const { user } = useAuth();
   const { currentOrganization } = useOrganization();
@@ -15,7 +23,6 @@ export function useInbox() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Query by organization if available, otherwise by user
       let query = supabase
         .from('conversations')
         .select(`
@@ -40,9 +47,8 @@ export function useInbox() {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch sender names for messages with sender_id
       const allSenderIds = new Set<string>();
-      (data as any[])?.forEach(conv => {
+      (data as any[])?.forEach((conv) => {
         conv.messages?.forEach((m: any) => {
           if (m.sender_id) allSenderIds.add(m.sender_id);
         });
@@ -54,13 +60,13 @@ export function useInbox() {
           .from('profiles')
           .select('user_id, full_name')
           .in('user_id', Array.from(allSenderIds));
-        profiles?.forEach(p => {
+
+        profiles?.forEach((p) => {
           if (p.full_name) senderNames[p.user_id] = p.full_name;
         });
       }
 
-      // Attach sender_name to messages
-      (data as any[])?.forEach(conv => {
+      (data as any[])?.forEach((conv) => {
         conv.messages?.forEach((m: any) => {
           if (m.sender_id && senderNames[m.sender_id]) {
             m.sender_name = senderNames[m.sender_id];
@@ -71,50 +77,96 @@ export function useInbox() {
       return data as any[];
     },
     enabled: !!user?.id,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+    refetchInterval: user?.id ? 3000 : false,
+    refetchIntervalInBackground: true,
   });
 
-  // Realtime
   useEffect(() => {
     if (!user?.id) return;
+
+    const channelName = currentOrganization?.id
+      ? `inbox-realtime-${currentOrganization.id}`
+      : `inbox-realtime-${user.id}`;
+
     const channel = supabase
-      .channel('inbox-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' },
-        () => { queryClient.invalidateQueries({ queryKey: ['conversations'] }); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' },
-        () => { queryClient.invalidateQueries({ queryKey: ['conversations'] }); })
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user?.id, queryClient]);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentOrganization?.id, queryClient, user?.id]);
 
   const createConversation = useMutation({
-    mutationFn: async (conversation: { contact_id: string; channel: string }) => {
+    mutationFn: async (conversation: { contact_id: string; channel: string; metadata?: Record<string, any> | null }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Check for existing conversation with same contact + channel to avoid duplicates
-      const { data: existing } = await supabase
+      let existingQuery = supabase
         .from('conversations')
         .select('*')
         .eq('contact_id', conversation.contact_id)
-        .eq('channel', conversation.channel)
-        .eq('organization_id', currentOrganization?.id || '')
-        .maybeSingle();
+        .eq('channel', conversation.channel);
+
+      if (currentOrganization?.id) {
+        existingQuery = existingQuery.eq('organization_id', currentOrganization.id);
+      } else {
+        existingQuery = existingQuery.is('organization_id', null).eq('user_id', user.id);
+      }
+
+      const { data: existing } = await existingQuery.maybeSingle();
 
       if (existing) {
+        const existingMetadata = getConversationMetadata(existing);
+        const nextMetadata = conversation.metadata
+          ? { ...existingMetadata, ...conversation.metadata }
+          : existingMetadata;
+
+        const updates: Record<string, any> = {};
         if (existing.status === 'resolved' || existing.status === 'closed') {
-          await supabase.from('conversations').update({ status: 'open', last_message_at: new Date().toISOString() }).eq('id', existing.id);
+          updates.status = 'open';
+          updates.last_message_at = new Date().toISOString();
+          updates.resolved_at = null;
         }
+
+        if (conversation.metadata) {
+          updates.metadata = nextMetadata;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { data: updatedConversation, error: updateError } = await supabase
+            .from('conversations')
+            .update(updates)
+            .eq('id', existing.id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          return updatedConversation;
+        }
+
         return existing;
       }
 
       const { data, error } = await supabase
         .from('conversations')
         .insert({
-          ...conversation,
+          contact_id: conversation.contact_id,
+          channel: conversation.channel,
           user_id: user.id,
           organization_id: currentOrganization?.id || null,
+          metadata: conversation.metadata ?? null,
         } as any)
         .select()
         .single();
+
       if (error) throw error;
       return data;
     },
@@ -124,10 +176,12 @@ export function useInbox() {
 
   const sendMessage = useMutation({
     mutationFn: async (message: any) => {
-      const messageToInsert = { ...message };
+      const { instance_id, ...messageToInsert } = { ...message };
+
       if (message.sender_type === 'user' && user?.id) {
         messageToInsert.sender_id = user.id;
       }
+
       const { data, error } = await supabase
         .from('messages')
         .insert(messageToInsert)
@@ -135,7 +189,15 @@ export function useInbox() {
         .single();
       if (error) throw error;
 
-      const conv = conversationsQuery.data?.find(c => c.id === message.conversation_id);
+      const conv = conversationsQuery.data?.find((c) => c.id === message.conversation_id);
+      const conversationMetadata = getConversationMetadata(conv);
+      const contactPhone = conv?.contacts?.whatsapp || conv?.contacts?.phone;
+      const cleanPhone = contactPhone ? contactPhone.replace(/\D/g, '') : null;
+      const resolvedInstanceId =
+        instance_id ||
+        (typeof conversationMetadata.whatsapp_manual_instance_id === 'string' ? conversationMetadata.whatsapp_manual_instance_id : null) ||
+        (typeof conversationMetadata.whatsapp_instance_id === 'string' ? conversationMetadata.whatsapp_instance_id : null);
+
       const updates: Record<string, any> = {
         last_message_at: new Date().toISOString(),
       };
@@ -144,31 +206,36 @@ export function useInbox() {
         updates.first_response_at = new Date().toISOString();
       }
 
-      // Auto-assign to current user when they reply
       if (message.sender_type === 'user' && conv && !conv.assigned_to && user?.id) {
         updates.assigned_to = user.id;
       }
 
-      const contactPhone = conv?.contacts?.whatsapp || conv?.contacts?.phone;
-      const cleanPhone = contactPhone ? contactPhone.replace(/\D/g, '') : null;
-      const existingMeta = (conv?.metadata as Record<string, string> | null) || {};
       if (conv?.channel === 'whatsapp' && cleanPhone) {
-        updates.metadata = { ...existingMeta, whatsapp_sender_id: cleanPhone };
+        updates.metadata = {
+          ...conversationMetadata,
+          whatsapp_sender_id: cleanPhone,
+          ...(resolvedInstanceId ? { whatsapp_last_used_instance_id: resolvedInstanceId } : {}),
+        };
       }
 
       await supabase.from('conversations').update(updates).eq('id', message.conversation_id);
 
       if (conv?.channel === 'whatsapp' && contactPhone) {
         try {
-          const { data: r, error: we } = await supabase.functions.invoke('send-whatsapp', {
+          const { data: responseData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
             body: {
               organization_id: currentOrganization?.id,
               to: contactPhone,
               message: message.content,
+              instance_id: resolvedInstanceId || undefined,
             },
           });
-          if (we) toast.error('Mensagem salva, mas falhou ao enviar via WhatsApp');
-          else if (r?.error) toast.error(`Erro WhatsApp: ${r.error}`);
+
+          if (whatsappError) {
+            toast.error('Mensagem salva, mas falhou ao enviar via WhatsApp');
+          } else if (responseData?.error) {
+            toast.error(`Erro WhatsApp: ${responseData.error}`);
+          }
         } catch {
           toast.error('Falha ao enviar mensagem via WhatsApp');
         }
