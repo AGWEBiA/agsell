@@ -640,6 +640,16 @@ Deno.serve(async (req) => {
             const displayText = mediaCaption || messageText || (hasMedia ? "" : "");
             const resolvedText = displayText || (hasMedia ? `[${messageType === "audio" ? "🎵 Áudio" : messageType === "image" ? "📷 Imagem" : messageType === "video" ? "🎥 Vídeo" : "📎 Arquivo"}]` : "[Mensagem]");
 
+            // Log routed message
+            await supabase.from("whatsapp_webhook_logs").insert({
+              event_type: body.event || "messages.upsert",
+              instance_name: instanceName,
+              phone: senderPhone,
+              organization_id: integration.organization_id,
+              routing_status: "routed",
+              details: { message_type: hasMedia ? messageType : "text", from_me: isFromMe, text_preview: resolvedText.slice(0, 100) },
+            }).then(() => {}).catch(() => {});
+
             // For fromMe messages, the senderPhone is the contact we're messaging
             // We route them as "user" sender_type so they appear in the conversation
             await routeToInbox(supabase, {
@@ -657,6 +667,74 @@ Deno.serve(async (req) => {
               sourceInstanceId: integration.id,
               sourceInstanceName: integration.name || instanceName,
               isFromMe: isFromMe,
+            });
+          } else if (isGroupMessage) {
+            // Log discarded group message
+            await supabase.from("whatsapp_webhook_logs").insert({
+              event_type: body.event || "messages.upsert",
+              instance_name: instanceName,
+              phone: senderPhone,
+              organization_id: integration.organization_id,
+              routing_status: "discarded",
+              details: { reason: "group_message", jid: String(remoteJid).slice(0, 60) },
+            }).then(() => {}).catch(() => {});
+          }
+        }
+      } else if (instanceName) {
+        // Unknown instance — log it and register for admin review
+        console.log(`Unknown instance received message: "${instanceName}"`);
+
+        const keyData = data.key || data.message?.key || {};
+        const remoteJid = keyData.remoteJid || data.remoteJid || "";
+        const senderPhone = String(remoteJid).replace("@s.whatsapp.net", "").replace("@c.us", "");
+
+        // Log as unknown
+        await supabase.from("whatsapp_webhook_logs").insert({
+          event_type: body.event || "messages.upsert",
+          instance_name: instanceName,
+          phone: senderPhone || null,
+          organization_id: null,
+          routing_status: "unknown_instance",
+          details: { instance_name: instanceName },
+        }).then(() => {}).catch(() => {});
+
+        // Upsert into unknown_whatsapp_instances
+        const { data: existing } = await supabase
+          .from("unknown_whatsapp_instances")
+          .select("id, message_count")
+          .eq("instance_name", instanceName)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase.from("unknown_whatsapp_instances")
+            .update({
+              last_seen_at: new Date().toISOString(),
+              message_count: (existing.message_count || 0) + 1,
+              sample_phone: senderPhone || null,
+            })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("unknown_whatsapp_instances")
+            .insert({
+              instance_name: instanceName,
+              sample_phone: senderPhone || null,
+            });
+
+          // Create admin notification
+          const { data: admins } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin");
+
+          for (const admin of admins || []) {
+            await supabase.from("notifications").insert({
+              user_id: admin.user_id,
+              type: "unknown_instance",
+              title: "⚠️ Instância WhatsApp Desconhecida",
+              message: `A instância "${instanceName}" está enviando mensagens mas não está cadastrada. Considere cadastrá-la.`,
+              link: "/whatsapp",
+              is_read: false,
+              metadata: { instance_name: instanceName },
             });
           }
         }
