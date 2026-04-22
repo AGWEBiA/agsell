@@ -137,6 +137,7 @@ export function useWhatsAppInstances() {
       const config = {
         ...data.config,
         is_default: data.is_default ?? false,
+        instance_name: data.config?.instance_name || data.name,
         ...(normalizedPhone ? { phone_number: normalizedPhone } : {}),
       };
 

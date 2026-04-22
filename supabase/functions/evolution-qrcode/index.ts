@@ -109,21 +109,58 @@ Deno.serve(async (req) => {
       }
     };
 
+    // Sync the real instance name and Evolution instanceId back to DB after connect/create
+    const syncInstanceMetadata = async (realInstanceName: string, evolutionInstanceId?: string) => {
+      if (!body.organization_id) return;
+      const { data: integrations } = await supabase
+        .from("organization_integrations")
+        .select("id, config, name")
+        .eq("organization_id", body.organization_id)
+        .in("integration_type", ["evolution_api", "whatsapp_business"])
+        .eq("is_active", true);
+
+      const normalize = (v: string) => v.toLowerCase().replace(/[\s_-]+/g, "");
+      const target = normalize(body.instance_name.trim());
+      const match = (integrations || []).find((r: any) => {
+        const name = r.config?.instance_name?.trim() || r.name?.trim() || "";
+        return !!name && normalize(name) === target;
+      });
+
+      if (match) {
+        const existingConfig = (match.config || {}) as Record<string, unknown>;
+        const updatedConfig = {
+          ...existingConfig,
+          instance_name: realInstanceName,
+          ...(evolutionInstanceId ? { evolution_instance_id: evolutionInstanceId } : {}),
+        };
+        await supabase
+          .from("organization_integrations")
+          .update({ name: realInstanceName, config: updatedConfig })
+          .eq("id", match.id);
+      }
+    };
+
     try {
       if (action === "create") {
         await saveUserOnIntegration();
-        return await createInstanceAndFetchQRCode(
+        const result = await createInstanceAndFetchQRCode(
           baseUrl,
           apiKey,
           instanceName,
           supabaseUrl,
           controller.signal,
         );
+        // Sync the real instance name back to DB
+        const resultBody = await result.clone().json().catch(() => ({}));
+        if (resultBody.success && resultBody.instance_name) {
+          await syncInstanceMetadata(resultBody.instance_name, resultBody.instance?.instanceId);
+        }
+        return result;
       }
 
       if (action === "connect" || action === "qrcode") {
         await saveUserOnIntegration();
-        return await getQRCode(
+        const result = await getQRCode(
           baseUrl,
           apiKey,
           instanceName,
@@ -131,6 +168,12 @@ Deno.serve(async (req) => {
           controller.signal,
           true,
         );
+        // Sync the real instance name back to DB
+        const resultBody = await result.clone().json().catch(() => ({}));
+        if (resultBody.success && resultBody.instance_name) {
+          await syncInstanceMetadata(resultBody.instance_name);
+        }
+        return result;
       }
 
       if (action === "status") {
