@@ -597,15 +597,22 @@ Deno.serve(async (req) => {
           // Ignore delivery/read status updates that are not real inbound messages
           const isStatusOnly = !messageText && !hasMedia;
 
-          if (!isFromMe && senderPhone && !isStatusOnly) {
+          // Skip group messages (they are handled elsewhere)
+          const isGroupMessage = String(remoteJid).includes("@g.us") || String(remoteJid).includes("@broadcast");
+
+          if (senderPhone && !isStatusOnly && !isGroupMessage) {
             const displayText = mediaCaption || messageText || (hasMedia ? "" : "");
+            const resolvedText = displayText || (hasMedia ? `[${messageType === "audio" ? "🎵 Áudio" : messageType === "image" ? "📷 Imagem" : messageType === "video" ? "🎥 Vídeo" : "📎 Arquivo"}]` : "[Mensagem]");
+
+            // For fromMe messages, the senderPhone is the contact we're messaging
+            // We route them as "user" sender_type so they appear in the conversation
             await routeToInbox(supabase, {
               organizationId: integration.organization_id,
               userId,
               channel: "whatsapp",
               senderIdentifier: senderPhone,
               identifierField: "whatsapp_phone",
-              messageText: displayText || (hasMedia ? `[${messageType === "audio" ? "🎵 Áudio" : messageType === "image" ? "📷 Imagem" : messageType === "video" ? "🎥 Vídeo" : "📎 Arquivo"}]` : "[Mensagem]"),
+              messageText: resolvedText,
               externalMessageId: keyData.id,
               mediaUrl,
               mediaMimeType,
@@ -613,6 +620,7 @@ Deno.serve(async (req) => {
               fileName,
               sourceInstanceId: integration.id,
               sourceInstanceName: integration.name || instanceName,
+              isFromMe: isFromMe,
             });
           }
         }
@@ -646,6 +654,7 @@ interface RouteToInboxParams {
   fileName?: string | null;
   sourceInstanceId?: string;
   sourceInstanceName?: string;
+  isFromMe?: boolean;
 }
 
 async function routeToInbox(
@@ -879,11 +888,13 @@ async function routeToInbox(
     }
 
     // Insert the message
+    const senderType = params.isFromMe ? "user" : "contact";
     const messageInsert: Record<string, unknown> = {
       conversation_id: conversationId,
       content: messageText,
-      sender_type: "contact",
-      is_read: false,
+      sender_type: senderType,
+      is_read: params.isFromMe ? true : false,
+      ...(params.isFromMe && userId ? { sender_id: userId } : {}),
     };
     if (params.mediaUrl) messageInsert.media_url = params.mediaUrl;
     if (params.mediaMimeType) messageInsert.media_mime_type = params.mediaMimeType;
