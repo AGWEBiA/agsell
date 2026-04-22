@@ -13,7 +13,7 @@ export function WhatsAppFloatingButton() {
       className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-white font-semibold shadow-lg shadow-black/30 hover:bg-[#1ebe5b] transition-all hover:scale-105 group"
     >
       <MessageCircle className="h-6 w-6 fill-white stroke-white" />
-      <span className="hidden sm:inline text-sm">(22) 99254-5278</span>
+      <span className="hidden sm:inline text-sm">Atendimento</span>
     </a>
   );
 }
