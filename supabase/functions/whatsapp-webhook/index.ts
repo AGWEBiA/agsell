@@ -401,6 +401,22 @@ Deno.serve(async (req) => {
           return normalizedCandidate === normalizedIncomingInstance || (!!incomingInstanceId && String(candidate) === incomingInstanceId);
         });
       });
+
+      // If matched by instanceId but name differs, sync the real name to DB
+      if (integration && instanceName) {
+        const config = (integration.config || {}) as Record<string, unknown>;
+        const storedName = typeof config.instance_name === "string" ? config.instance_name : "";
+        if (storedName && normalizeIdentifier(storedName) !== normalizedIncomingInstance) {
+          // Update the stored instance_name to match the real Evolution API name
+          const updatedConfig = { ...config, instance_name: instanceName };
+          await supabase
+            .from("organization_integrations")
+            .update({ name: instanceName, config: updatedConfig })
+            .eq("id", integration.id);
+          console.log(`Auto-synced instance name: "${storedName}" → "${instanceName}"`);
+        }
+      }
+
       const integrationConfig = integration ? (integration.config || {}) as Record<string, string> : {};
 
       if (integration) {
