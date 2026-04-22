@@ -12,6 +12,7 @@ import { WhatsAppGroupsManager } from '@/components/whatsapp/WhatsAppGroupsManag
 import { useWhatsAppGroups } from '@/hooks/useWhatsAppGroups';
 import { WhatsAppCampaignsManager } from '@/components/whatsapp/WhatsAppCampaignsManager';
 import { WhatsAppGroupMessages } from '@/components/whatsapp/WhatsAppGroupMessages';
+import { WhatsAppAuditLog } from '@/components/whatsapp/WhatsAppAuditLog';
 import { useWhatsAppInstances, WhatsAppInstance } from '@/hooks/useWhatsAppInstances';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
