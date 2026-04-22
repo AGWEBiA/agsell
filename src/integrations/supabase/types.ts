@@ -3210,6 +3210,8 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          delivery_status: string
+          external_id: string | null
           file_name: string | null
           id: string
           is_read: boolean | null
@@ -3223,6 +3225,8 @@ export type Database = {
           content: string
           conversation_id: string
           created_at?: string
+          delivery_status?: string
+          external_id?: string | null
           file_name?: string | null
           id?: string
           is_read?: boolean | null
@@ -3236,6 +3240,8 @@ export type Database = {
           content?: string
           conversation_id?: string
           created_at?: string
+          delivery_status?: string
+          external_id?: string | null
           file_name?: string | null
           id?: string
           is_read?: boolean | null
