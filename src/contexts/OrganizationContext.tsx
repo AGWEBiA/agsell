@@ -19,7 +19,7 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [currentRole, setCurrentRole] = useState<string | null>(null);
@@ -36,7 +36,6 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      // Get organizations where user is a member
       const { data: memberships, error: memberError } = await supabase
         .from('organization_members')
         .select('organization_id, role')
@@ -44,19 +43,25 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
       if (memberError) throw memberError;
 
-      if (!memberships || memberships.length === 0) {
+      if ((!memberships || memberships.length === 0) && !isAdmin) {
         setOrganizations([]);
         setCurrentOrganization(null);
         setLoading(false);
         return;
       }
 
-      const orgIds = memberships.map(m => m.organization_id);
-      
-      const { data: orgs, error: orgError } = await supabase
+      const membershipMap = new Map((memberships || []).map((membership) => [membership.organization_id, membership.role]));
+
+      let orgsQuery = supabase
         .from('organizations')
-        .select('*')
-        .in('id', orgIds);
+        .select('*');
+
+      if (!isAdmin) {
+        const orgIds = (memberships || []).map(m => m.organization_id);
+        orgsQuery = orgsQuery.in('id', orgIds);
+      }
+
+      const { data: orgs, error: orgError } = await orgsQuery;
 
       if (orgError) throw orgError;
 
@@ -71,8 +76,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
       // Set role for current org
       if (orgToSet) {
-        const membership = memberships.find(m => m.organization_id === orgToSet.id);
-        setCurrentRole(membership?.role || null);
+        setCurrentRole(membershipMap.get(orgToSet.id) || (isAdmin ? 'admin' : null));
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -83,7 +87,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     fetchOrganizations();
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, isAdmin]);
 
   useEffect(() => {
     if (currentOrganization) {
@@ -127,7 +131,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         _org_id: org.id,
         _user_id: user.id
       });
-      setCurrentRole(data || null);
+      setCurrentRole(data || (isAdmin ? 'admin' : null));
     } else {
       setCurrentRole(null);
     }
