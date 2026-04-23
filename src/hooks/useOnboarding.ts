@@ -16,6 +16,18 @@ export function useOnboarding() {
   const { currentOrganization } = useOrganization();
   const queryClient = useQueryClient();
 
+  const buildProgressInsert = (
+    step?: keyof Omit<OnboardingProgress, 'id' | 'organization_id' | 'completed_at'>,
+    completedAt?: string | null
+  ) => ({
+    organization_id: currentOrganization!.id,
+    step_profile_completed: step === 'step_profile_completed',
+    step_team_completed: step === 'step_team_completed',
+    step_pipeline_completed: step === 'step_pipeline_completed',
+    step_first_contact_completed: step === 'step_first_contact_completed',
+    completed_at: completedAt ?? null,
+  });
+
   const { data: progress, isLoading } = useQuery({
     queryKey: ['onboarding', currentOrganization?.id],
     queryFn: async () => {
@@ -37,9 +49,18 @@ export function useOnboarding() {
     mutationFn: async () => {
       if (!currentOrganization?.id) throw new Error('No organization');
 
+      const { data: existing, error: fetchError } = await supabase
+        .from('organization_onboarding')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (existing) return existing;
+
       const { data, error } = await supabase
         .from('organization_onboarding')
-        .insert({ organization_id: currentOrganization.id })
+        .insert(buildProgressInsert())
         .select()
         .single();
 
@@ -64,6 +85,25 @@ export function useOnboarding() {
 
       if (willBeComplete) {
         updates.completed_at = new Date().toISOString();
+      }
+
+      const { data: existing, error: fetchError } = await supabase
+        .from('organization_onboarding')
+        .select('id')
+        .eq('organization_id', currentOrganization.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (!existing) {
+        const { data, error } = await supabase
+          .from('organization_onboarding')
+          .insert(buildProgressInsert(step, (updates.completed_at as string | undefined) ?? null))
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
       }
 
       const { data, error } = await supabase
