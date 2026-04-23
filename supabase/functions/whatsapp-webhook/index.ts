@@ -685,6 +685,9 @@ Deno.serve(async (req) => {
               sourceInstanceId: integration.id,
               sourceInstanceName: integration.name || instanceName,
               isFromMe: isFromMe,
+              quotedContent: quotedContent?.slice(0, 200) || null,
+              quotedExternalId,
+              quotedSenderType: quotedFromMe === null ? null : (quotedFromMe ? "contact" : "user"),
             });
           } else if (isGroupMessage) {
             // Log discarded group message
