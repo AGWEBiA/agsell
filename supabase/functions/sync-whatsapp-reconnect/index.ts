@@ -116,8 +116,9 @@ Deno.serve(async (req) => {
       console.error("Error fetching chats:", e);
     }
 
+    const syncHours = Math.min(Math.max(Number(body.hours) || 48, 1), 168);
     const now = Date.now();
-    const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+    const twentyFourHoursAgo = now - syncHours * 60 * 60 * 1000;
     let syncedMessages = 0;
     let syncedChats = 0;
 

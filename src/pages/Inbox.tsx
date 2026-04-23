@@ -142,7 +142,7 @@ export default function Inbox() {
   const [showDebug, setShowDebug] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const handleSyncConversations = async () => {
+  const handleSyncConversations = async (hours: number = 48) => {
     if (!currentOrganization?.id || activeInstances.length === 0) {
       toast.error('Nenhuma instância ativa para sincronizar');
       return;
@@ -157,11 +157,12 @@ export default function Inbox() {
           body: {
             instance_name: instanceName,
             state: 'open',
+            hours,
           },
         });
         if (!error) syncedCount++;
       }
-      toast.success(`Sincronização concluída para ${syncedCount} instância(s)!`);
+      toast.success(`Sincronização (${hours}h) concluída para ${syncedCount} instância(s)!`);
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     } catch (e: any) {
       toast.error('Erro ao sincronizar: ' + (e.message || 'Erro desconhecido'));
