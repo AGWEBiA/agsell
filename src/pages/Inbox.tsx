@@ -586,17 +586,25 @@ export default function Inbox() {
                   <Bug className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger><TooltipContent>Debug SAC</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  onClick={handleSyncConversations}
-                  disabled={isSyncing}
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                </Button>
-              </TooltipTrigger><TooltipContent>Puxar conversas dos dispositivos</TooltipContent></Tooltip>
+              <DropdownMenu>
+                <Tooltip><TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                      disabled={isSyncing}
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger><TooltipContent>Puxar conversas dos dispositivos</TooltipContent></Tooltip>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleSyncConversations(24)}>Últimas 24 horas</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSyncConversations(48)}>Últimas 48 horas</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSyncConversations(72)}>Últimas 72 horas</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
