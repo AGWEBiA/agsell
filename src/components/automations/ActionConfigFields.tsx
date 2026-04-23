@@ -393,6 +393,55 @@ export function ActionConfigFields({ actionType, config, onConfigChange }: Actio
         </div>
       );
 
+    case 'create_deal':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Título do Deal</Label>
+            <Input
+              placeholder="Ex: Lead via {{source}} — {{first_name}}"
+              value={(config.title as string) || ''}
+              onChange={(e) => set('title', e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Use {`{{first_name}}`} e {`{{source}}`} como variáveis. Se vazio, será gerado automaticamente.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Valor estimado (R$)</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={(config.value as string) || ''}
+              onChange={(e) => set('value', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Probabilidade (%)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              placeholder="50"
+              value={(config.probability as string) || ''}
+              onChange={(e) => set('probability', parseInt(e.target.value) || 50)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Fechamento esperado (dias)</Label>
+            <Input
+              type="number"
+              placeholder="30"
+              value={(config.expected_close_days as string) || ''}
+              onChange={(e) => set('expected_close_days', parseInt(e.target.value) || 0)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            ℹ️ O deal será criado no <strong>primeiro estágio</strong> do seu pipeline (ex: "Novo Lead").
+          </p>
+        </div>
+      );
+
     case 'send_poll':
       return (
         <div className="space-y-4">

@@ -45,6 +45,7 @@ import {
   Pencil,
   Vote,
   SplitSquareVertical,
+  TrendingUp,
 } from 'lucide-react';
 import { ActionConfigFields } from './ActionConfigFields';
 
