@@ -138,6 +138,35 @@ export default function Inbox() {
   const [selectedWhatsappInstanceId, setSelectedWhatsappInstanceId] = useState('auto');
   const [instanceFilter, setInstanceFilter] = useState('all');
   const [showDebug, setShowDebug] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncConversations = async () => {
+    if (!currentOrganization?.id || activeInstances.length === 0) {
+      toast.error('Nenhuma instância ativa para sincronizar');
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      let syncedCount = 0;
+      for (const inst of activeInstances) {
+        const instanceName = inst.instance_name || inst.name;
+        if (!instanceName) continue;
+        const { error } = await supabase.functions.invoke('sync-whatsapp-reconnect', {
+          body: {
+            instance_name: instanceName,
+            state: 'open',
+          },
+        });
+        if (!error) syncedCount++;
+      }
+      toast.success(`Sincronização concluída para ${syncedCount} instância(s)!`);
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    } catch (e: any) {
+      toast.error('Erro ao sincronizar: ' + (e.message || 'Erro desconhecido'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
   const sacInstances = (activeInstances || []).filter((instance: any) => instance.config?.use_for_sac === true);
