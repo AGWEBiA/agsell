@@ -58,6 +58,7 @@ export function usePlans() {
       const { data, error } = await supabase
         .from('plans_public' as any)
         .select('*')
+        .eq('is_active', true)
         .order('price_monthly', { ascending: true });
 
       if (error) throw error;
