@@ -408,8 +408,10 @@ export default function Inbox() {
         r.shortcut?.toLowerCase().startsWith(query) || r.title.toLowerCase().includes(query)
       );
       setShortcutSuggestions(matches.slice(0, 5));
+      setSelectedSuggestionIdx(0);
     } else {
       setShortcutSuggestions([]);
+      setSelectedSuggestionIdx(0);
     }
   };
 
