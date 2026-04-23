@@ -148,6 +148,9 @@ export default function Inbox() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; sender_type: string; external_id?: string | null } | null>(null);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [shortcutSuggestions, setShortcutSuggestions] = useState<typeof quickReplies>([]);
+  const [selectedSuggestionIdx, setSelectedSuggestionIdx] = useState(0);
+  const [lastSentMessageId, setLastSentMessageId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSyncConversations = async (hours: number = 48) => {
     if (!currentOrganization?.id || activeInstances.length === 0) {
@@ -331,6 +334,8 @@ export default function Inbox() {
       mediaMimeType = pendingFile.file.type;
       fileName = pendingFile.file.name;
     }
+    const wasQuotedReply = !!replyingTo;
+    const sentContent = messageInput;
     sendMessage.mutate({
       conversation_id: selectedConversation.id,
       content: messageInput || (pendingFile ? `📎 ${pendingFile.file.name}` : ''),
@@ -346,11 +351,30 @@ export default function Inbox() {
         quoted_sender_type: replyingTo.sender_type,
         quoted_external_id: replyingTo.external_id,
       } : {}),
-    } as any);
+    } as any, {
+      onSuccess: (data: any) => {
+        if (wasQuotedReply && data?.id) {
+          setLastSentMessageId(data.id);
+          toast('Resposta com citação enviada', {
+            action: {
+              label: 'Desfazer',
+              onClick: async () => {
+                await supabase.from('messages').delete().eq('id', data.id);
+                queryClient.invalidateQueries({ queryKey: ['conversations'] });
+                setMessageInput(sentContent);
+                toast.success('Mensagem removida');
+              },
+            },
+            duration: 6000,
+          });
+        }
+      },
+    });
     setMessageInput('');
     setPendingFile(null);
     setIsUploading(false);
     setReplyingTo(null);
+    setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
   const handleEmojiSelect = (emoji: any) => {
@@ -384,8 +408,10 @@ export default function Inbox() {
         r.shortcut?.toLowerCase().startsWith(query) || r.title.toLowerCase().includes(query)
       );
       setShortcutSuggestions(matches.slice(0, 5));
+      setSelectedSuggestionIdx(0);
     } else {
       setShortcutSuggestions([]);
+      setSelectedSuggestionIdx(0);
     }
   };
 
@@ -854,11 +880,21 @@ export default function Inbox() {
                           <span>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                           {isUser && (() => {
                             const status = message.delivery_status || 'sent';
-                            if (status === 'failed') return <AlertCircle className="h-2.5 w-2.5 text-destructive" />;
-                            if (status === 'read') return <CheckCheck className="h-2.5 w-2.5 text-blue-400" />;
-                            if (status === 'delivered') return <CheckCheck className="h-2.5 w-2.5" />;
-                            if (status === 'sent') return <Check className="h-2.5 w-2.5" />;
-                            return <Clock className="h-2.5 w-2.5 opacity-50" />;
+                            const statusLabel: Record<string, string> = { failed: 'Falhou', read: 'Lida', delivered: 'Entregue', sent: 'Enviada', pending: 'Pendente' };
+                            const label = statusLabel[status] || 'Pendente';
+                            const icon = (() => {
+                              if (status === 'failed') return <AlertCircle className="h-2.5 w-2.5 text-destructive" />;
+                              if (status === 'read') return <CheckCheck className="h-2.5 w-2.5 text-blue-400" />;
+                              if (status === 'delivered') return <CheckCheck className="h-2.5 w-2.5" />;
+                              if (status === 'sent') return <Check className="h-2.5 w-2.5" />;
+                              return <Clock className="h-2.5 w-2.5 opacity-50" />;
+                            })();
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild><span className="inline-flex items-center cursor-default">{icon}</span></TooltipTrigger>
+                                <TooltipContent side="left" className="text-xs">{label}</TooltipContent>
+                              </Tooltip>
+                            );
                           })()}
                         </div>
                         {/* Reply button */}
@@ -926,10 +962,10 @@ export default function Inbox() {
             {shortcutSuggestions.length > 0 && (
               <div className="px-4 pb-1 shrink-0">
                 <div className="max-w-3xl mx-auto bg-popover border rounded-lg shadow-lg p-1 space-y-0.5">
-                  {shortcutSuggestions.map(r => (
+                  {shortcutSuggestions.map((r, idx) => (
                     <button
                       key={r.id}
-                      className="w-full text-left px-3 py-1.5 rounded hover:bg-accent text-sm flex items-center gap-2"
+                      className={`w-full text-left px-3 py-1.5 rounded text-sm flex items-center gap-2 ${idx === selectedSuggestionIdx ? 'bg-accent' : 'hover:bg-accent'}`}
                       onClick={() => applyQuickReply(r.content)}
                     >
                       <Zap className="h-3 w-3 text-primary shrink-0" />
@@ -950,6 +986,7 @@ export default function Inbox() {
                 </Button>
                 <AudioTranscription onTranscription={(text) => setMessageInput(prev => prev + text)} />
                 <textarea
+                  ref={textareaRef}
                   placeholder="Digite /atalho ou uma mensagem..."
                   className="flex-1 min-h-[36px] max-h-[120px] py-2 text-sm rounded-2xl bg-muted/50 border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring px-4 resize-none overflow-y-auto"
                   value={messageInput}
@@ -959,10 +996,36 @@ export default function Inbox() {
                     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                   }}
                   onKeyDown={(e) => {
+                    // Escape: close reply, suggestions, quick reply popover
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      if (shortcutSuggestions.length > 0) {
+                        setShortcutSuggestions([]);
+                        setSelectedSuggestionIdx(0);
+                      } else if (quickReplyOpen) {
+                        setQuickReplyOpen(false);
+                      } else if (replyingTo) {
+                        setReplyingTo(null);
+                      }
+                      return;
+                    }
+                    // Arrow navigation for shortcut suggestions
+                    if (shortcutSuggestions.length > 0) {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setSelectedSuggestionIdx(prev => Math.min(prev + 1, shortcutSuggestions.length - 1));
+                        return;
+                      }
+                      if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setSelectedSuggestionIdx(prev => Math.max(prev - 1, 0));
+                        return;
+                      }
+                    }
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       if (shortcutSuggestions.length > 0) {
-                        applyQuickReply(shortcutSuggestions[0].content);
+                        applyQuickReply(shortcutSuggestions[selectedSuggestionIdx].content);
                       } else {
                         handleSendMessage();
                       }
