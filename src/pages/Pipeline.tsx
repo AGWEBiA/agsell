@@ -75,6 +75,9 @@ import {
   type Deal,
 } from '@/hooks/usePipeline';
 import { useContacts } from '@/hooks/useContacts';
+import { useContactLastSacMessage } from '@/hooks/useSacLeads';
+import { SacLeadsPanel } from '@/components/pipeline/SacLeadsPanel';
+import { DealSourceBadge } from '@/components/pipeline/DealSourceBadge';
 import { PageHeader, FormField } from '@/components/ui/help-tooltip';
 const formatCurrency = (value: number | null) => {
   if (!value) return 'R$ 0,00';
