@@ -79,7 +79,7 @@ const renderMessageContent = (content: string, isUser: boolean) => {
   const parts = content.split(URL_REGEX);
 
   return (
-    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words select-text cursor-text">
       {parts.map((part, index) => {
         if (!part) return null;
 
@@ -844,7 +844,7 @@ export default function Inbox() {
                   const isUser = message.sender_type === 'user';
                   return (
                     <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'} group/msg`}>
-                      <div className={`max-w-[70%] rounded-xl px-3 py-2 relative ${isUser ? 'bg-emerald-900/60 text-foreground' : 'bg-muted'}`}>
+                      <div className={`max-w-[70%] rounded-xl px-3 py-2 relative select-text ${isUser ? 'bg-emerald-900/60 text-foreground' : 'bg-muted'}`}>
                         {/* Quoted message preview */}
                         {message.quoted_content && (
                           <div className="mb-1.5 rounded-md bg-background/30 border-l-2 border-primary px-2 py-1">
