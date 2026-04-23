@@ -2739,7 +2739,152 @@ Growth Tools se conectam ao ecossistema:
   // INTELIGÊNCIA E ANALYTICS
   // =====================================================
   {
-    id: 'analytics',
+    id: 'support-agent',
+    categoryId: 'intelligence',
+    title: 'Agente de Suporte AG Sell',
+    icon: Bot,
+    description: 'Tire dúvidas sobre a plataforma 24/7 com o chat flutuante de IA com base nos artigos da Central de Ajuda.',
+    readTime: '3 min',
+    popular: true,
+    content: `O **Agente de Suporte AG Sell** é um assistente de IA disponível em todas as páginas do dashboard. Ele responde perguntas sobre como usar a plataforma com base na Central de Ajuda oficial.
+
+## Onde encontrar
+
+Procure pelo botão flutuante com ícone de **balão de mensagem** no canto inferior direito da tela. Ele está disponível em qualquer página enquanto você estiver logado.
+
+## O que ele resolve
+
+- "Como conectar o WhatsApp?"
+- "Como criar uma automação de boas-vindas?"
+- "Onde configuro meu plano e limites?"
+- "Como exporto contatos para CSV?"
+- Qualquer outra dúvida sobre funcionalidades da plataforma
+
+## Como funciona
+
+- Usa **Gemini 3 Flash** via Lovable AI Gateway
+- Responde com base nos artigos atuais da **Central de Ajuda** (RAG)
+- Conhece seu **plano**, **organização** e **nome de usuário** para personalizar respostas
+- Quando sugere uma página, exibe um **link clicável** que leva direto para o módulo (ex: \`/whatsapp\`)
+- O histórico fica salvo na sua sessão para consulta posterior
+
+## Atalhos da janela do chat
+
+- **Nova conversa** (ícone de rotação) — limpa o contexto e começa do zero
+- **Expandir/Minimizar** — alterna entre tamanho compacto e amplo
+- **Fechar (X)** — esconde a janela; o botão flutuante volta
+
+## Quick actions
+
+Na primeira mensagem, o chat sugere perguntas frequentes que você pode clicar para enviar diretamente:
+
+- Como conectar o WhatsApp?
+- Como criar uma automação?
+- Tenho um bug para reportar
+- Como configurar meu plano?
+
+## Quando abrir um ticket humano
+
+O agente resolve a maioria das dúvidas operacionais. Para casos que envolvem:
+
+- **Bugs** que impedem o uso
+- **Solicitações de reembolso** ou cobrança
+- **Pedidos de feature** customizada
+- **Investigação de dados** específicos da sua conta
+
+Use o link **"abra um ticket"** no rodapé do chat ou acesse diretamente \`/support-center\`.
+
+⚠️ **Limites**: Em casos de alto volume, o agente pode retornar erro \`429\` (limite de requisições) ou \`402\` (créditos de IA insuficientes). Aguarde alguns instantes ou contate o admin da organização.
+
+💡 **Dica**: Quanto mais específica for a pergunta, melhor a resposta. Em vez de "WhatsApp não funciona", prefira "Meu QR Code expira antes de eu escanear, o que faço?".`,
+  },
+  {
+    id: 'ai-agents-builder',
+    categoryId: 'intelligence',
+    title: 'Agentes de IA (Chatbot Builder)',
+    icon: Brain,
+    description: 'Crie bots autônomos para WhatsApp, Instagram e outros canais com base de conhecimento e templates prontos.',
+    readTime: '8 min',
+    popular: true,
+    content: `Os **Agentes de IA** permitem criar bots que conversam com seus leads e clientes 24/7 nos canais conectados, com personalidade, base de conhecimento e regras configuráveis.
+
+Acesse em **Agentes IA** (\`/ai-agents\`) ou no **Chatbot Builder** (\`/chatbot-builder\`).
+
+## Quando usar um Agente de IA
+
+- **Atendimento de primeiro nível** — qualificar leads antes de passar para um humano
+- **FAQ automático** — responder dúvidas frequentes sobre produtos e serviços
+- **Agendamento e captação** — coletar dados, marcar reuniões, enviar links
+- **Suporte fora do horário** — manter o atendimento ativo 24/7
+
+## Configuração do agente
+
+### Identidade
+- **Nome** — como o agente será apresentado
+- **Avatar** — imagem (opcional)
+- **Descrição** — finalidade do agente
+- **Mensagem de boas-vindas** — primeira fala do agente
+- **Mensagem de fallback** — usada quando o agente não souber responder
+
+### Modelo de IA
+- **Modelo** — Gemini 2.5 Flash, Gemini 2.5 Pro, GPT-5 Mini, etc.
+- **Temperatura** — criatividade (0 = determinístico, 1 = criativo)
+- **Max tokens** — tamanho máximo da resposta
+- **System prompt** — instruções de personalidade e comportamento
+
+### Canais
+Selecione em quais canais o agente atende:
+- WhatsApp
+- Instagram DM
+- E-mail
+- Site (widget)
+
+## Base de conhecimento (RAG)
+
+Adicione documentos para que o agente responda com informações da sua empresa:
+
+- **Texto livre** — cole políticas, FAQs, descrições de produto
+- **URL** — o sistema extrai o conteúdo de uma página pública
+- **Arquivo** — PDF, DOCX (com extração automática de texto)
+
+> Cada bloco de conhecimento é armazenado em \`ai_agent_knowledge\` e usado como contexto nas respostas do agente.
+
+## Templates prontos
+
+Acesse a aba **Templates** para usar agentes pré-configurados por vertical:
+
+- **Imobiliária** — qualifica interesse, agenda visita
+- **Infoproduto** — tira dúvidas sobre o curso, oferece desconto
+- **Clínica** — agenda consulta, envia preparo do exame
+- **E-commerce** — rastreia pedidos, recomenda produtos
+
+Cada template já vem com system prompt, mensagem de boas-vindas e canais sugeridos.
+
+## Dashboard de performance
+
+Em **Performance**, acompanhe:
+
+- **Conversas iniciadas** vs concluídas
+- **Taxa de transferência humana** — quantas vezes o agente passou para um atendente
+- **Satisfação média** (CSAT) das conversas
+- **Tempo médio de resposta**
+
+Use estas métricas para ajustar o **system prompt** e a **base de conhecimento**.
+
+## Diferença entre Agente de IA e Agente de Suporte
+
+| Recurso | Agente de IA | Agente de Suporte AG Sell |
+|---------|--------------|---------------------------|
+| Para quem | Seus leads/clientes | Você (usuário da plataforma) |
+| Onde | WhatsApp, Instagram, etc. | Botão flutuante no dashboard |
+| Customização | Total (modelo, prompt, canais) | Configurado pela AG Sell |
+| Base | Sua base de conhecimento | Central de Ajuda da AG Sell |
+
+⚠️ **Importante**: O agente respeita os limites de créditos de IA do seu plano. Acompanhe o consumo no Dashboard.
+
+💡 **Dica**: Comece com **temperatura 0.3** e ajuste para cima se as respostas ficarem muito repetitivas. Para suporte, prefira respostas curtas e diretas; para vendas, permita mais criatividade.`,
+  },
+
     categoryId: 'intelligence',
     title: 'Analytics e relatórios',
     icon: BarChart3,
