@@ -395,6 +395,56 @@ serve(async (req) => {
             break;
           }
 
+          // ── DEALS / CRM ──
+          case 'create_deal': {
+            // Resolve target stage: prefer explicit stage_id, fallback to first stage by position
+            let stageId = (action.config.stage_id as string) || null;
+            if (!stageId) {
+              const { data: firstStage } = await supabase
+                .from('pipeline_stages')
+                .select('id')
+                .eq('user_id', automation.user_id)
+                .order('position', { ascending: true })
+                .limit(1)
+                .maybeSingle();
+              stageId = firstStage?.id || null;
+            }
+
+            if (!stageId) {
+              actionResult = { success: false, error: 'Nenhum estágio do pipeline encontrado' };
+              await logTimeline('create_deal', 'Criar Deal', 'failed', { error: 'No pipeline stage' });
+              break;
+            }
+
+            const contact = await getContact();
+            const titleTemplate = (action.config.title as string) || 'Lead via {{source}}';
+            const dealTitle = titleTemplate
+              .replace(/\{\{first_name\}\}/g, contact?.first_name || '')
+              .replace(/\{\{source\}\}/g, contact?.source || 'SAC')
+              || `Lead - ${contact?.first_name || 'Sem nome'}`;
+
+            const expectedDays = Number(action.config.expected_close_days || 0);
+            const expectedDate = expectedDays > 0
+              ? new Date(Date.now() + expectedDays * 86400000).toISOString().split('T')[0]
+              : null;
+
+            const { data: newDeal, error } = await supabase.from('deals').insert({
+              title: dealTitle,
+              value: Number(action.config.value || 0),
+              stage_id: stageId,
+              contact_id,
+              user_id: automation.user_id,
+              organization_id: automation.organization_id,
+              status: 'open',
+              expected_close_date: expectedDate,
+              probability: Number(action.config.probability || 50),
+            }).select('id').single();
+
+            actionResult = { success: !error, deal_id: newDeal?.id, error: error?.message };
+            await logTimeline('create_deal', 'Criar Deal no Pipeline', error ? 'failed' : 'success', { deal_id: newDeal?.id, title: dealTitle });
+            break;
+          }
+
           case 'send_notification': {
             const { error } = await supabase.from('notifications').insert({
               user_id: automation.user_id,

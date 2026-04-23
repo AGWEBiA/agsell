@@ -17,6 +17,7 @@ import {
   RotateCcw,
   ThumbsUp,
   Megaphone,
+  TrendingUp,
 } from 'lucide-react';
 import type { Action } from '@/components/automations/AutomationActionsEditor';
 
@@ -447,6 +448,56 @@ export const automationTemplates: AutomationTemplate[] = [
       { id: '5', type: 'send_sms', config: { message: '{{nome}}, novidade exclusiva! Confira seu e-mail ou WhatsApp. Oferta por tempo limitado!' } },
       { id: '6', type: 'add_tag', config: { tag_name: 'broadcast-enviado' } },
       { id: '7', type: 'update_score', config: { points: 5 } },
+    ],
+  },
+  {
+    id: 'sac_to_pipeline',
+    name: 'SAC → Pipeline',
+    description: 'Cria um deal automaticamente no Pipeline quando uma mensagem do WhatsApp contiver palavras de interesse de compra (preço, comprar, orçamento, etc.)',
+    category: 'Vendas',
+    icon: TrendingUp,
+    color: 'bg-emerald-500',
+    trigger_type: 'whatsapp_received',
+    trigger_config: {},
+    actions: [
+      {
+        id: '1',
+        type: 'condition',
+        config: {
+          field: 'message_keyword',
+          operator: 'contains_any',
+          value: 'preço,preco,valor,quanto custa,comprar,orçamento,orcamento,quero,interessado,proposta',
+        },
+      },
+      {
+        id: '2',
+        type: 'add_tag',
+        config: { tag_name: 'oportunidade-sac' },
+      },
+      {
+        id: '3',
+        type: 'update_score',
+        config: { points: 25, operation: 'add' },
+      },
+      {
+        id: '4',
+        type: 'create_deal',
+        config: {
+          title: 'Lead SAC — {{first_name}}',
+          value: 0,
+          probability: 40,
+          expected_close_days: 14,
+        },
+      },
+      {
+        id: '5',
+        type: 'send_notification',
+        config: {
+          title: 'Nova oportunidade no Pipeline',
+          message: 'Lead {{first_name}} demonstrou interesse de compra via SAC. Verifique no Pipeline.',
+          link: '/pipeline',
+        },
+      },
     ],
   },
 ];
