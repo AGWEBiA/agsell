@@ -222,15 +222,22 @@ export function useInbox() {
 
   const sendMessage = useMutation({
     mutationFn: async (message: any) => {
-      const { instance_id, ...messageToInsert } = { ...message };
+      const { instance_id, quoted_message_id, quoted_content, quoted_sender_type, quoted_external_id, ...messageToInsert } = { ...message };
 
       if (message.sender_type === 'user' && user?.id) {
         messageToInsert.sender_id = user.id;
       }
 
+      // Add quoted fields if replying
+      if (quoted_message_id) {
+        (messageToInsert as any).quoted_message_id = quoted_message_id;
+        (messageToInsert as any).quoted_content = quoted_content;
+        (messageToInsert as any).quoted_sender_type = quoted_sender_type;
+      }
+
       const { data, error } = await supabase
         .from('messages')
-        .insert(messageToInsert)
+        .insert(messageToInsert as any)
         .select()
         .single();
       if (error) throw error;
