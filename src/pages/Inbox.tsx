@@ -343,6 +343,7 @@ export default function Inbox() {
     setPendingFile(null);
     setIsUploading(false);
     setReplyingTo(null);
+  };
 
   const handleEmojiSelect = (emoji: any) => {
     setMessageInput(prev => prev + emoji.native);
