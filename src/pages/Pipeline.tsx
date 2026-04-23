@@ -337,6 +337,9 @@ export default function Pipeline() {
         </Dialog>
       </PageHeader>
 
+      {/* SAC Leads Panel */}
+      <SacLeadsPanel defaultStageId={stages[0]?.id} />
+
       {/* Pipeline Kanban */}
       <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-3 px-3 sm:mx-0 sm:px-0 snap-x snap-mandatory sm:snap-none">
         {stages.map((stage) => {
