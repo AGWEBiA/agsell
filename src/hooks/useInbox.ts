@@ -281,6 +281,7 @@ export function useInbox() {
               to: contactPhone,
               message: message.content,
               instance_id: resolvedInstanceId || undefined,
+              quoted_message_external_id: quoted_external_id || undefined,
             },
           });
 
