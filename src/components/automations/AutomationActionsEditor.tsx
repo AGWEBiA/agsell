@@ -69,6 +69,7 @@ export type ActionType =
   | 'transfer_human'
   | 'goto_flow'
   | 'send_poll'
+  | 'create_deal'
   | 'condition';
 
 export type Action = {
@@ -87,6 +88,7 @@ export const actionTypes = [
   { value: 'remove_tag', label: 'Remover Tag', icon: Tag, color: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400', category: 'crm' },
   { value: 'set_custom_field', label: 'Definir Campo', icon: PenLine, color: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400', category: 'crm' },
   { value: 'update_score', label: 'Atualizar Lead Score', icon: Star, color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400', category: 'crm' },
+  { value: 'create_deal', label: 'Criar Deal no Pipeline', icon: TrendingUp, color: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400', category: 'crm' },
   { value: 'subscribe_sequence', label: 'Inscrever em Sequência', icon: ListPlus, color: 'bg-teal-100 text-teal-600 dark:bg-teal-900 dark:text-teal-400', category: 'flow' },
   { value: 'unsubscribe_sequence', label: 'Remover de Sequência', icon: ListMinus, color: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400', category: 'flow' },
   { value: 'goto_flow', label: 'Ir para outro Flow', icon: GitBranch, color: 'bg-violet-100 text-violet-600 dark:bg-violet-900 dark:text-violet-400', category: 'flow' },
@@ -178,6 +180,8 @@ export function AutomationActionsEditor({ actions, onChange }: AutomationActions
         return action.config.message ? String(action.config.message).slice(0, 40) + '…' : 'Mensagem SMS';
       case 'create_task':
         return action.config.title ? String(action.config.title) : 'Nova tarefa';
+      case 'create_deal':
+        return action.config.title ? `Deal: ${String(action.config.title)}` : 'Novo deal no pipeline';
       case 'set_custom_field':
         return action.config.field_name ? `${String(action.config.field_name)} = ${String(action.config.field_value || '')}` : 'Campo personalizado';
       case 'subscribe_sequence':
