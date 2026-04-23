@@ -769,6 +769,9 @@ interface RouteToInboxParams {
   sourceInstanceId?: string;
   sourceInstanceName?: string;
   isFromMe?: boolean;
+  quotedContent?: string | null;
+  quotedExternalId?: string | null;
+  quotedSenderType?: string | null;
 }
 
 async function routeToInbox(
