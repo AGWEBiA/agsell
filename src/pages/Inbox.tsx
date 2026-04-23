@@ -32,6 +32,7 @@ import { InboxDebugPanel } from '@/components/inbox/InboxDebugPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupportTickets } from '@/hooks/useSupportTickets';
 import { useWhatsAppInstances } from '@/hooks/useWhatsAppInstances';
+import { useQuickReplies } from '@/hooks/useQuickReplies';
 import { toast } from 'sonner';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
