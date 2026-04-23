@@ -968,19 +968,28 @@ export default function Inbox() {
                             );
                           })()}
                         </div>
-                        {/* Reply button */}
-                        <button
-                          onClick={() => setReplyingTo({
-                            id: message.id,
-                            content: message.content,
-                            sender_type: message.sender_type,
-                            external_id: message.external_id,
-                          })}
-                          className={`absolute ${isUser ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted`}
-                          title="Responder"
-                        >
-                          <Reply className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
+                        {/* Action buttons */}
+                        <div className={`absolute ${isUser ? '-left-16' : '-right-16'} top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-opacity flex gap-0.5`}>
+                          <button
+                            onClick={() => handleCopyMessage(message, selectedConversation?.contacts?.first_name || 'Contato')}
+                            className="p-1 rounded-full hover:bg-muted"
+                            title="Copiar mensagem"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={() => setReplyingTo({
+                              id: message.id,
+                              content: message.content,
+                              sender_type: message.sender_type,
+                              external_id: message.external_id,
+                            })}
+                            className="p-1 rounded-full hover:bg-muted"
+                            title="Responder"
+                          >
+                            <Reply className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
