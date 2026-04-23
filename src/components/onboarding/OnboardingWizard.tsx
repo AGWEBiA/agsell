@@ -35,13 +35,15 @@ export function OnboardingWizard({ open, onComplete }: OnboardingWizardProps) {
   const [contactEmail, setContactEmail] = useState('');
 
   useEffect(() => {
+    if (!open) return;
+
     if (currentOrganization && !progress) {
       initializeOnboarding.mutate();
     }
     if (currentOrganization) {
       setOrgName(currentOrganization.name);
     }
-  }, [currentOrganization, progress]);
+  }, [open, currentOrganization, progress]);
 
   useEffect(() => {
     if (progress) {
@@ -140,6 +142,12 @@ export function OnboardingWizard({ open, onComplete }: OnboardingWizardProps) {
     navigate('/dashboard');
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      onComplete();
+    }
+  };
+
   const steps = [
     { icon: Building2, title: 'Perfil', description: 'Configure sua organização' },
     { icon: Users, title: 'Equipe', description: 'Convide sua equipe' },
@@ -148,7 +156,7 @@ export function OnboardingWizard({ open, onComplete }: OnboardingWizardProps) {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl p-0 overflow-hidden" onPointerDownOutside={(e) => e.preventDefault()}>
         {/* Progress Header */}
         <div className="p-6 border-b bg-gradient-to-r from-primary/10 to-primary/5">
