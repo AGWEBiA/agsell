@@ -28,7 +28,7 @@ export interface Deal {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  contact?: { id: string; first_name: string; last_name: string | null } | null;
+  contact?: { id: string; first_name: string; last_name: string | null; source: string | null } | null;
   company?: { id: string; name: string } | null;
 }
 
@@ -77,7 +77,7 @@ export function useDeals() {
         .from('deals')
         .select(`
           *,
-          contact:contacts(id, first_name, last_name),
+          contact:contacts(id, first_name, last_name, source),
           company:companies(id, name)
         `)
         .order('created_at', { ascending: false });
