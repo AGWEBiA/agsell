@@ -334,6 +334,8 @@ export default function Inbox() {
       mediaMimeType = pendingFile.file.type;
       fileName = pendingFile.file.name;
     }
+    const wasQuotedReply = !!replyingTo;
+    const sentContent = messageInput;
     sendMessage.mutate({
       conversation_id: selectedConversation.id,
       content: messageInput || (pendingFile ? `📎 ${pendingFile.file.name}` : ''),
@@ -349,11 +351,30 @@ export default function Inbox() {
         quoted_sender_type: replyingTo.sender_type,
         quoted_external_id: replyingTo.external_id,
       } : {}),
-    } as any);
+    } as any, {
+      onSuccess: (data: any) => {
+        if (wasQuotedReply && data?.id) {
+          setLastSentMessageId(data.id);
+          toast('Resposta com citação enviada', {
+            action: {
+              label: 'Desfazer',
+              onClick: async () => {
+                await supabase.from('messages').delete().eq('id', data.id);
+                queryClient.invalidateQueries({ queryKey: ['conversations'] });
+                setMessageInput(sentContent);
+                toast.success('Mensagem removida');
+              },
+            },
+            duration: 6000,
+          });
+        }
+      },
+    });
     setMessageInput('');
     setPendingFile(null);
     setIsUploading(false);
     setReplyingTo(null);
+    setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
   const handleEmojiSelect = (emoji: any) => {
