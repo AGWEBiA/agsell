@@ -715,6 +715,38 @@ async function sendWithBusinessAPI(
         },
       ],
     };
+  } else if (businessKind === "reaction") {
+    if (!whatsappReq.reaction_external_id) {
+      return new Response(
+        JSON.stringify({ error: "reaction_external_id is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    messageBody = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: phoneNumber,
+      type: "reaction",
+      reaction: {
+        message_id: whatsappReq.reaction_external_id,
+        emoji: whatsappReq.reaction_emoji ?? "",
+      },
+    };
+  } else if (businessKind === "sticker") {
+    const stickerUrl = whatsappReq.sticker_url || whatsappReq.media_url;
+    messageBody = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: phoneNumber,
+      type: "sticker",
+      sticker: { link: stickerUrl },
+    };
+  } else if (businessKind === "poll") {
+    // Cloud API doesn't expose poll send — gracefully skip
+    return new Response(
+      JSON.stringify({ success: true, provider: "whatsapp_business", skipped: "poll_not_supported_on_cloud_api" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } else if (whatsappReq.template_name) {
     messageBody = {
       messaging_product: "whatsapp",
