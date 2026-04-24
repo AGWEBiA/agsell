@@ -358,6 +358,7 @@ export default function Inbox() {
     let type = 'file';
     if (file.type.startsWith('image/')) type = 'image';
     else if (file.type.startsWith('audio/')) type = 'audio';
+    else if (file.type.startsWith('video/')) type = 'video';
     const preview = type === 'image' ? URL.createObjectURL(file) : undefined;
     setPendingFile({ file, preview, type });
     if (fileInputRef.current) fileInputRef.current.value = '';
