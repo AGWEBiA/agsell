@@ -49,9 +49,9 @@ const FEATURES = [
   },
   {
     title: 'Inbox Omnichannel',
-    desc: 'WhatsApp (QR e Oficial), E-mail, Instagram, Telegram, SMS e VoIP em uma única tela de atendimento.',
+    desc: 'WhatsApp (QR e Oficial), E-mail, Instagram, Telegram, SMS e VoIP em uma única tela de atendimento — com botões interativos, enquetes, reações e mídia rica nativos do WhatsApp.',
     image: featOmni,
-    bullets: ['Atendimento unificado', 'Distribuição inteligente entre agentes', 'CSAT e métricas SAC'],
+    bullets: ['Botões, listas, enquetes e reações no WhatsApp', 'Áudio PTT, vídeo, localização e vCard', 'Menções em grupos (incluindo @all) com visualização no Inbox'],
   },
   {
     title: 'Flow Builder Visual',
