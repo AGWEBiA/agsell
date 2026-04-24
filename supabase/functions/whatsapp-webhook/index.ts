@@ -515,6 +515,19 @@ Deno.serve(async (req) => {
 
           const isFromMe = keyData.fromMe || data.fromMe || false;
 
+          // Extract WhatsApp display name (pushName) from payload
+          // Evolution API typically sends it as `pushName` at the root of `data`
+          const rawPushName: string | null =
+            data.pushName ||
+            data.pushname ||
+            data.notifyName ||
+            data.verifiedBizName ||
+            messageData?.pushName ||
+            null;
+          const pushName = (typeof rawPushName === "string" && rawPushName.trim())
+            ? rawPushName.trim().slice(0, 80)
+            : null;
+
           // Extract interactive responses (button clicks / list selections)
           const buttonReply =
             messageData?.buttonsResponseMessage ||
