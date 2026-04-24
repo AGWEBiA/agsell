@@ -223,7 +223,14 @@ export function useInbox() {
 
   const sendMessage = useMutation({
     mutationFn: async (message: any) => {
-      const { instance_id, quoted_message_id, quoted_content, quoted_sender_type, quoted_external_id, ...messageToInsert } = { ...message };
+      const {
+        instance_id,
+        quoted_message_id,
+        quoted_content,
+        quoted_sender_type,
+        quoted_external_id,
+        ...messageToInsert
+      } = { ...message };
 
       if (message.sender_type === 'user' && user?.id) {
         messageToInsert.sender_id = user.id;
