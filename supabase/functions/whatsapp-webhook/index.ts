@@ -552,7 +552,7 @@ Deno.serve(async (req) => {
             mediaCaption = messageData.documentMessage.caption || null;
           } else if (messageData?.stickerMessage) {
             mediaMimeType = messageData.stickerMessage.mimetype || "image/webp";
-            messageType = "image";
+            messageType = "sticker";
           }
 
           // Phase 2: capture location & contact card metadata (no binary download needed)
