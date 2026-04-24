@@ -545,7 +545,7 @@ async function sendWithEvolutionAPI(
     return okResponse(result.data, result.instance);
   }
 
-  // ── Sticker (figurinha webp) ──
+  // ── Sticker (figurinha webp) — com fallback automático para imagem ──
   if (kind === "sticker") {
     const stickerUrl = whatsappReq.sticker_url || whatsappReq.media_url;
     if (!stickerUrl) {
@@ -554,12 +554,80 @@ async function sendWithEvolutionAPI(
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const result = await dispatch("message/sendSticker", {
+
+    // Validate sticker URL: must be reachable and ideally webp
+    let stickerValid = true;
+    let stickerContentType = "";
+    let validationReason = "";
+    try {
+      const head = await fetch(stickerUrl, { method: "HEAD" });
+      stickerContentType = (head.headers.get("content-type") || "").toLowerCase();
+      if (!head.ok) {
+        stickerValid = false;
+        validationReason = `HEAD ${head.status}`;
+      } else if (stickerContentType && !stickerContentType.includes("webp") && !stickerContentType.includes("octet-stream")) {
+        stickerValid = false;
+        validationReason = `content-type=${stickerContentType}`;
+      }
+    } catch (e) {
+      stickerValid = false;
+      validationReason = `fetch failed: ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    if (stickerValid) {
+      const result = await dispatch("message/sendSticker", {
+        number: phoneNumber,
+        sticker: stickerUrl,
+      });
+      if (result.ok) return okResponse(result.data, result.instance);
+      // If Evolution rejects the sticker, treat as invalid and fall through to image fallback
+      validationReason = `sendSticker failed: ${result.data?.message || result.status}`;
+      console.warn(`[send-whatsapp] Sticker rejected, falling back to image. Reason: ${validationReason}`);
+    } else {
+      console.warn(`[send-whatsapp] Sticker URL invalid, falling back to image. Reason: ${validationReason}`);
+    }
+
+    // Fallback: send as image (webp is supported as image too)
+    const fallbackResult = await dispatch("message/sendMedia", {
       number: phoneNumber,
-      sticker: stickerUrl,
+      mediatype: "image",
+      media: stickerUrl,
+      caption: "",
+      mimetype: stickerContentType.includes("webp") ? "image/webp" : (stickerContentType || "image/webp"),
     });
-    if (!result.ok) return errResponse(result.status, result.data);
-    return okResponse(result.data, result.instance);
+    if (!fallbackResult.ok) {
+      // Final fallback: send as document
+      const docResult = await dispatch("message/sendMedia", {
+        number: phoneNumber,
+        mediatype: "document",
+        media: stickerUrl,
+        fileName: "sticker.webp",
+        caption: "",
+      });
+      if (!docResult.ok) return errResponse(docResult.status, docResult.data);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          provider: "evolution_api",
+          data: docResult.data,
+          instance_used: docResult.instance,
+          fallback: "document",
+          fallback_reason: validationReason,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        success: true,
+        provider: "evolution_api",
+        data: fallbackResult.data,
+        instance_used: fallbackResult.instance,
+        fallback: "image",
+        fallback_reason: validationReason,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   // Helper to build mentions array (only useful in groups)
