@@ -6,8 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { Palette, Layout, Type, Code, Settings2 } from 'lucide-react';
+import { Palette, Layout, Type, Code, Settings2, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { FormSettings } from './FormTemplates';
+import { FormStylePresets } from './FormStylePresets';
 
 interface Props {
   settings: FormSettings;
@@ -19,15 +21,35 @@ export function FormStyleEditor({ settings, onChange }: Props) {
     onChange({ ...settings, [key]: value });
   };
 
+  const inheritFromParent = () => {
+    onChange({
+      ...settings,
+      bgColor: '',
+      bgOpacity: 0,
+      textColor: 'inherit',
+      fontFamily: 'inherit',
+      showBorder: false,
+      shadow: 'none',
+      padding: '0',
+      customCss: `.agsell-form { color: inherit; font-family: inherit; background: transparent !important; }
+.agsell-label { color: inherit; opacity: 0.85; }`,
+    });
+  };
+
   return (
-    <Tabs defaultValue="layout" className="w-full">
-      <TabsList className="w-full grid grid-cols-5 h-9">
+    <Tabs defaultValue="presets" className="w-full">
+      <TabsList className="w-full grid grid-cols-6 h-9">
+        <TabsTrigger value="presets" className="text-xs gap-1"><Sparkles className="h-3 w-3" />Presets</TabsTrigger>
         <TabsTrigger value="layout" className="text-xs gap-1"><Layout className="h-3 w-3" />Layout</TabsTrigger>
         <TabsTrigger value="colors" className="text-xs gap-1"><Palette className="h-3 w-3" />Cores</TabsTrigger>
         <TabsTrigger value="typography" className="text-xs gap-1"><Type className="h-3 w-3" />Texto</TabsTrigger>
         <TabsTrigger value="spacing" className="text-xs gap-1"><Settings2 className="h-3 w-3" />Espaço</TabsTrigger>
         <TabsTrigger value="css" className="text-xs gap-1"><Code className="h-3 w-3" />CSS</TabsTrigger>
       </TabsList>
+
+      <TabsContent value="presets" className="mt-3">
+        <FormStylePresets current={settings} onApply={onChange} />
+      </TabsContent>
 
       <TabsContent value="layout" className="space-y-4 mt-3">
         <div className="space-y-2">
@@ -98,6 +120,20 @@ export function FormStyleEditor({ settings, onChange }: Props) {
       </TabsContent>
 
       <TabsContent value="colors" className="space-y-4 mt-3">
+        <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold">Herdar estilo da página pai</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                Torna o formulário transparente e usa fonte/cor da página onde for embedado. Ideal para integrar com qualquer site sem ajustes.
+              </p>
+            </div>
+            <Button type="button" size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={inheritFromParent}>
+              Aplicar
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs">Cor primária</Label>

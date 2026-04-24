@@ -345,9 +345,12 @@ Content-Type: application/json
                 {iframeCode}
               </pre>
             </div>
-            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 space-y-1.5">
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                💡 <strong>Elementor:</strong> Use o widget "HTML" e cole o código acima. Ajuste a altura conforme necessário.
+                💡 <strong>Elementor / WordPress / Wix:</strong> Use o widget "HTML" e cole o código acima. A altura ajusta automaticamente.
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                ✨ <strong>Dica:</strong> Para o formulário se adaptar 100% à sua página (herdar fonte e cores), abra o editor do formulário → aba <strong>Aparência → Presets</strong> e selecione <strong>"Transparente (Embed)"</strong>.
               </p>
             </div>
           </TabsContent>
