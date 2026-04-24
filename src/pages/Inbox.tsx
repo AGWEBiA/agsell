@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Search, Send, Paperclip, Smile, Phone, Settings,
   MessageSquare, Mail, CheckCheck, Check, Plus, Bot, Image as ImageIcon,
-  FileAudio, File as FileIcon, X, Loader2,
+  FileAudio, File as FileIcon, X, Loader2, MapPin, UserSquare,
   Hash, ChevronLeft, Inbox as InboxIcon, User, Ticket,
   BarChart3, Brain, Calendar, Users, CheckCircle2,
   ArrowDownToLine, Instagram, AlertCircle, Clock, Bug, Filter, RefreshCw,
