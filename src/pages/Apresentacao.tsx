@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { WhatsAppFloatingButton } from '@/components/vendas/WhatsAppFloatingButton';
+import { WhatsNewSection } from '@/components/vendas/WhatsNewSection';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';
 import { Badge } from '@/components/ui/badge';
