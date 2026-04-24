@@ -1240,25 +1240,34 @@ async function routeToInbox(
 
       // Ensure whatsapp field is populated on the matched contact
       const existingWhatsapp = normalizePhone(matchedContact.whatsapp);
-      if (!existingWhatsapp) {
+      const updates: Record<string, unknown> = {};
+      if (!existingWhatsapp) updates.whatsapp = cleanPhone;
+
+      // If existing contact has an auto-created phone-like name, replace it with the real WhatsApp display name
+      if (cleanContactName && isAutoCreatedName(matchedContact.first_name || "")) {
+        updates.first_name = cleanContactName;
+      }
+
+      if (Object.keys(updates).length > 0) {
         await supabase
           .from("contacts")
-          .update({ whatsapp: cleanPhone })
+          .update(updates)
           .eq("id", matchedContact.id);
       }
     } else {
-      // Auto-create contact from incoming message
-      // Format phone for display name
+      // Auto-create contact from incoming message.
+      // Use WhatsApp pushName as display name when available; fallback to formatted phone.
       const displayPhone = cleanPhone.length > 11
         ? `+${cleanPhone.slice(0, 2)} ${cleanPhone.slice(2, 4)} ${cleanPhone.slice(4)}`
         : cleanPhone;
+      const displayName = cleanContactName || displayPhone;
 
       const { data: newContact } = await supabase
         .from("contacts")
         .insert({
           organization_id: organizationId,
           user_id: userId,
-          first_name: displayPhone,
+          first_name: displayName,
           whatsapp: cleanPhone,
           phone: cleanPhone,
           source: "whatsapp_inbound",
