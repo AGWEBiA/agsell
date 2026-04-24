@@ -587,6 +587,9 @@ Deno.serve(async (req) => {
             ? !contextInfo.participant.includes(senderPhone)
             : null;
 
+          // Declared early so media branches (e.g. video thumbnail) can populate before location/contact
+          let extraMetadata: Record<string, unknown> = {};
+
           if (messageData?.imageMessage) {
             mediaMimeType = messageData.imageMessage.mimetype || "image/jpeg";
             messageType = "image";
@@ -598,6 +601,11 @@ Deno.serve(async (req) => {
             mediaMimeType = messageData.videoMessage.mimetype || "video/mp4";
             messageType = "video";
             mediaCaption = messageData.videoMessage.caption || null;
+            // Capture base64 thumbnail (jpegThumbnail) as data URL for poster preview if available
+            const thumb = messageData.videoMessage.jpegThumbnail;
+            if (typeof thumb === "string" && thumb.length > 0) {
+              extraMetadata.thumbnail_url = `data:image/jpeg;base64,${thumb}`;
+            }
           } else if (messageData?.documentMessage) {
             mediaMimeType = messageData.documentMessage.mimetype || "application/octet-stream";
             messageType = "document";
@@ -609,7 +617,6 @@ Deno.serve(async (req) => {
           }
 
           // Phase 2: capture location & contact card metadata (no binary download needed)
-          let extraMetadata: Record<string, unknown> = {};
           const locMsg = messageData?.locationMessage;
           if (locMsg && (locMsg.degreesLatitude != null || locMsg.degreesLongitude != null)) {
             messageType = "location";
@@ -957,19 +964,22 @@ Deno.serve(async (req) => {
                         .from("inbox-attachments")
                         .getPublicUrl(storagePath);
                       mediaUrl = publicUrlData.publicUrl;
-                      console.log(`Media uploaded to storage: ${storagePath}`);
+                      console.log(`[media:${messageType}] uploaded to storage: ${storagePath}`);
                     } else {
-                      console.error("Storage upload error:", uploadError);
+                      console.error(`[media:${messageType}] storage upload error:`, uploadError);
                     }
+                  } else {
+                    console.error(`[media:${messageType}] empty base64 returned by Evolution for message ${keyData.id}`);
                   }
                 } else {
-                  console.error("Evolution getBase64 failed:", base64Resp.status, await base64Resp.text().catch(() => ""));
+                  const errBody = await base64Resp.text().catch(() => "");
+                  console.error(`[media:${messageType}] Evolution getBase64 failed (${base64Resp.status}) for message ${keyData.id}:`, errBody.slice(0, 300));
                 }
               } else {
-                console.error("Evolution API credentials/URL not found (instance or global config)");
+                console.error(`[media:${messageType}] Evolution API credentials/URL not found (instance or global config)`);
               }
             } catch (mediaErr) {
-              console.error("Error downloading media:", mediaErr);
+              console.error(`[media:${messageType}] Error downloading media:`, mediaErr);
             }
           }
 

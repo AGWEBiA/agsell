@@ -16,7 +16,7 @@ import {
   Hash, ChevronLeft, Inbox as InboxIcon, User, Ticket,
   BarChart3, Brain, Calendar, Users, CheckCircle2,
   ArrowDownToLine, Instagram, AlertCircle, Clock, Bug, Filter, RefreshCw,
-  Reply, Zap, Copy, Download, AtSign, Megaphone,
+  Reply, Zap, Copy, Download, AtSign, Megaphone, Video,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useInbox } from '@/hooks/useInbox';
@@ -947,9 +947,19 @@ export default function Inbox() {
                           </audio>
                         )}
                         {msgType === 'video' && message.media_url && (
-                          <video controls className="rounded-lg max-w-full max-h-72 mb-1" preload="metadata">
+                          <video controls className="rounded-lg max-w-full max-h-72 mb-1" preload="metadata" poster={message.metadata?.thumbnail_url || undefined}>
                             <source src={message.media_url} type={message.media_mime_type || 'video/mp4'} />
+                            Seu navegador não suporta vídeo.
                           </video>
+                        )}
+                        {msgType === 'video' && !message.media_url && (
+                          <div className="flex items-center gap-2 p-2 rounded border border-dashed border-current/30 mb-1 bg-background/30">
+                            <Video className="h-4 w-4 shrink-0 text-rose-500" />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium">Vídeo recebido</span>
+                              <span className="text-[10px] text-muted-foreground">Mídia indisponível — falha ao baixar do WhatsApp</span>
+                            </div>
+                          </div>
                         )}
                         {(msgType === 'file' || msgType === 'document') && message.media_url && (
                           <a href={message.media_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded border border-current/20 hover:opacity-80 mb-1">
