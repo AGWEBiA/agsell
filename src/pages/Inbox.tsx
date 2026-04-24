@@ -774,7 +774,7 @@ export default function Inbox() {
                   <div
                     key={conversation.id}
                     className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors ${
-                      isSelected ? 'bg-accent' : hasUnread ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-muted/50'
+                      isSelected ? 'bg-accent' : hasUnread ? 'bg-success/5 hover:bg-success/10' : 'hover:bg-muted/50'
                     }`}
                     onClick={() => setSelectedId(conversation.id)}
                   >
@@ -793,7 +793,7 @@ export default function Inbox() {
                         <span className={`text-sm truncate ${hasUnread ? 'font-bold text-foreground' : 'font-medium'}`}>
                           {conversation.contacts?.first_name} {conversation.contacts?.last_name}
                         </span>
-                        <span className={`text-[10px] shrink-0 ml-1 ${hasUnread ? 'text-emerald-500 font-semibold' : 'text-muted-foreground'}`}>
+                        <span className={`text-[10px] shrink-0 ml-1 ${hasUnread ? 'text-success font-semibold' : 'text-muted-foreground'}`}>
                           {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                       </div>
@@ -803,7 +803,7 @@ export default function Inbox() {
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       {hasUnread && (
-                        <span className="bg-emerald-500 text-white text-[11px] h-5 min-w-5 flex items-center justify-center rounded-full px-1.5 font-bold shadow-sm shadow-emerald-500/40 animate-in zoom-in">
+                        <span className="bg-success text-success-foreground text-[11px] h-5 min-w-5 flex items-center justify-center rounded-full px-1.5 font-bold shadow-sm shadow-success/40 animate-in zoom-in">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
