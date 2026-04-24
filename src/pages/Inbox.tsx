@@ -16,7 +16,7 @@ import {
   Hash, ChevronLeft, Inbox as InboxIcon, User, Ticket,
   BarChart3, Brain, Calendar, Users, CheckCircle2,
   ArrowDownToLine, Instagram, AlertCircle, Clock, Bug, Filter, RefreshCw,
-  Reply, Zap, Copy, Download,
+  Reply, Zap, Copy, Download, AtSign, Megaphone,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useInbox } from '@/hooks/useInbox';
@@ -1017,6 +1017,41 @@ export default function Inbox() {
                         {msgType === 'reaction' && message.metadata?.reaction && (
                           <div className="text-xs text-muted-foreground mb-1">
                             Reagiu com <span className="text-base">{message.metadata.reaction.emoji || '❌'}</span>
+                          </div>
+                        )}
+                        {/* Mentions banner — shows when message mentions specific users or @all */}
+                        {message.metadata?.mentions && (message.metadata.mentions.everyone || (message.metadata.mentions.phones?.length ?? 0) > 0) && (
+                          <div className="mb-1.5 flex flex-wrap items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1">
+                            {message.metadata.mentions.everyone ? (
+                              <>
+                                <Megaphone className="h-3 w-3 text-amber-500 shrink-0" />
+                                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                  Mencionou todos do grupo (@all)
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <AtSign className="h-3 w-3 text-amber-500 shrink-0" />
+                                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mr-1">
+                                  Mencionou:
+                                </span>
+                                {(message.metadata.mentions.phones || []).slice(0, 6).map((phone: string, i: number) => {
+                                  const display = phone.length > 4
+                                    ? `+${phone.slice(0, 2)} ${phone.slice(2, 4)} •••${phone.slice(-4)}`
+                                    : phone;
+                                  return (
+                                    <Badge key={i} variant="outline" className="text-[10px] h-4 px-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
+                                      @{display}
+                                    </Badge>
+                                  );
+                                })}
+                                {(message.metadata.mentions.phones?.length ?? 0) > 6 && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    +{message.metadata.mentions.phones.length - 6}
+                                  </span>
+                                )}
+                              </>
+                            )}
                           </div>
                         )}
                         {message.content && !(msgType !== 'text' && message.content.startsWith('📎')) && (

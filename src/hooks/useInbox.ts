@@ -37,7 +37,7 @@ export function useInbox() {
           messages (
             id, content, sender_type, is_read, created_at,
             message_type, media_url, media_mime_type, file_name, sender_id,
-            delivery_status, external_id,
+            delivery_status, external_id, metadata,
             quoted_message_id, quoted_content, quoted_sender_type
           )
         `)

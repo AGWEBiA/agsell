@@ -34,6 +34,36 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log("WhatsApp webhook received:", JSON.stringify(body).slice(0, 500));
 
+    // ────────────────────────────────────────────────────────────────
+    // Standardized structured logger for Phase 3 events
+    // (poll/reaction/sticker/mention) — makes debugging fast.
+    // ────────────────────────────────────────────────────────────────
+    const logPhase3Event = async (
+      level: "info" | "warn" | "error" | "skipped",
+      kind: "poll" | "poll_vote" | "reaction" | "sticker" | "mention" | "unsupported",
+      details: Record<string, unknown>,
+      orgId: string | null = null,
+      instance = "",
+      phone: string | null = null,
+    ) => {
+      const tag = `[whatsapp-webhook][${level.toUpperCase()}][${kind}]`;
+      const logFn = level === "error" ? console.error : (level === "warn" ? console.warn : console.log);
+      logFn(`${tag} ${JSON.stringify(details).slice(0, 600)}`);
+
+      try {
+        await supabase.from("whatsapp_webhook_logs").insert({
+          event_type: `phase3.${kind}`,
+          instance_name: instance || null,
+          phone,
+          organization_id: orgId,
+          routing_status: level === "skipped" ? "discarded" : (level === "error" ? "discarded" : "routed"),
+          details: { phase: 3, kind, level, ...details },
+        });
+      } catch (logErr) {
+        console.error(`${tag} failed to persist webhook log:`, logErr);
+      }
+    };
+
     // Handle WhatsApp Business API (Cloud API) format
     if (body.object === "whatsapp_business_account") {
       for (const entry of body.entry || []) {
@@ -598,26 +628,156 @@ Deno.serve(async (req) => {
             null;
           if (pollCreate) {
             messageType = "poll";
+            const pollOptions = Array.isArray(pollCreate.options)
+              ? pollCreate.options.map((o: { optionName?: string }) => o.optionName).filter(Boolean)
+              : [];
             extraMetadata = {
               poll: {
                 name: pollCreate.name || null,
-                options: Array.isArray(pollCreate.options)
-                  ? pollCreate.options.map((o: { optionName?: string }) => o.optionName).filter(Boolean)
-                  : [],
+                options: pollOptions,
                 selectable_count: pollCreate.selectableOptionsCount || 1,
               },
             };
+            await logPhase3Event(
+              "info",
+              "poll",
+              { poll_name: pollCreate.name, options_count: pollOptions.length, message_id: keyData.id },
+              integration.organization_id,
+              instanceName,
+              senderPhone,
+            );
           }
           // Phase 3 — Poll vote update
           const pollUpdate = messageData?.pollUpdateMessage || null;
           if (pollUpdate) {
             messageType = "poll_vote";
+            const pollMsgId = pollUpdate.pollCreationMessageKey?.id || null;
+            const rawSelected = pollUpdate.vote?.selectedOptions
+              || pollUpdate.pollVoteMessage?.selectedOptions
+              || null;
+            const selectedOptions: string[] = Array.isArray(rawSelected)
+              ? rawSelected.map((o: unknown) => String(o)).filter(Boolean)
+              : [];
+
             extraMetadata = {
               poll_vote: {
-                poll_message_id: pollUpdate.pollCreationMessageKey?.id || null,
+                poll_message_id: pollMsgId,
+                selected_options: selectedOptions,
                 vote_hash: pollUpdate.vote?.selectedOptions || pollUpdate.encPayload || null,
               },
             };
+
+            // Try to resolve the original poll question + options for richer logging/automation context
+            let pollContext: { name?: string | null; options?: string[] } | null = null;
+            if (pollMsgId) {
+              const { data: pollMsg } = await supabase
+                .from("messages")
+                .select("metadata, conversation_id")
+                .eq("external_id", pollMsgId)
+                .maybeSingle();
+              const pollMeta = pollMsg?.metadata as Record<string, unknown> | null;
+              const pollMetaPoll = (pollMeta?.poll || null) as { name?: string; options?: string[] } | null;
+              if (pollMetaPoll) {
+                pollContext = { name: pollMetaPoll.name, options: pollMetaPoll.options || [] };
+                (extraMetadata.poll_vote as Record<string, unknown>).poll_name = pollMetaPoll.name || null;
+                (extraMetadata.poll_vote as Record<string, unknown>).poll_options = pollMetaPoll.options || [];
+              }
+            }
+
+            await logPhase3Event(
+              pollMsgId ? "info" : "warn",
+              "poll_vote",
+              {
+                poll_message_id: pollMsgId,
+                voter_phone: senderPhone,
+                selected_options_count: selectedOptions.length,
+                poll_question: pollContext?.name || null,
+                poll_resolved: !!pollContext,
+                reason: pollMsgId ? null : "missing_poll_message_id",
+              },
+              integration.organization_id,
+              instanceName,
+              senderPhone,
+            );
+
+            // Trigger automations registered for poll_vote
+            try {
+              const { data: pollAutomations } = await supabase
+                .from("automations")
+                .select("id, trigger_config")
+                .eq("organization_id", integration.organization_id)
+                .eq("trigger_type", "poll_vote")
+                .eq("is_active", true);
+
+              for (const auto of pollAutomations || []) {
+                const cfg = (auto.trigger_config || {}) as Record<string, unknown>;
+                const requiredPollId = typeof cfg.poll_message_id === "string" ? cfg.poll_message_id : null;
+                const requiredOption = typeof cfg.expected_option === "string" ? cfg.expected_option : null;
+
+                // Filter: if config restricts to a specific poll, must match
+                if (requiredPollId && requiredPollId !== pollMsgId) continue;
+                // Filter: if config restricts to a specific option label, try to match
+                if (requiredOption && pollContext?.options?.length) {
+                  const optionMatched = selectedOptions.some((sel) => {
+                    // selected_options may be a hash; also compare against index
+                    const idx = Number(sel);
+                    if (!Number.isNaN(idx) && pollContext!.options![idx] === requiredOption) return true;
+                    return sel === requiredOption;
+                  });
+                  if (!optionMatched) continue;
+                }
+
+                // Resolve contact from the voter's phone
+                const cleanVoter = senderPhone.replace(/\D/g, "");
+                const { data: voterContact } = await supabase
+                  .from("contacts")
+                  .select("id")
+                  .eq("organization_id", integration.organization_id)
+                  .or(`whatsapp.eq.${cleanVoter},phone.eq.${cleanVoter}`)
+                  .limit(1)
+                  .maybeSingle();
+
+                const automationUrl = `${supabaseUrl}/functions/v1/process-automation`;
+                fetch(automationUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${supabaseServiceKey}`,
+                    "X-Internal-Cron": "true",
+                  },
+                  body: JSON.stringify({
+                    automation_id: auto.id,
+                    contact_id: voterContact?.id,
+                    trigger_event: "poll_vote",
+                    trigger_data: {
+                      poll_message_id: pollMsgId,
+                      selected_options: selectedOptions,
+                      voter_phone: senderPhone,
+                    },
+                  }),
+                }).catch((err) => {
+                  console.error("[whatsapp-webhook][ERROR][poll_vote] failed to dispatch automation:", err);
+                });
+
+                await logPhase3Event(
+                  "info",
+                  "poll_vote",
+                  { dispatched_automation: auto.id, contact_id: voterContact?.id || null },
+                  integration.organization_id,
+                  instanceName,
+                  senderPhone,
+                );
+              }
+            } catch (autoErr) {
+              await logPhase3Event(
+                "error",
+                "poll_vote",
+                { reason: "automation_dispatch_failed", error: String(autoErr) },
+                integration.organization_id,
+                instanceName,
+                senderPhone,
+              );
+            }
           }
           // Phase 3 — Reaction
           const reactionMsg = messageData?.reactionMessage || null;
@@ -630,11 +790,76 @@ Deno.serve(async (req) => {
                 target_from_me: reactionMsg.key?.fromMe || false,
               },
             };
+            if (!reactionMsg.text) {
+              await logPhase3Event(
+                "info",
+                "reaction",
+                { action: "removed", target_message_id: reactionMsg.key?.id, from_phone: senderPhone },
+                integration.organization_id,
+                instanceName,
+                senderPhone,
+              );
+            } else {
+              await logPhase3Event(
+                "info",
+                "reaction",
+                { emoji: reactionMsg.text, target_message_id: reactionMsg.key?.id, from_phone: senderPhone },
+                integration.organization_id,
+                instanceName,
+                senderPhone,
+              );
+            }
           }
           // Phase 3 — Sticker (already partially handled above; keep messageType=sticker)
           if (messageData?.stickerMessage) {
             messageType = "sticker";
             mediaMimeType = messageData.stickerMessage.mimetype || "image/webp";
+            const stickerInfo = messageData.stickerMessage as Record<string, unknown>;
+            await logPhase3Event(
+              "info",
+              "sticker",
+              {
+                mime: mediaMimeType,
+                is_animated: !!stickerInfo.isAnimated,
+                file_length: stickerInfo.fileLength || null,
+                message_id: keyData.id,
+              },
+              integration.organization_id,
+              instanceName,
+              senderPhone,
+            );
+          }
+
+          // Phase 3 — Mentions (works in groups, but also captured outside groups for completeness)
+          const mentionedJids: string[] = Array.isArray(contextInfo?.mentionedJid)
+            ? (contextInfo.mentionedJid as string[]).filter(Boolean)
+            : [];
+          const mentionsEveryone = !!(contextInfo?.groupMentions || contextInfo?.mentionsEveryOne);
+          if (mentionedJids.length > 0 || mentionsEveryone) {
+            const mentionedPhones = mentionedJids
+              .map((jid) => String(jid).replace("@s.whatsapp.net", "").replace("@c.us", "").replace("@lid", ""))
+              .filter(Boolean);
+            extraMetadata = {
+              ...extraMetadata,
+              mentions: {
+                everyone: mentionsEveryone,
+                jids: mentionedJids,
+                phones: mentionedPhones,
+              },
+            };
+            await logPhase3Event(
+              "info",
+              "mention",
+              {
+                everyone: mentionsEveryone,
+                count: mentionedPhones.length,
+                phones: mentionedPhones.slice(0, 10),
+                message_id: keyData.id,
+              },
+              integration.organization_id,
+              instanceName,
+              senderPhone,
+            );
           }
 
           const hasMedia = ["image", "audio", "video", "document", "sticker"].includes(messageType);
