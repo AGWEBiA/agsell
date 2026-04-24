@@ -37,7 +37,10 @@ interface WhatsAppRequest {
     | "presence"
     | "audio_ptt"
     | "location"
-    | "contact";
+    | "contact"
+    | "poll"
+    | "reaction"
+    | "sticker";
   // Buttons (interactive reply buttons, max 3)
   buttons?: WhatsAppButton[];
   buttons_footer?: string;
