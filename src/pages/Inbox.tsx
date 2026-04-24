@@ -985,6 +985,40 @@ export default function Inbox() {
                             </span>
                           </div>
                         )}
+                        {msgType === 'sticker' && message.media_url && (
+                          <img
+                            src={message.media_url}
+                            alt="Sticker"
+                            className="max-w-[140px] max-h-[140px] mb-1"
+                            loading="lazy"
+                          />
+                        )}
+                        {msgType === 'poll' && message.metadata?.poll && (
+                          <div className="rounded border border-current/20 p-2 mb-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <BarChart3 className="h-4 w-4 text-fuchsia-500" />
+                              <span className="text-xs font-semibold">{message.metadata.poll.name}</span>
+                            </div>
+                            <div className="space-y-0.5 pl-6">
+                              {(message.metadata.poll.options || []).map((opt: string, i: number) => (
+                                <div key={i} className="text-xs text-muted-foreground">• {opt}</div>
+                              ))}
+                            </div>
+                            {message.metadata.poll.selectable_count > 1 && (
+                              <p className="text-[10px] text-muted-foreground pl-6">Múltipla escolha</p>
+                            )}
+                          </div>
+                        )}
+                        {msgType === 'poll_vote' && (
+                          <div className="text-xs italic text-muted-foreground mb-1">
+                            🗳️ Voto registrado na enquete
+                          </div>
+                        )}
+                        {msgType === 'reaction' && message.metadata?.reaction && (
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Reagiu com <span className="text-base">{message.metadata.reaction.emoji || '❌'}</span>
+                          </div>
+                        )}
                         {message.content && !(msgType !== 'text' && message.content.startsWith('📎')) && (
                           renderMessageContent(message.content, isUser)
                         )}
