@@ -858,6 +858,7 @@ interface RouteToInboxParams {
   quotedContent?: string | null;
   quotedExternalId?: string | null;
   quotedSenderType?: string | null;
+  extraMetadata?: Record<string, unknown>;
 }
 
 async function routeToInbox(
