@@ -6,11 +6,42 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface WhatsAppButton {
+  id?: string;        // optional reply id (defaults to text)
+  text: string;       // visible button label
+}
+
+interface WhatsAppListRow {
+  title: string;
+  description?: string;
+  rowId?: string;
+}
+
+interface WhatsAppListSection {
+  title: string;
+  rows: WhatsAppListRow[];
+}
+
 interface WhatsAppRequest {
   organization_id: string;
   instance_id?: string; // Optional: specify which instance to use
   to: string;
   message: string;
+  // ── Phase 1 extension: kind drives which Evolution endpoint we call ──
+  // Defaults to "text" (or "media" if media_url present) for full backward compatibility.
+  message_kind?: "text" | "media" | "buttons" | "list" | "presence";
+  // Buttons (interactive reply buttons, max 3)
+  buttons?: WhatsAppButton[];
+  buttons_footer?: string;
+  // List message
+  list_button_text?: string; // ex: "Ver opções"
+  list_sections?: WhatsAppListSection[];
+  list_footer?: string;
+  list_title?: string;
+  // Presence (typing indicator)
+  presence_state?: "composing" | "recording" | "paused";
+  presence_delay_ms?: number; // how long to keep state on
+  // Existing fields
   media_url?: string;
   media_type?: "image" | "video" | "audio" | "document";
   template_name?: string;
