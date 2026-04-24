@@ -485,9 +485,27 @@ Deno.serve(async (req) => {
 
           const isFromMe = keyData.fromMe || data.fromMe || false;
 
+          // Extract interactive responses (button clicks / list selections)
+          const buttonReply =
+            messageData?.buttonsResponseMessage ||
+            messageData?.templateButtonReplyMessage ||
+            null;
+          const listReply = messageData?.listResponseMessage || null;
+          const interactiveSelectedId =
+            buttonReply?.selectedButtonId ||
+            buttonReply?.selectedId ||
+            listReply?.singleSelectReply?.selectedRowId ||
+            null;
+          const interactiveSelectedText =
+            buttonReply?.selectedDisplayText ||
+            buttonReply?.selectedButtonText ||
+            listReply?.title ||
+            null;
+
           const messageText =
             messageData?.conversation ||
             messageData?.extendedTextMessage?.text ||
+            interactiveSelectedText ||
             data.body ||
             null;
 

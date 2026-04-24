@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Info, Clock, AlertCircle } from 'lucide-react';
 import { TEMPLATE_VARIABLES } from './flowNodeTypes';
+import { WhatsAppInteractiveConfig } from './WhatsAppInteractiveConfig';
 
 interface WhatsAppNodeConfigProps {
   config: Record<string, unknown>;
@@ -43,22 +44,27 @@ export function WhatsAppNodeConfig({ config, onChange }: WhatsAppNodeConfigProps
         </div>
       </div>
 
-      {/* Message */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Mensagem</Label>
-          <span className="text-xs text-muted-foreground">
-            {String(config.message || '').length}/500
-          </span>
+      {/* Message (hidden for presence kind) */}
+      {config.message_kind !== 'presence' && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Mensagem</Label>
+            <span className="text-xs text-muted-foreground">
+              {String(config.message || '').length}/500
+            </span>
+          </div>
+          <Textarea
+            placeholder="Digite aqui.."
+            rows={5}
+            maxLength={500}
+            value={String(config.message || '')}
+            onChange={e => onChange({ ...config, message: e.target.value })}
+          />
         </div>
-        <Textarea
-          placeholder="Digite aqui.."
-          rows={5}
-          maxLength={500}
-          value={String(config.message || '')}
-          onChange={e => onChange({ ...config, message: e.target.value })}
-        />
-      </div>
+      )}
+
+      {/* Phase 1: interactive message kinds (buttons / list / presence) */}
+      <WhatsAppInteractiveConfig config={config} onChange={onChange} />
 
       {/* Schedule deadline */}
       <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10 p-4">

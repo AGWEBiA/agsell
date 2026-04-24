@@ -131,36 +131,41 @@ serve(async (req) => {
       }).then(() => {});
     };
 
-    // Helper: send WhatsApp via org integration
-    const sendWhatsAppDirect = async (phone: string, message: string) => {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const { data: evolutionInt } = await supabase
-        .from('organization_integrations')
-        .select('config')
-        .eq('organization_id', automation.organization_id)
-        .eq('integration_type', 'evolution_api')
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (evolutionInt) {
-        const { data: globalConfig } = await supabase
-          .from('platform_settings').select('value').eq('key', 'evolution_api').single();
-        const globalEvo = globalConfig?.value as Record<string, string> | null;
-        const orgConfig = evolutionInt.config as Record<string, string>;
-        const apiUrl = (globalEvo?.api_url || orgConfig.api_url || '').replace(/\/+$/, '');
-        const apiKey = globalEvo?.api_key || orgConfig.api_key || '';
-        const instanceName = (orgConfig.instance_name || '').trim();
-
-        if (apiUrl && apiKey && instanceName) {
-          const resp = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: apiKey },
-            body: JSON.stringify({ number: cleanPhone, text: message }),
-          });
-          return { success: resp.ok, provider: 'evolution' };
-        }
+    // Helper: send WhatsApp via send-whatsapp edge function (supports text/buttons/list/presence)
+    const sendWhatsAppDirect = async (phone: string, actionConfig: Record<string, unknown>) => {
+      const messageKind = (actionConfig.message_kind as string) || 'text';
+      const message = (actionConfig.message as string) || '';
+      const payload: Record<string, unknown> = {
+        organization_id: automation.organization_id,
+        to: phone,
+        message,
+        message_kind: messageKind,
+      };
+      // Pass through interactive fields when relevant
+      if (messageKind === 'buttons') {
+        payload.buttons = actionConfig.buttons || [];
+        payload.buttons_footer = actionConfig.buttons_footer;
+      } else if (messageKind === 'list') {
+        payload.list_sections = actionConfig.list_sections || [];
+        payload.list_button_text = actionConfig.list_button_text;
+        payload.list_title = actionConfig.list_title;
+        payload.list_footer = actionConfig.list_footer;
+      } else if (messageKind === 'presence') {
+        payload.presence_state = actionConfig.presence_state || 'composing';
+        payload.presence_delay_ms = actionConfig.presence_delay_ms || 2000;
       }
-      return { success: false, reason: 'No WhatsApp integration configured' };
+      if (actionConfig.media_url) {
+        payload.media_url = actionConfig.media_url;
+        payload.media_type = actionConfig.media_type || 'image';
+      }
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json().catch(() => ({}));
+      return { success: resp.ok, provider: 'send-whatsapp', data };
     };
 
     // Helper: replace template variables
@@ -214,8 +219,8 @@ serve(async (req) => {
             const contact = await getContact();
             const phone = (action.config.to as string) || contact?.whatsapp || contact?.phone;
             if (phone) {
-              const message = replaceVars(action.config.message as string, contact);
-              actionResult = await sendWhatsAppDirect(phone, message);
+              const cfg = { ...action.config, message: replaceVars(action.config.message as string, contact) };
+              actionResult = await sendWhatsAppDirect(phone, cfg);
             } else {
               actionResult = { skipped: true, reason: 'No phone number' };
             }
@@ -684,7 +689,7 @@ serve(async (req) => {
               try {
                 if (channel === 'whatsapp' && (contact?.whatsapp || contact?.phone)) {
                   const msg = replaceVars(action.config.whatsapp_message as string || action.config.message as string, contact);
-                  parallelResults.whatsapp = await sendWhatsAppDirect(contact.whatsapp || contact.phone, msg);
+                  parallelResults.whatsapp = await sendWhatsAppDirect(contact.whatsapp || contact.phone, { ...action.config, message: msg });
                 } else if (channel === 'email' && contact?.email) {
                   await fetch(`${supabaseUrl}/functions/v1/send-email`, {
                     method: 'POST',
