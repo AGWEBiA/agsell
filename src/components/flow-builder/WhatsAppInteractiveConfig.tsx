@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   Plus,
   Trash2,
@@ -15,6 +16,10 @@ import {
   MapPin,
   UserSquare,
   Image as ImageIcon,
+  BarChart3,
+  Smile,
+  Sticker,
+  AtSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +31,10 @@ export type WhatsAppMessageKind =
   | 'presence'
   | 'audio_ptt'
   | 'location'
-  | 'contact';
+  | 'contact'
+  | 'poll'
+  | 'reaction'
+  | 'sticker';
 
 interface Props {
   config: Record<string, unknown>;
