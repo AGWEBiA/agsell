@@ -120,6 +120,20 @@ export function FormStyleEditor({ settings, onChange }: Props) {
       </TabsContent>
 
       <TabsContent value="colors" className="space-y-4 mt-3">
+        <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold">Herdar estilo da página pai</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                Torna o formulário transparente e usa fonte/cor da página onde for embedado. Ideal para integrar com qualquer site sem ajustes.
+              </p>
+            </div>
+            <Button type="button" size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={inheritFromParent}>
+              Aplicar
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs">Cor primária</Label>
