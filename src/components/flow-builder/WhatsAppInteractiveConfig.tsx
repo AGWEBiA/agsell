@@ -332,6 +332,187 @@ export function WhatsAppInteractiveConfig({ config, onChange }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── MEDIA CONFIG (image / video / document) ── */}
+      {kind === 'media' && (
+        <div className="space-y-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 p-4">
+          <Label className="text-sm font-medium text-amber-700 dark:text-amber-400">
+            Mídia (imagem, vídeo ou documento)
+          </Label>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Envia o arquivo a partir de uma URL pública. A mensagem acima será usada como legenda.
+          </p>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Tipo de mídia</Label>
+            <Select
+              value={String(config.media_type || 'image')}
+              onValueChange={v => onChange({ ...config, media_type: v })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="image">🖼️ Imagem (JPG/PNG)</SelectItem>
+                <SelectItem value="video">🎥 Vídeo (MP4)</SelectItem>
+                <SelectItem value="document">📄 Documento (PDF, DOCX, XLSX)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">URL do arquivo</Label>
+            <Input
+              placeholder="https://..."
+              value={String(config.media_url || '')}
+              onChange={e => onChange({ ...config, media_url: e.target.value })}
+            />
+          </div>
+
+          {config.media_type === 'document' && (
+            <div className="space-y-1">
+              <Label className="text-xs">Nome do arquivo (opcional)</Label>
+              <Input
+                placeholder="ex: contrato.pdf"
+                value={String(config.media_filename || '')}
+                onChange={e => onChange({ ...config, media_filename: e.target.value })}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── AUDIO PTT (voice note) ── */}
+      {kind === 'audio_ptt' && (
+        <div className="space-y-3 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-900/10 p-4">
+          <Label className="text-sm font-medium text-rose-700 dark:text-rose-400">
+            Áudio nativo (PTT)
+          </Label>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Envia como mensagem de voz no formato nativo do WhatsApp (forma de onda + reprodução automática).
+            Use arquivos OGG/Opus, MP3 ou M4A acessíveis via URL pública.
+          </p>
+
+          <div className="space-y-1">
+            <Label className="text-xs">URL do áudio</Label>
+            <Input
+              placeholder="https://...audio.ogg"
+              value={String(config.audio_url || config.media_url || '')}
+              onChange={e => onChange({ ...config, audio_url: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── LOCATION ── */}
+      {kind === 'location' && (
+        <div className="space-y-3 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10 p-4">
+          <Label className="text-sm font-medium text-teal-700 dark:text-teal-400">
+            Localização
+          </Label>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Envia coordenadas geográficas que abrem direto no app de mapas do contato.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Latitude</Label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="-23.5505"
+                value={String(config.latitude ?? '')}
+                onChange={e => onChange({ ...config, latitude: parseFloat(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Longitude</Label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="-46.6333"
+                value={String(config.longitude ?? '')}
+                onChange={e => onChange({ ...config, longitude: parseFloat(e.target.value) })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Nome do local (opcional)</Label>
+            <Input
+              placeholder="Ex: Nossa loja"
+              value={String(config.location_name || '')}
+              onChange={e => onChange({ ...config, location_name: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Endereço (opcional)</Label>
+            <Input
+              placeholder="Av. Paulista, 1000"
+              value={String(config.location_address || '')}
+              onChange={e => onChange({ ...config, location_address: e.target.value })}
+            />
+          </div>
+
+          <a
+            href="https://www.google.com/maps"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-teal-600 dark:text-teal-400 underline"
+          >
+            Abrir Google Maps para copiar coordenadas →
+          </a>
+        </div>
+      )}
+
+      {/* ── CONTACT (vCard) ── */}
+      {kind === 'contact' && (
+        <div className="space-y-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/10 p-4">
+          <Label className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
+            Cartão de contato (vCard)
+          </Label>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Envia um contato que o lead pode salvar com 1 toque. Útil para encaminhar para vendedor, suporte ou parceiro.
+          </p>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Nome completo</Label>
+            <Input
+              placeholder="João Silva"
+              value={String(config.contact_full_name || '')}
+              onChange={e => onChange({ ...config, contact_full_name: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Telefone (com DDI/DDD)</Label>
+            <Input
+              placeholder="5511999999999"
+              value={String(config.contact_phone || '')}
+              onChange={e => onChange({ ...config, contact_phone: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Empresa (opcional)</Label>
+              <Input
+                placeholder="Acme Ltda"
+                value={String(config.contact_organization || '')}
+                onChange={e => onChange({ ...config, contact_organization: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">E-mail (opcional)</Label>
+              <Input
+                type="email"
+                placeholder="contato@acme.com"
+                value={String(config.contact_email || '')}
+                onChange={e => onChange({ ...config, contact_email: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
