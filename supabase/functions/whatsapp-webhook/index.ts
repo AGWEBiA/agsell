@@ -97,10 +97,19 @@ Deno.serve(async (req) => {
           const userId = orgOwner?.user_id;
           if (!userId) continue;
 
+          // Cloud API sends contact profile names in `value.contacts[]`
+          const contactsByWaId: Record<string, string> = {};
+          for (const c of (value.contacts || [])) {
+            const waId = c?.wa_id || c?.waId;
+            const profileName = c?.profile?.name;
+            if (waId && profileName) contactsByWaId[String(waId)] = String(profileName);
+          }
+
           for (const message of value.messages || []) {
             const senderPhone = message.from; // e.g. "5511999990000"
             const messageText = message.text?.body || message.caption || "[Mídia recebida]";
             const messageId = message.id;
+            const profileName = contactsByWaId[senderPhone] || null;
 
             await routeToInbox(supabase, {
               organizationId: integration.organization_id,
@@ -112,6 +121,7 @@ Deno.serve(async (req) => {
               externalMessageId: messageId,
               sourceInstanceId: integration.id,
               sourceInstanceName: integration.name || String((integration.config as Record<string, unknown>)?.phone_number_id || "WhatsApp Business"),
+              contactName: profileName,
             });
           }
         }
