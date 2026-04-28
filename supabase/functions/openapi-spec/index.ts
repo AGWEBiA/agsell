@@ -101,6 +101,26 @@ const spec = {
         type: "object",
         properties: { error: { type: "string" }, code: { type: "string" } },
       },
+      MessageStatusUpdate: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["pending", "queued", "sent", "delivered", "read", "failed", "bounced"] },
+          info: { type: "string", description: "Detalhe opcional (motivo de falha, código do provedor, etc.)" },
+        },
+        required: ["status"],
+      },
+      MessageSentV11: {
+        type: "object",
+        properties: {
+          channel: { type: "string", enum: ["whatsapp", "email", "sms"] },
+          to: { type: "string" },
+          message_id: { type: "string", format: "uuid", description: "ID interno (use em /messages/:id/status)" },
+          external_id: { type: "string", nullable: true, description: "ID retornado pelo provedor (ex: WhatsApp wamid)" },
+          delivery_status: { type: "string", example: "sent" },
+          tracking_url: { type: "string", format: "uri", nullable: true },
+          sent_at: { type: "string", format: "date-time" },
+        },
+      },
     },
     responses: {
       Unauthorized: { description: "API key inválida", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
