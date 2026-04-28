@@ -1,0 +1,1 @@
+ALTER TABLE public.messages ALTER COLUMN delivery_status SET DEFAULT 'pending';
