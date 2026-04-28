@@ -215,6 +215,79 @@ const spec = {
         responses: { "200": { description: "OK", content: { "application/json": { example: { period: "30d", contacts: 142, deals_won: 12, revenue: 45000 } } } } },
       },
     },
+
+    // ================== v1.1 — Integrações Nativas ==================
+    "/messages/{id}": {
+      get: {
+        tags: ["Messages v1.1"], summary: "[v1.1] Buscar mensagem por ID",
+        description: "Retorna o registro completo da mensagem persistida no envio (apenas v1.1).",
+        parameters: [{ $ref: "#/components/parameters/ResourceId" }],
+        responses: {
+          "200": { description: "OK", content: { "application/json": { example: { data: { id: "msg-uuid", conversation_id: "conv-uuid", content: "Olá!", message_type: "text", delivery_status: "delivered", external_id: "wamid.HBg...", created_at: "2026-04-28T12:00:00Z", sender_type: "agent" } } } } },
+          "404": { description: "Mensagem não encontrada" },
+        },
+      },
+    },
+    "/messages/{id}/status": {
+      get: {
+        tags: ["Messages v1.1"], summary: "[v1.1] Status de entrega + timeline",
+        description: "Retorna o status atual e a linha do tempo (`queued → sent → delivered → read` ou `failed`).",
+        parameters: [{ $ref: "#/components/parameters/ResourceId" }],
+        responses: {
+          "200": { description: "Status atual", content: { "application/json": { example: {
+            data: {
+              message_id: "msg-uuid", external_id: "wamid.HBgM...", channel: "whatsapp",
+              delivery_status: "delivered", created_at: "2026-04-28T12:00:00Z",
+              timeline: [
+                { status: "queued", at: "2026-04-28T12:00:00Z" },
+                { status: "sent", at: "2026-04-28T12:00:01Z" },
+                { status: "delivered", at: "2026-04-28T12:00:05Z" },
+              ],
+            },
+          } } } },
+        },
+      },
+      post: {
+        tags: ["Messages v1.1"], summary: "[v1.1] Atualizar status (callback de provedor)",
+        description: "Endpoint para integrações reportarem mudanças de status (delivered/read/failed/bounced).",
+        parameters: [{ $ref: "#/components/parameters/ResourceId" }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/MessageStatusUpdate" }, example: { status: "delivered", info: "Entregue ao dispositivo" } } },
+        },
+        responses: {
+          "200": { description: "Atualizado", content: { "application/json": { example: { data: { message_id: "msg-uuid", delivery_status: "delivered", updated_at: "2026-04-28T12:00:05Z" } } } } },
+          "400": { description: "Status inválido" },
+        },
+      },
+    },
+    "/webhooks/events": {
+      get: {
+        tags: ["Webhooks v1.1"], summary: "[v1.1] Listar eventos suportados",
+        responses: { "200": { description: "OK", content: { "application/json": { example: {
+          data: { count: 17, events: [
+            { name: "contact.created" }, { name: "deal.won" }, { name: "message.sent" },
+            { name: "message.status_updated" }, { name: "form.submitted" },
+          ] },
+        } } } } },
+      },
+    },
+    "/webhooks/{id}/test": {
+      post: {
+        tags: ["Webhooks v1.1"], summary: "[v1.1] Disparar evento de teste",
+        description: "Envia evento `webhook.test` assinado (`X-Agsell-Signature: sha256=...`) para a URL cadastrada.",
+        parameters: [{ $ref: "#/components/parameters/ResourceId" }],
+        responses: { "200": { description: "Resultado da entrega", content: { "application/json": { example: { data: { delivered: true, status_code: 200, url: "https://meusite.com/webhook", sent_at: "2026-04-28T12:10:00Z" } } } } } },
+      },
+    },
+    "/webhooks/{id}/rotate-secret": {
+      post: {
+        tags: ["Webhooks v1.1"], summary: "[v1.1] Rotacionar secret HMAC",
+        description: "Gera um novo `secret`. O valor antigo é invalidado imediatamente.",
+        parameters: [{ $ref: "#/components/parameters/ResourceId" }],
+        responses: { "200": { description: "OK", content: { "application/json": { example: { data: { id: "wh_abc123", secret: "whsec_NEW_VALUE_2f8a...", rotated_at: "2026-04-28T12:15:00Z" } } } } } },
+      },
+    },
   },
   tags: [
     { name: "Contacts", description: "Gestão de contatos do CRM" },
