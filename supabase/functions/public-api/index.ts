@@ -224,9 +224,18 @@ Deno.serve(async (req) => {
       })
       .eq("id", apiKeyData.id);
 
-    // Determine resource from already-parsed URL
-    const resource = pathParts[1];
-    const resourceId = pathParts[2];
+    // Determine version + resource from already-parsed URL
+    // Path layout: /functions/v1/public-api/<version>/<resource>/<id>/<sub>
+    // pathParts[0] = "public-api", pathParts[1] = version (v1|v1.1), pathParts[2] = resource
+    const apiVersion = (pathParts[1] || "v1").toLowerCase();
+    const isV11 = apiVersion === "v1.1";
+    const resource = pathParts[2] || pathParts[1]; // backward-compat: /v1/contacts OR legacy direct
+    const resourceId = pathParts[3];
+    // For legacy callers without version segment, fall back to old layout
+    const legacyMode = !apiVersion.startsWith("v");
+    const effResource = legacyMode ? pathParts[1] : resource;
+    const effResourceId = legacyMode ? pathParts[2] : resourceId;
+    const effSubResource = legacyMode ? pathParts[3] : pathParts[4];
 
     // Check permissions
     const permissions = apiKeyData.permissions as string[];
