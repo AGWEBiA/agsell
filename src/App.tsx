@@ -202,6 +202,7 @@ const App = () => (
                     <Route path="admin" element={<Admin />} />
                     <Route path="api-keys" element={<ApiKeys />} />
                     <Route path="webhooks" element={<Webhooks />} />
+                    <Route path="api-webhooks" element={<ApiWebhooks />} />
                     <Route path="email-domain" element={<FeatureRequiredPage feature="email_marketing" featureLabel="Domínio de E-mail"><EmailDomain /></FeatureRequiredPage>} />
                     <Route path="system-guide" element={<SystemGuide />} />
                     <Route path="help-center" element={<HelpCenter />} />
