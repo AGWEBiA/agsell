@@ -817,12 +817,15 @@ export default function Inbox() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm truncate ${hasUnread ? 'font-bold text-foreground' : 'font-medium'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`flex-1 min-w-0 text-sm truncate ${hasUnread ? 'font-bold text-foreground' : 'font-medium'}`}>
                           {conversation.contacts?.first_name} {conversation.contacts?.last_name}
                         </span>
-                        <span className={`text-[11px] shrink-0 ml-2 tabular-nums whitespace-nowrap ${hasUnread ? 'text-success font-semibold' : 'text-muted-foreground'}`}>
-                          {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        <span
+                          className={`text-[11px] shrink-0 tabular-nums whitespace-nowrap leading-none ${hasUnread ? 'text-success font-semibold' : 'text-muted-foreground'}`}
+                          title={lastMessage ? new Date(lastMessage.created_at).toLocaleString('pt-BR') : ''}
+                        >
+                          {lastMessage ? formatConversationTimestamp(lastMessage.created_at) : ''}
                         </span>
                       </div>
                       <p className={`text-xs truncate mt-0.5 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
