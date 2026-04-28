@@ -297,9 +297,13 @@ const spec = {
       get: {
         tags: ["Webhooks v1.1"], summary: "[v1.1] Listar eventos suportados",
         responses: { "200": { description: "OK", content: { "application/json": { example: {
-          data: { count: 17, events: [
-            { name: "contact.created" }, { name: "deal.won" }, { name: "message.sent" },
-            { name: "message.status_updated" }, { name: "form.submitted" },
+          data: { count: 21, events: [
+            { name: "message_sent" }, { name: "delivered" }, { name: "read" }, { name: "failed" },
+            { name: "tag_added", description: "Tag aplicada a um contato" },
+            { name: "tag_removed", description: "Tag removida de um contato" },
+            { name: "tag_created", description: "Nova tag criada" },
+            { name: "tag_deleted", description: "Tag excluída" },
+            { name: "contact.created" }, { name: "deal.won" }, { name: "form.submitted" },
           ] },
         } } } } },
       },

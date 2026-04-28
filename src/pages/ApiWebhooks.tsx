@@ -34,6 +34,10 @@ const AVAILABLE_EVENTS = [
   { value: 'delivered', label: 'Mensagem entregue', description: 'Provedor confirmou entrega' },
   { value: 'read', label: 'Mensagem lida', description: 'Destinatário leu a mensagem' },
   { value: 'failed', label: 'Falha no envio', description: 'Mensagem não pôde ser entregue' },
+  { value: 'tag_added', label: 'Tag adicionada', description: 'Tag aplicada a um contato' },
+  { value: 'tag_removed', label: 'Tag removida', description: 'Tag removida de um contato' },
+  { value: 'tag_created', label: 'Tag criada', description: 'Nova tag criada na organização' },
+  { value: 'tag_deleted', label: 'Tag excluída', description: 'Tag removida da organização' },
 ];
 
 const StatusBadge = ({ status }: { status: string }) => {
