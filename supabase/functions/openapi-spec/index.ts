@@ -164,8 +164,122 @@ const spec = {
   ],
 };
 
+// Build Postman Collection v2.1.0 from the OpenAPI spec
+function buildPostmanCollection() {
+  const tagFolders: Record<string, any> = {};
+  for (const tag of spec.tags) {
+    tagFolders[tag.name] = { name: tag.name, description: tag.description, item: [] };
+  }
+
+  const sampleBody = (schemaRef: string | undefined): string | undefined => {
+    if (!schemaRef) return undefined;
+    const name = schemaRef.split("/").pop() || "";
+    const samples: Record<string, any> = {
+      Contact: { first_name: "João", last_name: "Silva", email: "joao@example.com", phone: "+5511999999999" },
+      Company: { name: "Acme Corp", domain: "acme.com", industry: "SaaS" },
+      Deal: { title: "Proposta Q1", value: 5000, currency: "BRL", contact_id: "{{contact_id}}" },
+      Tag: { name: "Lead Quente", color: "#ef4444" },
+      MessageRequest: { channel: "whatsapp", to: "+5511999999999", message: "Olá! Mensagem via API." },
+      Webhook: { name: "Meu Webhook", url: "https://meusite.com/webhook", events: ["contact.created", "deal.won"] },
+    };
+    return samples[name] ? JSON.stringify(samples[name], null, 2) : undefined;
+  };
+
+  for (const [pathStr, methods] of Object.entries(spec.paths)) {
+    for (const [method, opRaw] of Object.entries(methods as Record<string, any>)) {
+      const op = opRaw as any;
+      const tag = (op.tags && op.tags[0]) || "Default";
+      if (!tagFolders[tag]) tagFolders[tag] = { name: tag, item: [] };
+
+      const pmPath = pathStr.replace(/^\//, "").split("/").map((seg) =>
+        seg.startsWith("{") && seg.endsWith("}") ? `:${seg.slice(1, -1)}` : seg
+      );
+
+      const queryParams = (op.parameters || [])
+        .map((p: any) => {
+          if (p.$ref) {
+            const refName = p.$ref.split("/").pop();
+            const resolved = (spec.components.parameters as any)[refName];
+            return resolved;
+          }
+          return p;
+        })
+        .filter((p: any) => p && p.in === "query")
+        .map((p: any) => ({ key: p.name, value: p.schema?.default?.toString() ?? "", disabled: true, description: p.description }));
+
+      const variables = (op.parameters || [])
+        .map((p: any) => p.$ref ? (spec.components.parameters as any)[p.$ref.split("/").pop()] : p)
+        .filter((p: any) => p && p.in === "path")
+        .map((p: any) => ({ key: p.name, value: "", description: p.description || "" }));
+
+      const bodySchemaRef = op.requestBody?.content?.["application/json"]?.schema?.$ref;
+      const rawBody = sampleBody(bodySchemaRef);
+
+      const isPublic = Array.isArray(op.security) && op.security.length === 0;
+      const headers = [
+        { key: "Content-Type", value: "application/json" },
+      ];
+      if (!isPublic) headers.push({ key: "X-API-Key", value: "{{api_key}}" });
+
+      tagFolders[tag].item.push({
+        name: `${method.toUpperCase()} ${op.summary || pathStr}`,
+        request: {
+          method: method.toUpperCase(),
+          header: headers,
+          url: {
+            raw: `{{base_url}}/${pmPath.join("/")}${queryParams.length ? "?" + queryParams.map((q: any) => `${q.key}=${q.value}`).join("&") : ""}`,
+            host: ["{{base_url}}"],
+            path: pmPath,
+            query: queryParams.length ? queryParams : undefined,
+            variable: variables.length ? variables : undefined,
+          },
+          ...(rawBody ? { body: { mode: "raw", raw: rawBody, options: { raw: { language: "json" } } } } : {}),
+          description: op.summary,
+        },
+        response: [],
+      });
+    }
+  }
+
+  return {
+    info: {
+      _postman_id: crypto.randomUUID(),
+      name: "Agsell Public API",
+      description: "Coleção oficial Agsell — Importe e configure as variáveis `base_url` e `api_key` no Environment.\n\n**Base URL padrão:** " + SERVER_URL + "\n\n**Header de auth:** `X-API-Key`\n\n**Rate limit:** 60 req/min",
+      schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    },
+    auth: {
+      type: "apikey",
+      apikey: [
+        { key: "key", value: "X-API-Key", type: "string" },
+        { key: "value", value: "{{api_key}}", type: "string" },
+        { key: "in", value: "header", type: "string" },
+      ],
+    },
+    variable: [
+      { key: "base_url", value: SERVER_URL, type: "string" },
+      { key: "api_key", value: "ags_live_SUA_CHAVE_AQUI", type: "string" },
+    ],
+    item: Object.values(tagFolders),
+  };
+}
+
 Deno.serve((req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const url = new URL(req.url);
+  const format = url.searchParams.get("format");
+
+  if (format === "postman") {
+    const collection = buildPostmanCollection();
+    return new Response(JSON.stringify(collection, null, 2), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Content-Disposition": 'attachment; filename="agsell-public-api.postman_collection.json"',
+      },
+    });
+  }
+
   return new Response(JSON.stringify(spec, null, 2), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
