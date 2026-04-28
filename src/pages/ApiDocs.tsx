@@ -269,6 +269,9 @@ export default function ApiDocs() {
                 <a href="#webhooks-info" className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted ${activeId === 'webhooks-info' ? 'bg-muted font-medium' : ''}`}>
                   <WebhookIcon className="h-3.5 w-3.5" /> Webhooks
                 </a>
+                <a href="#swagger" className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted ${activeId === 'swagger' ? 'bg-muted font-medium' : ''}`}>
+                  <Code2 className="h-3.5 w-3.5" /> Swagger interativo
+                </a>
                 <Separator className="my-3" />
                 <p className="px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Endpoints</p>
                 {grouped.map(([group, items]) => (
