@@ -7063,6 +7063,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      emit_webhook_event: {
+        Args: { _data: Json; _event_type: string; _org_id: string }
+        Returns: number
+      }
       get_agency_access_level: {
         Args: { _client_org_id: string; _user_id: string }
         Returns: string
