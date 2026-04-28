@@ -216,11 +216,6 @@ export default function ApiDocs() {
 
   return (
     <>
-      <Helmet>
-        <title>API Docs · Agsell — Integração nativa REST</title>
-        <meta name="description" content="Documentação completa da API REST do Agsell: contatos, deals, mensagens omnichannel, automações e webhooks. Exemplos em cURL, JavaScript, Python e PHP." />
-      </Helmet>
-
       <div className="min-h-screen bg-background">
         {/* Top bar */}
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
