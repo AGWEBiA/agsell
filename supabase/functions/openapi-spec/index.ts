@@ -202,7 +202,19 @@ const spec = {
             },
           },
         },
-        responses: { "200": { description: "Mensagem enfileirada", content: { "application/json": { example: { success: true, message_id: "msg_abc123", queued_at: "2026-04-28T12:00:00Z" } } } } },
+        responses: {
+          "200": {
+            description: "Mensagem enviada (v1: resposta simples · v1.1: tracking completo)",
+            content: { "application/json": {
+              examples: {
+                v1: { summary: "Resposta v1", value: { data: { channel: "whatsapp", to: "+5511999999999", sent: true } } },
+                v11: { summary: "Resposta v1.1", value: { data: { channel: "whatsapp", to: "+5511999999999", message_id: "550e8400-e29b-41d4-a716-446655440000", external_id: "wamid.HBgMNTUx...", delivery_status: "sent", tracking_url: "https://.../v1.1/messages/550e.../status", sent_at: "2026-04-28T12:00:00Z" } } },
+              },
+              schema: { $ref: "#/components/schemas/MessageSentV11" },
+            } },
+          },
+          "400": { description: "Validação falhou", content: { "application/json": { example: { error: "channel must be whatsapp|email|sms", code: "INVALID_CHANNEL" } } } },
+        },
       },
     },
     "/automations": { get: { tags: ["Automations"], summary: "Listar automações", responses: { "200": { description: "OK", content: { "application/json": { example: { data: [{ id: "...", name: "Boas-vindas", is_active: true, executions_count: 142 }] } } } } } } },
