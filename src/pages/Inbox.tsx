@@ -16,7 +16,7 @@ import {
   Hash, ChevronLeft, Inbox as InboxIcon, User, Ticket,
   BarChart3, Brain, Calendar, Users, CheckCircle2,
   ArrowDownToLine, Instagram, AlertCircle, Clock, Bug, Filter, RefreshCw, Ban,
-  Reply, Zap, Copy, Download, AtSign, Megaphone, Video,
+  Reply, Zap, Copy, Download, AtSign, Megaphone, Video, Maximize2, Minimize2,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useInbox } from '@/hooks/useInbox';
@@ -66,6 +66,26 @@ const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 type QueueTab = 'fila' | 'meus' | 'todos';
 type ChannelFilter = 'all' | 'whatsapp' | 'instagram' | 'email' | 'voip' | 'support';
 type NcStep = 'search' | 'new' | 'device';
+
+const formatConversationTimestamp = (iso?: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (sameDay) return time;
+  if (isYesterday) return `Ontem ${time}`;
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+  if (diffDays < 7) {
+    const wd = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+    return `${wd} ${time}`;
+  }
+  const date = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  return `${date} ${time}`;
+};
 
 const getConversationMetadata = (conversation: any): Record<string, any> => {
   if (!conversation?.metadata || typeof conversation.metadata !== 'object' || Array.isArray(conversation.metadata)) {
@@ -145,6 +165,13 @@ export default function Inbox() {
   const [instanceFilter, setInstanceFilter] = useState('all');
   const [showDebug, setShowDebug] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [compactMode, setCompactMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('inbox:compact') === '1';
+  });
+  useEffect(() => {
+    try { localStorage.setItem('inbox:compact', compactMode ? '1' : '0'); } catch {}
+  }, [compactMode]);
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; sender_type: string; external_id?: string | null } | null>(null);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [shortcutSuggestions, setShortcutSuggestions] = useState<typeof quickReplies>([]);
@@ -666,7 +693,7 @@ export default function Inbox() {
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar — Conversation List */}
-        <div className={`w-full sm:w-96 border-r flex flex-col shrink-0 bg-background ${selectedId ? 'hidden sm:flex' : 'flex'}`}>
+        <div className={`w-full ${compactMode ? 'sm:w-72 md:w-80' : 'sm:w-80 md:w-96 lg:w-[26rem]'} border-r flex flex-col shrink-0 bg-background ${selectedId ? 'hidden sm:flex' : 'flex'}`}>
           {/* Queue Tabs */}
           <div className="flex border-b shrink-0">
             {([
@@ -732,6 +759,16 @@ export default function Inbox() {
                   <Bug className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger><TooltipContent>Debug SAC</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild>
+                <Button
+                  variant={compactMode ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => setCompactMode(!compactMode)}
+                >
+                  {compactMode ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger><TooltipContent>{compactMode ? 'Modo normal' : 'Modo compacto'}</TooltipContent></Tooltip>
               <DropdownMenu>
                 <Tooltip><TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
@@ -774,13 +811,13 @@ export default function Inbox() {
                 return (
                   <div
                     key={conversation.id}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-b border-border/50 transition-colors ${
+                    className={`flex items-center cursor-pointer border-b border-border/50 transition-colors ${compactMode ? 'gap-2 px-2 py-1.5' : 'gap-2.5 px-3 py-2.5'} ${
                       isSelected ? 'bg-accent' : hasUnread ? 'bg-success/5 hover:bg-success/10' : 'hover:bg-muted/50'
                     }`}
                     onClick={() => setSelectedId(conversation.id)}
                   >
                     <div className="relative shrink-0">
-                      <Avatar className="h-9 w-9">
+                      <Avatar className={compactMode ? 'h-7 w-7' : 'h-9 w-9'}>
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
                           {getInitials(conversation.contacts?.first_name, conversation.contacts?.last_name)}
                         </AvatarFallback>
@@ -790,12 +827,15 @@ export default function Inbox() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm truncate ${hasUnread ? 'font-bold text-foreground' : 'font-medium'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`flex-1 min-w-0 text-sm truncate ${hasUnread ? 'font-bold text-foreground' : 'font-medium'}`}>
                           {conversation.contacts?.first_name} {conversation.contacts?.last_name}
                         </span>
-                        <span className={`text-[11px] shrink-0 ml-2 tabular-nums whitespace-nowrap ${hasUnread ? 'text-success font-semibold' : 'text-muted-foreground'}`}>
-                          {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        <span
+                          className={`text-[11px] shrink-0 tabular-nums whitespace-nowrap leading-none ${hasUnread ? 'text-success font-semibold' : 'text-muted-foreground'}`}
+                          title={lastMessage ? new Date(lastMessage.created_at).toLocaleString('pt-BR') : ''}
+                        >
+                          {lastMessage ? formatConversationTimestamp(lastMessage.created_at) : ''}
                         </span>
                       </div>
                       <p className={`text-xs truncate mt-0.5 ${hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
