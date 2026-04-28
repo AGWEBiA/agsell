@@ -103,50 +103,105 @@ const spec = {
   },
   paths: {
     "/contacts": {
-      get: { tags: ["Contacts"], summary: "Listar contatos", parameters: [{ $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" }], responses: { "200": { description: "OK" } } },
-      post: { tags: ["Contacts"], summary: "Criar contato", requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/Contact" } } } }, responses: { "200": { description: "Created" } } },
+      get: {
+        tags: ["Contacts"], summary: "Listar contatos",
+        parameters: [{ $ref: "#/components/parameters/Limit" }, { $ref: "#/components/parameters/Cursor" }],
+        responses: {
+          "200": {
+            description: "Lista paginada de contatos",
+            content: { "application/json": { example: { data: [{ id: "550e8400-e29b-41d4-a716-446655440000", first_name: "João", last_name: "Silva", email: "joao@example.com", phone: "+5511999999999", created_at: "2026-04-28T10:00:00Z" }], pagination: { total: 142, limit: 50, has_more: true, next_cursor: "2026-04-27T10:00:00Z" } } } },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+        },
+      },
+      post: {
+        tags: ["Contacts"], summary: "Criar contato",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/Contact" }, example: { first_name: "Maria", last_name: "Souza", email: "maria@example.com", phone: "+5511988887777", source: "site" } } },
+        },
+        responses: {
+          "201": { description: "Criado", content: { "application/json": { example: { id: "660e8400-e29b-41d4-a716-446655440001", first_name: "Maria", created_at: "2026-04-28T11:00:00Z" } } } },
+          "400": { description: "Dados inválidos" },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+        },
+      },
     },
     "/contacts/{id}": {
-      get: { tags: ["Contacts"], summary: "Buscar contato", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } },
-      patch: { tags: ["Contacts"], summary: "Atualizar contato", parameters: [{ $ref: "#/components/parameters/ResourceId" }], requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Contact" } } } }, responses: { "200": { description: "OK" } } },
-      delete: { tags: ["Contacts"], summary: "Remover contato", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } },
+      get: { tags: ["Contacts"], summary: "Buscar contato por ID", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK", content: { "application/json": { example: { id: "550e...", first_name: "João" } } } }, "404": { description: "Não encontrado" } } },
+      patch: { tags: ["Contacts"], summary: "Atualizar contato", parameters: [{ $ref: "#/components/parameters/ResourceId" }], requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Contact" }, example: { phone: "+5511977776666", status: "qualified" } } } }, responses: { "200": { description: "Atualizado" } } },
+      delete: { tags: ["Contacts"], summary: "Remover contato", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "204": { description: "Removido" } } },
     },
-    "/companies": { get: { tags: ["Companies"], summary: "Listar empresas", responses: { "200": { description: "OK" } } }, post: { tags: ["Companies"], summary: "Criar empresa", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Company" } } } }, responses: { "200": { description: "OK" } } } },
-    "/companies/{id}": { get: { tags: ["Companies"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } }, patch: { tags: ["Companies"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } }, delete: { tags: ["Companies"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
-    "/deals": { get: { tags: ["Deals"], summary: "Listar negócios", responses: { "200": { description: "OK" } } }, post: { tags: ["Deals"], summary: "Criar negócio", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Deal" } } } }, responses: { "200": { description: "OK" } } } },
-    "/deals/{id}": { get: { tags: ["Deals"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } }, patch: { tags: ["Deals"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } }, delete: { tags: ["Deals"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
-    "/tags": { get: { tags: ["Tags"], responses: { "200": { description: "OK" } } }, post: { tags: ["Tags"], requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Tag" } } } }, responses: { "200": { description: "OK" } } } },
+    "/companies": {
+      get: { tags: ["Companies"], summary: "Listar empresas", responses: { "200": { description: "OK", content: { "application/json": { example: { data: [{ id: "...", name: "Acme Corp", domain: "acme.com" }] } } } } } },
+      post: { tags: ["Companies"], summary: "Criar empresa", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Company" }, example: { name: "Acme Corp", domain: "acme.com", industry: "SaaS" } } } }, responses: { "201": { description: "Criada" } } },
+    },
+    "/companies/{id}": {
+      get: { tags: ["Companies"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } },
+      patch: { tags: ["Companies"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } },
+      delete: { tags: ["Companies"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "204": { description: "Removida" } } },
+    },
+    "/deals": {
+      get: { tags: ["Deals"], summary: "Listar negócios", responses: { "200": { description: "OK", content: { "application/json": { example: { data: [{ id: "...", title: "Proposta Q1", value: 5000, status: "open" }] } } } } } },
+      post: { tags: ["Deals"], summary: "Criar negócio", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Deal" }, example: { title: "Proposta Q1", value: 5000, currency: "BRL", contact_id: "550e..." } } } }, responses: { "201": { description: "Criado" } } },
+    },
+    "/deals/{id}": {
+      get: { tags: ["Deals"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } },
+      patch: { tags: ["Deals"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } },
+      delete: { tags: ["Deals"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "204": { description: "Removido" } } },
+    },
+    "/tags": {
+      get: { tags: ["Tags"], summary: "Listar tags", responses: { "200": { description: "OK", content: { "application/json": { example: { data: [{ id: "...", name: "Lead Quente", color: "#ef4444" }] } } } } } },
+      post: { tags: ["Tags"], summary: "Criar tag", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Tag" }, example: { name: "Lead Quente", color: "#ef4444" } } } }, responses: { "201": { description: "Criada" } } },
+    },
     "/messages": {
       post: {
         tags: ["Messages"], summary: "Enviar mensagem (WhatsApp / Email / SMS)",
-        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/MessageRequest" } } } },
-        responses: { "200": { description: "Mensagem enfileirada" } },
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/MessageRequest" },
+              examples: {
+                whatsapp: { summary: "WhatsApp", value: { channel: "whatsapp", to: "+5511999999999", message: "Olá! Mensagem via API." } },
+                email: { summary: "Email", value: { channel: "email", to: "cliente@example.com", subject: "Boas-vindas", message: "Conteúdo em texto", html: "<p>Conteúdo HTML</p>" } },
+                sms: { summary: "SMS", value: { channel: "sms", to: "+5511988887777", message: "Código: 1234" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Mensagem enfileirada", content: { "application/json": { example: { success: true, message_id: "msg_abc123", queued_at: "2026-04-28T12:00:00Z" } } } } },
       },
     },
-    "/automations": { get: { tags: ["Automations"], summary: "Listar automações", responses: { "200": { description: "OK" } } } },
+    "/automations": { get: { tags: ["Automations"], summary: "Listar automações", responses: { "200": { description: "OK", content: { "application/json": { example: { data: [{ id: "...", name: "Boas-vindas", is_active: true, executions_count: 142 }] } } } } } } },
     "/automations/{id}/trigger": {
       post: {
-        tags: ["Automations"], summary: "Disparar automação",
+        tags: ["Automations"], summary: "Disparar automação manualmente",
         parameters: [{ $ref: "#/components/parameters/ResourceId" }],
-        requestBody: { content: { "application/json": { schema: { type: "object", description: "Dados arbitrários para o trigger" } } } },
-        responses: { "200": { description: "Disparada" } },
+        requestBody: { content: { "application/json": { example: { contact_id: "550e...", custom_data: { plano: "premium" } } } } },
+        responses: { "200": { description: "Disparada", content: { "application/json": { example: { success: true, execution_id: "exec_xyz789" } } } } },
       },
     },
-    "/conversations": { get: { tags: ["Inbox"], summary: "Listar conversas", responses: { "200": { description: "OK" } } } },
-    "/conversations/{id}": { get: { tags: ["Inbox"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
-    "/forms": { get: { tags: ["Forms"], responses: { "200": { description: "OK" } } } },
-    "/forms/{id}/submissions": { get: { tags: ["Forms"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
-    "/forms/{id}/submit": { post: { tags: ["Forms"], summary: "Submissão pública (sem auth)", security: [], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
+    "/conversations": { get: { tags: ["Inbox"], summary: "Listar conversas do inbox", responses: { "200": { description: "OK", content: { "application/json": { example: { data: [{ id: "...", channel: "whatsapp", contact_id: "...", status: "open", last_message_at: "2026-04-28T11:30:00Z" }] } } } } } } },
+    "/conversations/{id}": { get: { tags: ["Inbox"], summary: "Buscar conversa com mensagens", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
+    "/forms": { get: { tags: ["Forms"], summary: "Listar formulários", responses: { "200": { description: "OK" } } } },
+    "/forms/{id}/submissions": { get: { tags: ["Forms"], summary: "Listar submissões", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
+    "/forms/{id}/submit": { post: { tags: ["Forms"], summary: "Submissão pública (sem auth)", security: [], parameters: [{ $ref: "#/components/parameters/ResourceId" }], requestBody: { content: { "application/json": { example: { name: "João", email: "joao@example.com", message: "Quero uma proposta" } } } }, responses: { "200": { description: "Recebido" } } } },
     "/webhooks": {
-      get: { tags: ["Webhooks"], summary: "Listar assinaturas", responses: { "200": { description: "OK" } } },
-      post: { tags: ["Webhooks"], summary: "Criar assinatura", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Webhook" } } } }, responses: { "200": { description: "OK" } } },
+      get: { tags: ["Webhooks"], summary: "Listar assinaturas de webhook", responses: { "200": { description: "OK" } } },
+      post: {
+        tags: ["Webhooks"], summary: "Criar assinatura de webhook",
+        requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Webhook" }, example: { name: "Sync ERP", url: "https://meusite.com/webhook", events: ["contact.created", "deal.won", "message.received"] } } } },
+        responses: { "201": { description: "Criada", content: { "application/json": { example: { id: "wh_abc123", secret: "whsec_xxxx", events: ["contact.created"] } } } } },
+      },
     },
-    "/webhooks/{id}": { delete: { tags: ["Webhooks"], parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "200": { description: "OK" } } } },
+    "/webhooks/{id}": { delete: { tags: ["Webhooks"], summary: "Remover assinatura", parameters: [{ $ref: "#/components/parameters/ResourceId" }], responses: { "204": { description: "Removida" } } } },
     "/metrics/{type}": {
       get: {
         tags: ["Metrics"], summary: "Métricas (overview|email|leads|pipeline|automations|forms)",
-        parameters: [{ name: "type", in: "path", required: true, schema: { type: "string" } }, { name: "period", in: "query", schema: { type: "string", enum: ["today", "7d", "30d", "90d"], default: "30d" } }],
-        responses: { "200": { description: "OK" } },
+        parameters: [{ name: "type", in: "path", required: true, schema: { type: "string", enum: ["overview", "email", "leads", "pipeline", "automations", "forms"] } }, { name: "period", in: "query", schema: { type: "string", enum: ["today", "7d", "30d", "90d"], default: "30d" } }],
+        responses: { "200": { description: "OK", content: { "application/json": { example: { period: "30d", contacts: 142, deals_won: 12, revenue: 45000 } } } } },
       },
     },
   },
