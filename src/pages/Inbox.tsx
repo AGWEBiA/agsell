@@ -759,6 +759,16 @@ export default function Inbox() {
                   <Bug className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger><TooltipContent>Debug SAC</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild>
+                <Button
+                  variant={compactMode ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => setCompactMode(!compactMode)}
+                >
+                  {compactMode ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger><TooltipContent>{compactMode ? 'Modo normal' : 'Modo compacto'}</TooltipContent></Tooltip>
               <DropdownMenu>
                 <Tooltip><TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
