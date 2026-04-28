@@ -5,7 +5,9 @@ const corsHeaders = {
 };
 
 const PROJECT_REF = Deno.env.get("SUPABASE_URL")?.replace("https://", "").split(".")[0] ?? "";
-const SERVER_URL = `https://${PROJECT_REF}.supabase.co/functions/v1/public-api/v1`;
+const SERVER_URL_V1 = `https://${PROJECT_REF}.supabase.co/functions/v1/public-api/v1`;
+const SERVER_URL_V11 = `https://${PROJECT_REF}.supabase.co/functions/v1/public-api/v1.1`;
+const SERVER_URL = SERVER_URL_V1; // default base used by OpenAPI / Postman
 
 const spec = {
   openapi: "3.1.0",
@@ -13,10 +15,19 @@ const spec = {
     title: "Agsell Public API",
     version: "1.1.0",
     description:
-      "REST API oficial do Agsell. Autenticação via header `X-API-Key`. Rate limit: 60 req/min, paginação via cursor.",
+      "REST API oficial do Agsell.\n\n" +
+      "**Autenticação:** header `X-API-Key`.\n" +
+      "**Rate limit:** 60 req/min, paginação por cursor.\n\n" +
+      "**Versões disponíveis:**\n" +
+      "- `v1` — endpoints estáveis (envio simples, CRUD).\n" +
+      "- `v1.1` — endpoints estendidos com tracking de entrega, status de mensagens, " +
+      "webhooks assinados (HMAC SHA-256), test/rotate de webhooks e fan-out de eventos.\n",
     contact: { name: "Agsell Support", url: "https://site.agsell.com.br/support" },
   },
-  servers: [{ url: SERVER_URL, description: "Production" }],
+  servers: [
+    { url: SERVER_URL_V1, description: "Production · v1" },
+    { url: SERVER_URL_V11, description: "Production · v1.1 (recomendado para integrações nativas)" },
+  ],
   security: [{ ApiKeyAuth: [] }],
   components: {
     securitySchemes: {
