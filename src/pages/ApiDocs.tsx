@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SwaggerEmbed } from '@/components/api/SwaggerEmbed';
 import {
   Search, Code2, Copy, Check, Key, Webhook as WebhookIcon, Send, Users, Building2,
   Briefcase, Tag as TagIcon, Bot, MessagesSquare, FileText, BarChart3, Download,
@@ -267,6 +268,9 @@ export default function ApiDocs() {
                 </a>
                 <a href="#webhooks-info" className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted ${activeId === 'webhooks-info' ? 'bg-muted font-medium' : ''}`}>
                   <WebhookIcon className="h-3.5 w-3.5" /> Webhooks
+                </a>
+                <a href="#swagger" className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted ${activeId === 'swagger' ? 'bg-muted font-medium' : ''}`}>
+                  <Code2 className="h-3.5 w-3.5" /> Swagger interativo
                 </a>
                 <Separator className="my-3" />
                 <p className="px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Endpoints</p>
@@ -559,6 +563,33 @@ X-Agsell-Event: contact.created
                 ))}
               </div>
             ))}
+
+            {/* Swagger interativo */}
+            <section data-section="swagger" id="swagger" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-3 flex items-center gap-2"><Code2 className="h-5 w-5" /> Swagger UI — playground interativo</h2>
+              <p className="text-muted-foreground mb-4">
+                Documentação OpenAPI 3.1 renderizada com Swagger UI. Clique em <strong>"Authorize"</strong> e cole sua API Key
+                (header <code className="bg-muted px-1 rounded text-xs">X-API-Key</code>) para executar chamadas <em>Try it out</em> direto do navegador.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={OPENAPI_URL} target="_blank" rel="noreferrer">
+                    <Download className="h-3.5 w-3.5 mr-1.5" /> Baixar JSON OpenAPI
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={POSTMAN_URL} target="_blank" rel="noreferrer">
+                    <Download className="h-3.5 w-3.5 mr-1.5" /> Baixar coleção Postman
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`https://editor.swagger.io/?url=${encodeURIComponent(OPENAPI_URL)}`} target="_blank" rel="noreferrer">
+                    Abrir no Swagger Editor <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                  </a>
+                </Button>
+              </div>
+              <SwaggerEmbed specUrl={OPENAPI_URL} />
+            </section>
 
             {/* Footer */}
             <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
