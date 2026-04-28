@@ -1090,3 +1090,97 @@ async function handlePublicFormSubmit(supabase: any, formId: string, req: Reques
     );
   }
 }
+
+// ===== Send messages via channel =====
+// deno-lint-ignore no-explicit-any
+async function handleSendMessage(supabase: any, orgId: string, req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const channel = validateString(body.channel, 20);
+  const to = validateString(body.to, 320);
+  const message = validateString(body.message, 4096);
+  if (!channel || !to) return { error: "channel and to are required" };
+  if (!["whatsapp", "email", "sms"].includes(channel)) return { error: "channel must be whatsapp|email|sms" };
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  let fnName = "";
+  let payload: Record<string, unknown> = { organization_id: orgId };
+  if (channel === "whatsapp") {
+    fnName = "send-whatsapp";
+    payload = { ...payload, to, message, instance_id: body.instance_id, media_url: body.media_url, media_type: body.media_type };
+  } else if (channel === "email") {
+    fnName = "send-email";
+    payload = { ...payload, to, subject: validateString(body.subject, 300), html: body.html || message, from: body.from };
+  } else if (channel === "sms") {
+    fnName = "send-sms";
+    payload = { ...payload, to, message };
+  }
+
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data?.error || `Failed to send ${channel}`, status: res.status };
+    return { data: { channel, to, sent: true, ...data } };
+  } catch (e) {
+    return { error: `Failed to send: ${(e as Error).message}` };
+  }
+}
+
+// ===== Trigger automation =====
+// deno-lint-ignore no-explicit-any
+async function handleTriggerAutomation(supabase: any, orgId: string, automationId: string, req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const { data: auto, error } = await supabase
+    .from("automations").select("id, is_active").eq("id", automationId).eq("organization_id", orgId).single();
+  if (error || !auto) return { error: "Automation not found" };
+  if (!auto.is_active) return { error: "Automation is not active" };
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/process-automation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({ automation_id: automationId, organization_id: orgId, trigger_data: body }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data?.error || "Failed to trigger automation" };
+    return { data: { triggered: true, automation_id: automationId, ...data } };
+  } catch (e) {
+    return { error: `Failed: ${(e as Error).message}` };
+  }
+}
+
+// ===== Outbound Webhook subscriptions =====
+// deno-lint-ignore no-explicit-any
+async function handleWebhooks(supabase: any, method: string, orgId: string, id: string | undefined, req: Request) {
+  if (method === "GET") {
+    if (id) {
+      const { data, error } = await supabase.from("webhooks").select("*").eq("id", id).eq("organization_id", orgId).single();
+      return error ? { error: "Webhook not found" } : { data };
+    }
+    return paginatedList(supabase, "webhooks", orgId, req);
+  }
+  if (method === "POST") {
+    const body = await req.json().catch(() => ({}));
+    const url = validateString(body.url, 500);
+    const events = Array.isArray(body.events) ? body.events.slice(0, 50) : [];
+    if (!url || events.length === 0) return { error: "url and events[] are required" };
+    const userId = await getOrgOwnerUserId(supabase, orgId);
+    const { data, error } = await supabase.from("webhooks").insert({
+      url, events, name: validateString(body.name, 100) || "API Webhook",
+      is_active: body.is_active !== false, organization_id: orgId, user_id: userId,
+    }).select().single();
+    return error ? { error: "Failed to create webhook: " + error.message } : { data };
+  }
+  if (method === "DELETE" && id) {
+    const { error } = await supabase.from("webhooks").delete().eq("id", id).eq("organization_id", orgId);
+    return error ? { error: "Failed to delete" } : { success: true };
+  }
+  return { error: "Method not allowed" };
+}
