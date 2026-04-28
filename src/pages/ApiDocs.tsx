@@ -96,7 +96,8 @@ const WEBHOOK_EVENTS = [
 ];
 
 function buildExample(ep: Endpoint, lang: Lang, apiKey = 'YOUR_API_KEY'): string {
-  const url = `${API_BASE}${ep.path.replace('{id}', 'CONTACT_ID')}`;
+  const base = ep.group.includes('v1.1') ? API_BASE_V11 : API_BASE;
+  const url = `${base}${ep.path.replace('{id}', 'RESOURCE_ID')}`;
   const bodyJson = ep.body ? JSON.stringify(ep.body, null, 2) : '';
   const hasBody = !!ep.body && ep.method !== 'GET';
 
