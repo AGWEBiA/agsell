@@ -133,94 +133,94 @@ function PricingCard({
 
   return (
     <Card className={cn(
-      'relative transition-all hover:shadow-xl hover:-translate-y-1 duration-300',
-      isPro && 'border-primary border-2 shadow-lg scale-105',
+      'relative transition-all hover:shadow-xl hover:-translate-y-1 duration-300 flex flex-col',
+      isPro && 'border-primary border-2 shadow-lg lg:scale-105',
     )}>
       {isPro && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-          <Badge className="bg-primary text-primary-foreground px-4 py-1">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+          <Badge className="bg-primary text-primary-foreground px-3 py-1 text-xs whitespace-nowrap">
             <Zap className="h-3 w-3 mr-1" />
             Mais Popular
           </Badge>
         </div>
       )}
 
-      <CardHeader className="text-center pb-2 pt-8">
-        {isEnterprise && <Crown className="h-10 w-10 mx-auto mb-3 text-yellow-500" />}
-        <CardTitle className="text-2xl">{plan.name}</CardTitle>
-        <CardDescription className="text-base">{plan.description}</CardDescription>
+      <CardHeader className="text-center pb-2 pt-7 px-4 sm:px-6">
+        {isEnterprise && <Crown className="h-9 w-9 mx-auto mb-2 text-yellow-500" />}
+        <CardTitle className="text-xl sm:text-2xl">{plan.name}</CardTitle>
+        <CardDescription className="text-sm sm:text-base line-clamp-2 min-h-[40px]">{plan.description}</CardDescription>
       </CardHeader>
 
-      <CardContent className="text-center">
-        <div className="mb-6">
+      <CardContent className="text-center px-4 sm:px-6 flex-1 flex flex-col">
+        <div className="mb-5">
           {isFree ? (
-            <span className="text-5xl font-bold">Grátis</span>
+            <span className="text-4xl sm:text-5xl font-bold">Grátis</span>
           ) : (
             <>
-              <span className="text-5xl font-bold">R$ {price}</span>
-              <span className="text-muted-foreground text-lg">/mês</span>
+              <span className="text-4xl sm:text-5xl font-bold">R$ {price}</span>
+              <span className="text-muted-foreground text-base sm:text-lg">/mês</span>
             </>
           )}
         </div>
 
         {!isFree && billingCycle === 'yearly' && (
-          <p className="text-sm text-green-600 dark:text-green-400 mb-4 font-medium">
+          <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 mb-4 font-medium">
             Cobrado R$ {totalPrice}/ano (economize 17%)
           </p>
         )}
 
-        <div className="space-y-3 text-left mb-6">
-          <div className="flex items-center gap-3 text-sm">
-            <Users className="h-5 w-5 text-primary" />
+        <div className="space-y-2.5 text-left mb-5">
+          <div className="flex items-center gap-2.5 text-sm">
+            <Users className="h-4 w-4 text-primary flex-shrink-0" />
             <span>{plan.max_users === -1 ? 'Usuários ilimitados' : `${plan.max_users} usuário${plan.max_users > 1 ? 's' : ''}`}</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Users className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5 text-sm">
+            <Users className="h-4 w-4 text-primary flex-shrink-0" />
             <span>{plan.max_contacts === -1 ? 'Contatos ilimitados' : `${plan.max_contacts.toLocaleString()} contatos`}</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Mail className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5 text-sm">
+            <Mail className="h-4 w-4 text-primary flex-shrink-0" />
             <span>{plan.max_emails_per_month === -1 ? 'E-mails ilimitados' : `${plan.max_emails_per_month.toLocaleString()} e-mails/mês`}</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <MessageSquare className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5 text-sm">
+            <MessageSquare className="h-4 w-4 text-primary flex-shrink-0" />
             <span>WhatsApp ilimitado</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Bot className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5 text-sm">
+            <Bot className="h-4 w-4 text-primary flex-shrink-0" />
             <span>{plan.max_automations === -1 ? 'Automações ilimitadas' : `${plan.max_automations} automações`}</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Brain className="h-5 w-5 text-primary" />
-            <span>{plan.max_ai_requests_per_month === -1 ? 'IA ilimitada' : `${plan.max_ai_requests_per_month.toLocaleString()} requisições IA/mês`}</span>
+          <div className="flex items-center gap-2.5 text-sm">
+            <Brain className="h-4 w-4 text-primary flex-shrink-0" />
+            <span>{plan.max_ai_requests_per_month === -1 ? 'IA ilimitada' : `${plan.max_ai_requests_per_month.toLocaleString()} req. IA/mês`}</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <FileText className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5 text-sm">
+            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
             <span>{plan.max_forms === -1 ? 'Formulários ilimitados' : `${plan.max_forms} formulários`}</span>
           </div>
         </div>
 
-        <div className="pt-4 border-t space-y-2">
+        <div className="pt-4 border-t space-y-2 mt-auto">
           {(plan.features || []).map((feature) => (
-            <div key={feature} className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-              <span>{FEATURE_LABELS[feature] || feature}</span>
+            <div key={feature} className="flex items-start gap-2 text-sm">
+              <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+              <span className="text-left">{FEATURE_LABELS[feature] || feature}</span>
             </div>
           ))}
         </div>
       </CardContent>
 
-      <CardFooter className="pb-8">
+      <CardFooter className="pb-6 px-4 sm:px-6">
         <Button 
           className={cn(
-            "w-full h-12 text-base",
+            "w-full h-11 sm:h-12 text-sm sm:text-base",
             isPro && "bg-primary hover:bg-primary/90"
           )}
           variant={isPro ? 'default' : 'outline'}
           onClick={onSelect}
         >
           {isFree ? 'Começar' : 'Assinar Agora'}
-          <ArrowRight className="ml-2 h-5 w-5" />
+          <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
       </CardFooter>
     </Card>
@@ -628,8 +628,8 @@ export default function Pricing() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="container mx-auto px-4 pb-20">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
+      <section className="container mx-auto px-4 pb-20 pt-6">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
           {plans.map((plan) => (
             <PricingCard
               key={plan.id}
@@ -656,14 +656,14 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
           {SYSTEM_FEATURES.map((feature, index) => (
             <Card key={index} className="border bg-card/50 hover:bg-card hover:shadow-md transition-all">
-              <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-primary" />
+              <CardContent className="pt-5 sm:pt-6 px-5 sm:px-6">
+                <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
+                  <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                <h3 className="font-semibold text-base sm:text-lg mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
               </CardContent>
             </Card>
