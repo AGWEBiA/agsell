@@ -489,7 +489,7 @@ export default function Pricing() {
   useEffect(() => {
     const fetchPlans = async () => {
       const { data, error } = await supabase
-        .from('plans')
+        .from('plans_public' as any)
         .select('*')
         .eq('is_active', true)
         .order('price_monthly', { ascending: true });
@@ -498,7 +498,7 @@ export default function Pricing() {
         console.error('Error fetching plans:', error);
         toast.error('Erro ao carregar planos');
       } else {
-        setPlans((data || []).map(p => ({
+        setPlans(((data as any[]) || []).map((p: any) => ({
           ...p,
           features: Array.isArray(p.features) ? p.features as string[] : [],
           price_monthly: p.price_monthly || 0,
