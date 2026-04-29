@@ -70,6 +70,7 @@ const menuSections: MenuSection[] = [
     icon: Users,
     items: [
       { label: 'Painel CRM (Admin)', icon: Briefcase, path: '/crm-admin', orgAdminOnly: true },
+      { label: 'CRM Intelligence', icon: Brain, path: '/crm-intelligence' },
       { label: 'Empresas', icon: Building2, path: '/companies' },
       { label: 'Win Probability', icon: Brain, path: '/win-probability' },
       { label: 'Sales Routing', icon: Route, path: '/sales-routing' },

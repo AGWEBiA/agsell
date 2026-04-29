@@ -119,6 +119,7 @@ const AutomationMetrics = React.lazy(() => import("./pages/AutomationMetrics"));
 const SMSMarketing = React.lazy(() => import("./pages/SMSMarketing"));
 const Notifications = React.lazy(() => import("./pages/Notifications"));
 const CRMAdmin = React.lazy(() => import("./pages/CRMAdmin"));
+const CRMIntelligence = React.lazy(() => import("./pages/CRMIntelligence"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -244,6 +245,7 @@ const App = () => (
                     <Route path="support-portal-settings" element={<FeatureRequiredPage feature="customer_support_center" featureLabel="Portal de Suporte"><SupportPortalSettingsPage /></FeatureRequiredPage>} />
                     <Route path="notifications" element={<Notifications />} />
                     <Route path="crm-admin" element={<CRMAdmin />} />
+                    <Route path="crm-intelligence" element={<CRMIntelligence />} />
                   </Route>
                   
                   {/* Plans accessible even with expired subscription */}
