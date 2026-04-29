@@ -60,6 +60,7 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { ImportContactsDialog } from '@/components/contacts/ImportContactsDialog';
 import { ImportJobsList } from '@/components/contacts/ImportJobsList';
 import { ContactTagsManager } from '@/components/contacts/ContactTagsManager';
+import { Contact360Drawer } from '@/components/contacts/Contact360Drawer';
 import { BulkTagsDialog } from '@/components/contacts/BulkTagsDialog';
 import { TagsImportExportDialog } from '@/components/contacts/TagsImportExportDialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -561,80 +562,12 @@ export default function Contacts() {
       {/* Import Jobs History */}
       {!isImportOpen && <ImportJobsList />}
 
-      {/* View Contact Detail Dialog */}
-      <Dialog open={!!viewContact} onOpenChange={() => setViewContact(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Detalhes do Contato</DialogTitle>
-          </DialogHeader>
-          {viewContact && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14">
-                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                    {getInitials(viewContact.first_name, viewContact.last_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold">{viewContact.first_name} {viewContact.last_name}</h3>
-                  <Badge className={statusColors[viewContact.status || 'lead']} variant="secondary">
-                    {statusLabels[viewContact.status || 'lead']}
-                  </Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {viewContact.email && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-4 w-4" /> {viewContact.email}
-                  </div>
-                )}
-                {viewContact.phone && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4" /> {viewContact.phone}
-                  </div>
-                )}
-                {viewContact.whatsapp && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MessageSquare className="h-4 w-4" /> {viewContact.whatsapp}
-                  </div>
-                )}
-                {viewContact.company && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Building2 className="h-4 w-4" /> {viewContact.company.name}
-                  </div>
-                )}
-              </div>
-              {viewContact.position && (
-                <div className="text-sm"><span className="font-medium">Cargo:</span> {viewContact.position}</div>
-              )}
-              {viewContact.source && (
-                <div className="text-sm"><span className="font-medium">Origem:</span> {viewContact.source}</div>
-              )}
-              <div className="text-sm"><span className="font-medium">Lead Score:</span> {viewContact.lead_score || 0}</div>
-              <div className="border-t pt-3">
-                <ContactTagsManager contactId={viewContact.id} />
-              </div>
-              {viewContact.notes && (
-                <div className="text-sm">
-                  <span className="font-medium">Notas:</span>
-                  <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{viewContact.notes}</p>
-                </div>
-              )}
-              <div className="text-xs text-muted-foreground">
-                Criado em: {new Date(viewContact.created_at).toLocaleDateString('pt-BR')}
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewContact(null)}>Fechar</Button>
-            <PermissionGate module="contacts" action="edit">
-              <Button onClick={() => { setEditContact({ ...viewContact! }); setViewContact(null); }}>
-                <Edit className="h-4 w-4 mr-2" /> Editar
-              </Button>
-            </PermissionGate>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Visão 360° do Contato */}
+      <Contact360Drawer
+        contact={viewContact}
+        open={!!viewContact}
+        onOpenChange={(o) => !o && setViewContact(null)}
+      />
 
       {/* Edit Contact Dialog */}
       <Dialog open={!!editContact} onOpenChange={() => setEditContact(null)}>
