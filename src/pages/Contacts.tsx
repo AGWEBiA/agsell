@@ -404,6 +404,18 @@ export default function Contacts() {
             <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={paginatedContacts.length > 0 && paginatedContacts.every(c => selectedIds.has(c.id))}
+                      onCheckedChange={(v) => {
+                        const next = new Set(selectedIds);
+                        if (v) paginatedContacts.forEach(c => next.add(c.id));
+                        else paginatedContacts.forEach(c => next.delete(c.id));
+                        setSelectedIds(next);
+                      }}
+                      aria-label="Selecionar todos"
+                    />
+                  </TableHead>
                   <TableHead>Contato</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -417,6 +429,16 @@ export default function Contacts() {
                 {paginatedContacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(contact.id)}
+                        onCheckedChange={(v) => {
+                          const next = new Set(selectedIds);
+                          if (v) next.add(contact.id); else next.delete(contact.id);
+                          setSelectedIds(next);
+                        }}
+                        aria-label={`Selecionar ${contact.first_name}`}
+                      />
+                    </TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
                           <AvatarFallback className="bg-primary/10 text-primary">
