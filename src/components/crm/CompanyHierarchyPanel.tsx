@@ -63,7 +63,7 @@ export function CompanyHierarchyPanel() {
               <Select value={parentId} onValueChange={setParentId}>
                 <SelectTrigger><SelectValue placeholder="Sem matriz" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— Sem matriz —</SelectItem>
+                  <SelectItem value="__none__">— Sem matriz —</SelectItem>
                   {companies.filter((c: any) => c.id !== childId).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
