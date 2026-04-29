@@ -15,6 +15,7 @@ import {
   ExternalLink, Shield, Zap, BookOpen, Terminal, Rocket,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import agsellLogo from '@/assets/agsell-api-logo.png';
 
 const API_BASE = `https://rcxrkvwxlzwzrllwdwgz.supabase.co/functions/v1/public-api/v1`;
 const API_BASE_V11 = `https://rcxrkvwxlzwzrllwdwgz.supabase.co/functions/v1/public-api/v1.1`;
