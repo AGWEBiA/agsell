@@ -551,6 +551,12 @@ export default function Contacts() {
 
       {/* Import Dialog */}
       <ImportContactsDialog open={isImportOpen} onOpenChange={setIsImportOpen} />
+      <BulkTagsDialog
+        open={bulkTagsOpen}
+        onOpenChange={setBulkTagsOpen}
+        contactIds={Array.from(selectedIds)}
+      />
+      <TagsImportExportDialog open={tagsCsvOpen} onOpenChange={setTagsCsvOpen} />
 
       {/* Import Jobs History */}
       {!isImportOpen && <ImportJobsList />}
