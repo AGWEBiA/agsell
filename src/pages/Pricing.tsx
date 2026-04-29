@@ -628,8 +628,8 @@ export default function Pricing() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="container mx-auto px-4 pb-20">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
+      <section className="container mx-auto px-4 pb-20 pt-6">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
           {plans.map((plan) => (
             <PricingCard
               key={plan.id}
