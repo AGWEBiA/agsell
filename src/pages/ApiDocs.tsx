@@ -236,7 +236,7 @@ export default function ApiDocs() {
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-14 items-center gap-4">
             <Link to="/" className="flex items-center gap-2 font-bold">
-              <Code2 className="h-5 w-5 text-primary" />
+              <img src={agsellLogo} alt="AG Sell" className="h-7 w-7 rounded-md object-contain" />
               <span>Agsell API</span>
               <Badge variant="secondary" className="text-[10px]">v1.1</Badge>
             </Link>
