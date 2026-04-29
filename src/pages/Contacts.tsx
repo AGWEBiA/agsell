@@ -59,6 +59,7 @@ import { PageHeader, EmptyState, FormField } from '@/components/ui/help-tooltip'
 import { useCompanies } from '@/hooks/useCompanies';
 import { ImportContactsDialog } from '@/components/contacts/ImportContactsDialog';
 import { ImportJobsList } from '@/components/contacts/ImportJobsList';
+import { ContactTagsManager } from '@/components/contacts/ContactTagsManager';
 import { PermissionGate } from '@/components/permissions/PermissionGate';
 import { useFeatureCheck } from '@/components/permissions/FeatureGate';
 import { usePaginatedData } from '@/hooks/usePaginatedQuery';
@@ -564,6 +565,9 @@ export default function Contacts() {
                 <div className="text-sm"><span className="font-medium">Origem:</span> {viewContact.source}</div>
               )}
               <div className="text-sm"><span className="font-medium">Lead Score:</span> {viewContact.lead_score || 0}</div>
+              <div className="border-t pt-3">
+                <ContactTagsManager contactId={viewContact.id} />
+              </div>
               {viewContact.notes && (
                 <div className="text-sm">
                   <span className="font-medium">Notas:</span>
