@@ -203,6 +203,16 @@ export default function Contacts() {
             Importar
           </Button>
         </PermissionGate>
+        <Button variant="outline" size="sm" onClick={() => setTagsCsvOpen(true)}>
+          <FileSpreadsheet className="h-4 w-4 mr-2" />
+          Tags CSV
+        </Button>
+        {selectedIds.size > 0 && (
+          <Button size="sm" onClick={() => setBulkTagsOpen(true)}>
+            <Tags className="h-4 w-4 mr-2" />
+            Tags em massa ({selectedIds.size})
+          </Button>
+        )}
         <PermissionGate module="contacts" action="export">
           <Button variant="outline" size="sm" onClick={() => {
             if (contacts.length === 0) {
