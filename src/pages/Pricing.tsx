@@ -489,7 +489,7 @@ export default function Pricing() {
   useEffect(() => {
     const fetchPlans = async () => {
       const { data, error } = await supabase
-        .from('plans')
+        .from('plans_public' as any)
         .select('*')
         .eq('is_active', true)
         .order('price_monthly', { ascending: true });
