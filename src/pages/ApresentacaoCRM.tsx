@@ -354,9 +354,19 @@ export default function ApresentacaoCRM() {
           <div className="hidden sm:block h-8 w-px bg-white/20" />
           <div className="hidden sm:block text-xs uppercase tracking-[0.2em] text-white/60">Apresentação CRM</div>
         </div>
-        <Badge variant="outline" className="border-white/20 text-white/80">
-          {idx + 1} / {slides.length}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://agsell.lovable.app/pricing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-zinc-900 text-sm font-semibold hover:bg-white/90 transition"
+          >
+            Ver Planos <ArrowRight className="w-4 h-4" />
+          </a>
+          <Badge variant="outline" className="border-white/20 text-white/80">
+            {idx + 1} / {slides.length}
+          </Badge>
+        </div>
       </header>
 
       {/* Watermark logo - presente em todos os slides */}
