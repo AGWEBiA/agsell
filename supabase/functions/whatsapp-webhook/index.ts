@@ -443,6 +443,45 @@ Deno.serve(async (req) => {
       const data = body.data || body;
       const instanceName = (body.instance || data.instance || "").trim();
 
+      // Evolution API frequently piggybacks delivery status (SERVER_ACK / DELIVERY_ACK / READ)
+      // inside messages.upsert events instead of sending a dedicated messages.update event.
+      // Update existing outbound messages' delivery_status whenever we see a higher ack level.
+      try {
+        const upsertKey = data.key || data.message?.key || {};
+        const upsertMsgId = upsertKey.id || data.id;
+        const upsertStatus = data.status || data.message?.status;
+        const isFromMeStatus = upsertKey.fromMe || data.fromMe || false;
+        if (upsertMsgId && upsertStatus && isFromMeStatus) {
+          const s = typeof upsertStatus === 'string' ? upsertStatus.toUpperCase() : upsertStatus;
+          let newStatus: string | null = null;
+          if (s === "SERVER_ACK" || s === "SENT" || s === 2) newStatus = "sent";
+          else if (s === "DELIVERY_ACK" || s === "DELIVERED" || s === 3) newStatus = "delivered";
+          else if (s === "READ" || s === 4 || s === "PLAYED" || s === 5) newStatus = "read";
+          else if (s === "ERROR" || s === "FAILED" || s === 0) newStatus = "failed";
+
+          if (newStatus) {
+            // Only upgrade status (never downgrade): pending < sent < delivered < read
+            const rank: Record<string, number> = { pending: 0, sent: 1, delivered: 2, read: 3, failed: -1 };
+            const { data: existingMsg } = await supabase
+              .from("messages")
+              .select("id, delivery_status")
+              .eq("external_id", upsertMsgId)
+              .maybeSingle();
+            if (existingMsg) {
+              const cur = (existingMsg as any).delivery_status || 'pending';
+              if (newStatus === 'failed' || (rank[newStatus] ?? 0) > (rank[cur] ?? 0)) {
+                await supabase
+                  .from("messages")
+                  .update({ delivery_status: newStatus })
+                  .eq("id", (existingMsg as any).id);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to piggyback delivery_status from messages.upsert:", e);
+      }
+
       // Find the org by Evolution API instance name (normalized match to avoid space/case issues)
       const normalizeInstanceName = (value: string) => value.toLowerCase().replace(/[\s_-]+/g, "");
       const normalizedIncomingInstance = normalizeInstanceName(instanceName);
