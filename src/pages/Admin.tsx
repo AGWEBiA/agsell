@@ -541,6 +541,9 @@ export default function Admin() {
         <TabsContent value="integrations">
           <AdminIntegrationsConfig />
         </TabsContent>
+        <TabsContent value="webhook-audit">
+          <WebhookAuditDashboard />
+        </TabsContent>
       </Tabs>
 
       <AssignPlanDialog
