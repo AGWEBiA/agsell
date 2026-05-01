@@ -222,6 +222,33 @@ Deno.serve(async (req) => {
       throw webhookError;
     }
 
+    // --- Early exit: ignore products that are not AG Sell plans ---
+    // Kiwify webhook receives events from ALL products in the account.
+    // If the order doesn't match any AG Sell plan, acknowledge and skip.
+    const isApprovedOrPending =
+      payload.order_status === "paid" ||
+      payload.order_status === "completed" ||
+      payload.order_status === "waiting_payment";
+
+    if (!plan && isApprovedOrPending) {
+      logStep("SKIPPED: product is not an AG Sell plan", {
+        productId,
+        productName: payload.Product?.product_name || payload.product_name,
+        checkoutLink,
+        orderId: payload.order_id,
+        email: customerEmail,
+      });
+      await supabase.from("webhook_events").update({
+        processed: true,
+        processed_at: new Date().toISOString(),
+        error_message: "Skipped: product is not an AG Sell plan",
+      }).eq("id", webhookEvent.id);
+      return new Response(
+        JSON.stringify({ success: true, event_id: webhookEvent.id, skipped: true, reason: "not_an_agsell_plan" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Upsert gateway product for automation triggers
     const kiwifyProductName = payload.Product?.product_name || payload.product_name;
     if (kiwifyProductName) {
