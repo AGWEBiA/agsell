@@ -55,6 +55,7 @@ import { VoipProviderConfig } from '@/components/admin/VoipProviderConfig';
 import { CommunicationPackagesAdmin } from '@/components/admin/CommunicationPackagesAdmin';
 import { AdminDomainReport } from '@/components/admin/AdminDomainReport';
 import { AdminIntegrationsConfig } from '@/components/admin/AdminIntegrationsConfig';
+import { WebhookAuditDashboard } from '@/components/admin/WebhookAuditDashboard';
 export default function Admin() {
   const { user, isAdmin, loading: isCheckingAdmin } = useAuth();
   const [assignPlanOrg, setAssignPlanOrg] = useState<{ id: string; name: string } | null>(null);
@@ -274,6 +275,10 @@ export default function Admin() {
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Integrações
+          </TabsTrigger>
+          <TabsTrigger value="webhook-audit" className="flex items-center gap-2">
+            <Bug className="h-4 w-4" />
+            Auditoria Webhooks
           </TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
@@ -535,6 +540,9 @@ export default function Admin() {
         </TabsContent>
         <TabsContent value="integrations">
           <AdminIntegrationsConfig />
+        </TabsContent>
+        <TabsContent value="webhook-audit">
+          <WebhookAuditDashboard />
         </TabsContent>
       </Tabs>
 

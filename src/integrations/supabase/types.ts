@@ -7372,6 +7372,33 @@ export type Database = {
       }
     }
     Functions: {
+      admin_audit_webhook_events: {
+        Args: {
+          _email?: string
+          _limit?: number
+          _processed_filter?: string
+          _source?: string
+        }
+        Returns: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          error_message: string
+          event_type: string
+          has_active_subscription: boolean
+          id: string
+          order_id: string
+          order_status: string
+          organization_id: string
+          organization_name: string
+          processed: boolean
+          processed_at: string
+          product_name: string
+          source: string
+          user_exists: boolean
+          user_id: string
+        }[]
+      }
       award_points: {
         Args: {
           _action: string
