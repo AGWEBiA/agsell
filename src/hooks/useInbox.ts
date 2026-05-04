@@ -330,6 +330,8 @@ export function useInbox() {
             // request was accepted, not that WhatsApp delivered it. Real status (sent /
             // delivered / read / failed) comes from the webhook updating delivery_status
             // based on SERVER_ACK / DELIVERY_ACK / READ events. Initial state stays 'pending'.
+            // In some Evolution versions/configs, the status might come as 'sent' immediately in the 200 response.
+
             const externalId = responseData?.key?.id || responseData?.messageId || responseData?.id;
             const instanceUsed = responseData?.instance_used || responseData?.instance;
             const evoStatus = String(responseData?.status || responseData?.key?.status || '').toUpperCase();
