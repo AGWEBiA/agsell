@@ -398,7 +398,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                     isActive={location.pathname === getItemPathBase(item.path) && location.search === (item.path.includes('?') ? '?' + item.path.split('?')[1] : '')}
                     collapsed={sidebarCollapsed}
                     onNavigate={navigateCallback}
-                    isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}
+                    sectionId={section.id}
                   />
                 ))}
                 {section.id === 'crm' && (
