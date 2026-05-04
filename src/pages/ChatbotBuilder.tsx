@@ -638,37 +638,141 @@ function ChatbotVisualBuilder({ chatbot, onSave, onClose }: { chatbot: Chatbot; 
 
 // ─── Main Page ───
 export default function ChatbotBuilderPage() {
-  const [chatbots, setChatbots] = useState<Chatbot[]>([]);
+  const { currentOrganization } = useOrganization();
+  const queryClient = useQueryClient();
+  const orgId = currentOrganization?.id;
+
   const [editingChatbot, setEditingChatbot] = useState<Chatbot | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newBot, setNewBot] = useState({ name: '', channel: 'whatsapp', description: '' });
 
+  const { data: chatbots = [], isLoading } = useQuery({
+    queryKey: ['chatbots', orgId],
+    queryFn: async (): Promise<Chatbot[]> => {
+      if (!orgId) return [];
+      const { data, error } = await supabase
+        .from('chatbots')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        channel: row.channel,
+        nodes: (row.nodes as ChatbotNode[]) || [],
+        rules: (row.rules as ChatbotRule[]) || [],
+        isActive: row.is_active,
+      }));
+    },
+    enabled: !!orgId,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (input: { name: string; channel: string; description: string }) => {
+      if (!orgId) throw new Error('Organização não selecionada');
+      const { data: { user } } = await supabase.auth.getUser();
+      const initialNode: ChatbotNode = {
+        id: crypto.randomUUID(),
+        type: 'welcome',
+        label: 'Boas-vindas',
+        config: defaultNodeConfig('welcome'),
+        connections: defaultConnections('welcome'),
+      };
+      const { data, error } = await supabase
+        .from('chatbots')
+        .insert({
+          organization_id: orgId,
+          name: input.name,
+          description: input.description,
+          channel: input.channel,
+          nodes: [initialNode] as any,
+          rules: [] as any,
+          is_active: false,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (row: any) => {
+      queryClient.invalidateQueries({ queryKey: ['chatbots', orgId] });
+      setNewBot({ name: '', channel: 'whatsapp', description: '' });
+      setShowCreate(false);
+      setEditingChatbot({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        channel: row.channel,
+        nodes: (row.nodes as ChatbotNode[]) || [],
+        rules: (row.rules as ChatbotRule[]) || [],
+        isActive: row.is_active,
+      });
+      toast.success('Chatbot criado!');
+    },
+    onError: (e: any) => toast.error(`Erro ao criar: ${e.message}`),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (updated: Chatbot) => {
+      const { error } = await supabase
+        .from('chatbots')
+        .update({
+          name: updated.name,
+          description: updated.description,
+          channel: updated.channel,
+          nodes: updated.nodes as any,
+          rules: updated.rules as any,
+          is_active: updated.isActive,
+        })
+        .eq('id', updated.id);
+      if (error) throw error;
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatbots', orgId] });
+      toast.success('Chatbot salvo!');
+    },
+    onError: (e: any) => toast.error(`Erro ao salvar: ${e.message}`),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const { error } = await supabase.from('chatbots').update({ is_active: isActive }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chatbots', orgId] }),
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('chatbots').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatbots', orgId] });
+      toast.success('Chatbot excluído');
+    },
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
+  });
+
   const handleCreate = () => {
     if (!newBot.name) return toast.error('Nome é obrigatório');
-    const bot: Chatbot = {
-      id: crypto.randomUUID(),
-      name: newBot.name,
-      description: newBot.description,
-      channel: newBot.channel,
-      nodes: [
-        { id: crypto.randomUUID(), type: 'welcome', label: 'Boas-vindas', config: defaultNodeConfig('welcome'), connections: defaultConnections('welcome') },
-      ],
-      rules: [],
-      isActive: false,
-    };
-    setChatbots(prev => [...prev, bot]);
-    setNewBot({ name: '', channel: 'whatsapp', description: '' });
-    setShowCreate(false);
-    setEditingChatbot(bot);
-  };
-
-  const handleSave = (updated: Chatbot) => {
-    setChatbots(prev => prev.map(b => b.id === updated.id ? updated : b));
-    setEditingChatbot(null);
+    createMutation.mutate(newBot);
   };
 
   if (editingChatbot) {
-    return <ChatbotVisualBuilder chatbot={editingChatbot} onSave={handleSave} onClose={() => setEditingChatbot(null)} />;
+    return (
+      <ChatbotVisualBuilder
+        chatbot={editingChatbot}
+        onSave={(c) => saveMutation.mutate(c)}
+        onClose={() => setEditingChatbot(null)}
+        isSaving={saveMutation.isPending}
+      />
+    );
   }
 
   return (
@@ -699,13 +803,18 @@ export default function ChatbotBuilderPage() {
                 </Select>
               </div>
               <div><Label>Descrição</Label><Textarea value={newBot.description} onChange={e => setNewBot(p => ({ ...p, description: e.target.value }))} /></div>
-              <Button onClick={handleCreate} className="w-full">Criar Chatbot</Button>
+              <Button onClick={handleCreate} className="w-full" disabled={createMutation.isPending}>
+                {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Criar Chatbot
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {chatbots.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+      ) : chatbots.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
             <Bot className="h-16 w-16 text-muted-foreground/30" />
@@ -729,7 +838,20 @@ export default function ChatbotBuilderPage() {
                       <CardDescription className="text-xs">{bot.channel}</CardDescription>
                     </div>
                   </div>
-                  <Switch checked={bot.isActive} onCheckedChange={v => setChatbots(prev => prev.map(b => b.id === bot.id ? { ...b, isActive: v } : b))} onClick={e => e.stopPropagation()} />
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <Switch
+                      checked={bot.isActive}
+                      onCheckedChange={v => toggleActiveMutation.mutate({ id: bot.id, isActive: v })}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive"
+                      onClick={() => { if (confirm(`Excluir "${bot.name}"?`)) deleteMutation.mutate(bot.id); }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
