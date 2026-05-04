@@ -72,6 +72,7 @@ export default function Deals() {
     return stages.find(s => s.id === stageId)?.color || '#3b82f6';
   };
 
+  return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
