@@ -102,7 +102,10 @@ describe('Automation template validation', () => {
     const validActionTypes = [
       'send_email', 'send_whatsapp', 'send_sms', 'add_tag', 'remove_tag',
       'update_score', 'create_task', 'send_notification', 'wait',
-      'move_deal', 'update_contact', 'webhook', 'condition',
+      'move_deal_stage', 'update_contact', 'webhook', 'condition',
+      'assign_agent', 'create_deal', 'send_instagram_dm', 'set_custom_field',
+      'subscribe_sequence', 'unsubscribe_sequence', 'http_request',
+      'ab_split', 'transfer_human', 'goto_flow', 'send_poll',
     ];
 
     automationTemplates.forEach(template => {
