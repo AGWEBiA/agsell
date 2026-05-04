@@ -156,7 +156,7 @@ export default function Pipeline() {
       contact_id: newDeal.contact_id || undefined,
     });
     setIsDialogOpen(false);
-    setNewDeal({ title: '', value: 0, stage_id: '', contact_id: '', expected_close_date: '', commission_rate: 0, payment_link: '' });
+    setNewDeal({ title: '', value: 0, stage_id: '', contact_id: '', expected_close_date: '', commission_rate: 0, payment_link: '', product_id: '' });
   };
 
   const handleUpdateDeal = async () => {
