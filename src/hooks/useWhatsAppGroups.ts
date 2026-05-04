@@ -100,7 +100,7 @@ export function useWhatsAppGroups() {
   });
 
   const createGroupMutation = useMutation({
-    mutationFn: async (group: { name: string; description?: string; group_type?: string; tags?: string[] }) => {
+    mutationFn: async (group: { name: string; description?: string; group_type?: string; tags?: string[]; external_group_id?: string }) => {
       if (!orgId) throw new Error('Organização não encontrada');
       const insertData: Record<string, unknown> = {
         name: group.name,
@@ -108,6 +108,7 @@ export function useWhatsAppGroups() {
         group_type: group.group_type || 'group',
         organization_id: orgId,
         settings: {} as Json,
+        external_group_id: group.external_group_id || null,
       };
       if (group.tags) insertData.tags = group.tags;
       const { data, error } = await supabase
@@ -126,8 +127,8 @@ export function useWhatsAppGroups() {
   });
 
   const updateGroupMutation = useMutation({
-    mutationFn: async ({ id, name, description, is_active, tags, settings }: {
-      id: string; name?: string; description?: string; is_active?: boolean; tags?: string[]; settings?: Record<string, unknown>;
+    mutationFn: async ({ id, name, description, is_active, tags, settings, external_group_id }: {
+      id: string; name?: string; description?: string; is_active?: boolean; tags?: string[]; settings?: Record<string, unknown>; external_group_id?: string;
     }) => {
       const updateData: Record<string, unknown> = {};
       if (name !== undefined) updateData.name = name;
@@ -135,6 +136,8 @@ export function useWhatsAppGroups() {
       if (is_active !== undefined) updateData.is_active = is_active;
       if (tags !== undefined) updateData.tags = tags;
       if (settings !== undefined) updateData.settings = settings as Json;
+      if (external_group_id !== undefined) updateData.external_group_id = external_group_id;
+      
       const { data, error } = await supabase
         .from('whatsapp_groups')
         .update(updateData as any)
