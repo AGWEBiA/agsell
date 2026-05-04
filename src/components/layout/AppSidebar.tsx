@@ -409,7 +409,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                       isActive={location.pathname === '/crm-settings'}
                       collapsed={sidebarCollapsed}
                       onNavigate={navigateCallback}
-                      isSecondary
+                      sectionId="crm"
                     />
                   </>
                 )}
