@@ -95,7 +95,7 @@ const SupportTickets = React.lazy(() => import("./pages/SupportTickets"));
 const SupportCenter = React.lazy(() => import("./pages/SupportCenter"));
 const SupportPortalSettingsPage = React.lazy(() => import("./pages/SupportPortalSettings"));
 const WhatsAppTemplates = React.lazy(() => import("./pages/WhatsAppTemplates"));
-const ContactPreferences = React.lazy(() => import("./pages/ContactPreferences"));
+const ContactPreferences = React.lazy(() => import("./pages/CRMSettingsConsolidated"));
 const EventTracking = React.lazy(() => import("./pages/EventTracking"));
 const Attribution = React.lazy(() => import("./pages/Attribution"));
 const LandingPagesPage = React.lazy(() => import("./pages/LandingPages"));
