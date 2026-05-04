@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import logoFull from '@/assets/agsell-logo-full.png';
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,22 +20,20 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error } = await resetPassword(email);
 
     if (error) {
       toast({
-        title: 'Erro ao entrar',
-        description: error.message === 'Invalid login credentials'
-          ? 'Email ou senha incorretos'
-          : error.message,
+        title: 'Erro ao enviar email',
+        description: error.message,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Bem-vindo!',
-        description: 'Login realizado com sucesso.',
+        title: 'Email enviado!',
+        description: 'Verifique sua caixa de entrada para redefinir sua senha.',
       });
-      navigate('/dashboard');
+      navigate('/login');
     }
 
     setLoading(false);
@@ -45,16 +42,25 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <img src={logoFull} alt="AG Sell" className="h-16 w-auto object-contain" />
         </div>
 
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Entrar</CardTitle>
+            <div className="flex items-center gap-2 mb-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8" 
+                onClick={() => navigate('/login')}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
+            </div>
             <CardDescription>
-              Entre com seu email e senha para acessar o sistema
+              Informe seu email para receber um link de redefinição
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -70,35 +76,16 @@ export default function Login() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  <Link 
-                    to="/forgot-password" 
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    Esqueceu a senha?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
+            <CardFooter>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
+                    Enviando...
                   </>
                 ) : (
-                  'Entrar'
+                  'Enviar Link de Recuperação'
                 )}
               </Button>
             </CardFooter>

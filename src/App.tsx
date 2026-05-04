@@ -26,6 +26,8 @@ const PageLoader = () => (
 const Index = React.lazy(() => import("./pages/Index"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Register = React.lazy(() => import("./pages/Register"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Pricing = React.lazy(() => import("./pages/Pricing"));
 const Features = React.lazy(() => import("./pages/Features"));
 const Apresentacao = React.lazy(() => import("./pages/Apresentacao"));
@@ -151,6 +153,8 @@ const App = () => (
                 {/* Public Routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path="/features" element={<Features />} />
