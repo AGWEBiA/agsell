@@ -159,7 +159,7 @@ export function WebhookAuditDashboard() {
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="kiwify">Kiwify</SelectItem>
-                  <SelectItem value="stripe">Stripe</SelectItem>
+                  
                 </SelectContent>
               </Select>
             </div>
