@@ -407,9 +407,9 @@ function CostSlide({ active }: { active: boolean }) {
                 ))}
               </div>
               <div className="pt-4 border-t border-[hsl(2,76%,53%)]/20">
-                <p className="text-white/40 text-xs mb-1">A partir de</p>
+                <p className="text-white/40 text-xs mb-1">Planos que cabem</p>
                 <p className="text-3xl font-bold font-mono tabular-nums">
-                  R$ <span className={accent}>197</span><span className="text-base text-white/40">/mês</span>
+                  no seu <span className={accent}>bolso</span>
                 </p>
               </div>
             </div>
