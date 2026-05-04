@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { PaidGroupsQRConnect } from './PaidGroupsQRConnect';
 
 const SUPPORTED_GATEWAYS = [
-  'Stripe', 'Kiwify', 'Hotmart', 'Eduzz', 'Monetizze', 'PerfectPay',
+  'Kiwify', 'Hotmart', 'Eduzz', 'Monetizze', 'PerfectPay',
   'Braip', 'Guru', 'Lastlink', 'Pepper', 'Yampi', 'Ticto', 'Kirvano',
   'Payt', 'Greenn', 'CartPanda', 'HeroSpark', 'AppMax', 'Doppus', 'Webhook Genérico',
 ];
