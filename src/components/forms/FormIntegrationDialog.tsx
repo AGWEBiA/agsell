@@ -109,13 +109,14 @@ export function FormIntegrationDialog({ open, onOpenChange, formId, formName }: 
   height="600" 
   frameborder="0" 
   allowtransparency="true"
-  style="border: none; border-radius: ${styles.borderRadius}px; max-width: 600px; background: transparent;"
+  style="border: none; border-radius: ${styles.borderRadius}px; max-width: 600px; background: transparent; transition: height 0.3s ease;"
   title="${formName}">
 </iframe>
 <script>
 window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'agsell-form-height' && e.data.formId === '${formId}') {
-    document.getElementById('agsell-form-frame-${formId}').style.height = e.data.height + 'px';
+    var frame = document.getElementById('agsell-form-frame-${formId}');
+    if (frame) frame.style.height = e.data.height + 'px';
   }
 });
 </script>`;
@@ -127,11 +128,10 @@ window.addEventListener('message', function(e) {
   if (!container) return;
   var iframe = document.createElement('iframe');
   iframe.src = '${styledFormUrl()}';
-  iframe.style.cssText = 'width:100%;border:none;border-radius:${styles.borderRadius}px;max-width:600px;min-height:400px;background:transparent;';
+  iframe.style.cssText = 'width:100%;border:none;border-radius:${styles.borderRadius}px;max-width:600px;min-height:400px;background:transparent;transition:height 0.3s ease;';
   iframe.setAttribute('allowtransparency', 'true');
   iframe.title = '${formName}';
   container.appendChild(iframe);
-  // Auto-resize
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'agsell-form-height' && e.data.formId === '${formId}') {
       iframe.style.height = e.data.height + 'px';
