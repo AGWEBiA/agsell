@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
           if (existingMsg) {
             const currentStatus = (existingMsg as any).delivery_status || 'pending';
             const statusPriority: Record<string, number> = {
-              'failed': 0, 'pending': 1, 'sent': 2, 'delivered': 3, 'read': 4, 'played': 4
+              'failed': -1, 'pending': 0, 'sent': 1, 'delivered': 2, 'read': 3, 'played': 3
             };
             
             // Only update if the new status is an upgrade or a failure
