@@ -16,7 +16,7 @@ interface PackageRow {
   price_cents: number;
   kiwify_checkout_url: string | null;
   kiwify_product_id: string | null;
-  stripe_price_id: string | null;
+  
   sort_order: number;
   is_active: boolean;
 }
