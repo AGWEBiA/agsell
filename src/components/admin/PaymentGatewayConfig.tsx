@@ -363,7 +363,7 @@ export function PaymentGatewayConfig() {
                     </div>
                     <div>
                       <p className="font-semibold">Stripe</p>
-                      <p className="text-xs text-muted-foreground">Cartão internacional, Apple Pay, Google Pay</p>
+                      <p className="text-xs text-muted-foreground">Crédito internacional, Apple Pay, Google Pay</p>
                     </div>
                   </div>
                   <Switch
