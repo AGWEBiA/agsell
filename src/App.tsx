@@ -54,6 +54,7 @@ const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Contacts = React.lazy(() => import("./pages/Contacts"));
 const Companies = React.lazy(() => import("./pages/Companies"));
 const Pipeline = React.lazy(() => import("./pages/Pipeline"));
+const Deals = React.lazy(() => import("./pages/Deals"));
 const Tags = React.lazy(() => import("./pages/Tags"));
 const Tasks = React.lazy(() => import("./pages/Tasks"));
 const Inbox = React.lazy(() => import("./pages/Inbox"));
@@ -183,6 +184,7 @@ const App = () => (
                     <Route path="contacts" element={<Contacts />} />
                     <Route path="companies" element={<Companies />} />
                     <Route path="pipeline" element={<Pipeline />} />
+                    <Route path="deals" element={<Deals />} />
                     <Route path="tags" element={<Tags />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="inbox" element={<Inbox />} />
