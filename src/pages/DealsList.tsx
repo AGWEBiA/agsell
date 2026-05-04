@@ -72,37 +72,13 @@ export default function Deals() {
     return stages.find(s => s.id === stageId)?.color || '#3b82f6';
   };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/dashboard" className="flex items-center gap-1">
-                <Home className="h-3.5 w-3.5" />
-                Dashboard
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Deals & Oportunidades</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Deals & Oportunidades</h1>
-          <p className="text-muted-foreground">Gerencie todos os seus negócios em uma visão de lista</p>
+          <h2 className="text-xl font-bold tracking-tight">Lista de Deals</h2>
+          <p className="text-muted-foreground text-sm">Gerencie seus negócios em formato de tabela</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <Link to="/pipeline">
-              Visão Kanban
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Novo Deal
