@@ -204,10 +204,12 @@ export function useUpdateDeal() {
         const { data: current } = await supabase.from('deals').select('value, commission_rate, status').eq('id', id).single();
         
         const value = data.value !== undefined ? Number(data.value) : (Number(current?.value) || 0);
-        const rate = data.commission_rate !== undefined ? Number(data.commission_rate) : (Number(current?.commission_rate) || 0);
+        const defaultRate = (currentOrganization as any)?.sales_commission_rule?.default_rate || 0;
+        const rate = data.commission_rate !== undefined ? Number(data.commission_rate) : (Number(current?.commission_rate) || defaultRate);
         
         if (value > 0) {
           finalData.commission_value = value * (rate / 100);
+          finalData.commission_rate = rate;
         }
       }
 
