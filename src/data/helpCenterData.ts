@@ -3398,7 +3398,7 @@ Recursos que não fazem parte do seu plano são protegidos por **Feature Gate**:
 - 📊 **Comece pelo plano que atende hoje** — Upgrade é fácil e imediato
 - 📅 **Planos anuais** têm desconto significativo
 - 🔔 **Monitore o uso** — Próximo de atingir limites? Considere upgrade
-- 💳 **Mantenha cartão atualizado** — Evite interrupção por falha de pagamento
+- 💳 **Mantenha os dados de pagamento atualizados** — Evite interrupção por falha de pagamento
 
 💡 **Dica**: Comece com o plano que atende suas necessidades atuais. Você pode fazer upgrade a qualquer momento sem perder dados ou configurações.`,
   },
