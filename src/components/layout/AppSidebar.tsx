@@ -231,9 +231,9 @@ function SectionHeader({
 }
 
 function MenuItemLink({
-  item, isActive, collapsed, onNavigate, isLocked,
+  item, isActive, collapsed, onNavigate, isLocked, isSecondary,
 }: {
-  item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate?: () => void; isLocked?: boolean;
+  item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate?: () => void; isLocked?: boolean; isSecondary?: boolean;
 }) {
   const Icon = item.icon;
 
@@ -247,27 +247,29 @@ function MenuItemLink({
         isLocked
           ? 'text-sidebar-foreground/35 hover:text-sidebar-foreground/55 hover:bg-sidebar-accent/40'
           : isActive
-            ? 'bg-gradient-to-r from-primary/15 via-primary/5 to-transparent text-foreground font-semibold'
-            : 'text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            ? 'bg-[#c0392b] text-white font-semibold shadow-md'
+            : isSecondary
+              ? 'text-sidebar-foreground/45 hover:text-sidebar-foreground/75 hover:bg-sidebar-accent/30 text-[11px]'
+              : 'text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
       )}
       aria-current={isActive ? 'page' : undefined}
     >
-      {/* Indicador vermelho à esquerda (estilo vídeo) */}
-      {isActive && !collapsed && (
+      {/* Indicador vermelho à esquerda (estilo vídeo) - Removed for explicit active background */}
+      {isActive && !collapsed && !isSecondary && (
         <span
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-white/40"
           aria-hidden="true"
         />
       )}
       <Icon
         className={cn(
           'h-[18px] w-[18px] shrink-0 transition-colors',
-          isActive ? 'text-primary' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground/90'
+          isActive ? 'text-white' : isSecondary ? 'h-4 w-4 text-sidebar-foreground/40 group-hover:text-sidebar-foreground/60' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground/90'
         )}
       />
       {!collapsed && (
         <>
-          <span className="flex-1 truncate">{item.label}</span>
+          <span className={cn("flex-1 truncate", isSecondary && "text-[12px]")}>{item.label}</span>
           {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 opacity-50" />}
         </>
       )}
