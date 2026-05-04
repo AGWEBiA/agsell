@@ -1,7 +1,8 @@
 // Webhook Handler for Kiwify Events — Subscription Lifecycle
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { crypto } from "https://deno.land/std@0.203.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.203.0/encoding/hex.ts";
+import { logToSystem, updateWebhookEvent } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
