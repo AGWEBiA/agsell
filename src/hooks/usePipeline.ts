@@ -193,12 +193,17 @@ export function useUpdateDeal() {
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Deal> & { id: string }) => {
       let finalData = { ...data };
-      if (data.value !== undefined || data.commission_rate !== undefined) {
-        // We need to fetch current values to recalculate commission if only one is updated
-        const { data: current } = await supabase.from('deals').select('value, commission_rate').eq('id', id).single();
-        const value = data.value !== undefined ? data.value : (current?.value || 0);
-        const rate = data.commission_rate !== undefined ? data.commission_rate : (current?.commission_rate || 0);
-        finalData.commission_value = Number(value) * (Number(rate) / 100);
+      
+      // Auto-compute commission if status changes to won or value/rate updates
+      if (data.status === 'won' || data.value !== undefined || data.commission_rate !== undefined) {
+        const { data: current } = await supabase.from('deals').select('value, commission_rate, status').eq('id', id).single();
+        
+        const value = data.value !== undefined ? Number(data.value) : (Number(current?.value) || 0);
+        const rate = data.commission_rate !== undefined ? Number(data.commission_rate) : (Number(current?.commission_rate) || 0);
+        
+        if (value > 0) {
+          finalData.commission_value = value * (rate / 100);
+        }
       }
 
       const { data: result, error } = await supabase

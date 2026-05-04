@@ -33,14 +33,19 @@ const getInitials = (name: string) =>
 
 const SOURCE_COLORS = ['hsl(var(--primary))', '#3b82f6', '#8b5cf6', '#f59e0b', '#22c55e', '#ec4899', '#06b6d4'];
 
+import { useSalesRepDetail } from '@/hooks/useSalesRepDetail';
+
 export default function CRMAdmin() {
   const { currentOrganization, currentRole } = useOrganization();
 
   // Permission gate: only owner/admin of the org (or global admin) can see this
   const isOrgAdmin = currentRole === 'owner' || currentRole === 'admin';
 
+  const [period, setPeriod] = React.useState<'day' | 'week' | 'month' | 'all'>('all');
   const overview = useCRMOverview();
-  const reps = useSalesRepPerformance();
+  const reps = useSalesRepPerformance(period);
+  const [selectedRepId, setSelectedRepId] = React.useState<string | null>(null);
+
   const byStage = useDealsByStageAdmin();
   const bySource = useDealsBySource();
   const trend = useMonthlyTrend();

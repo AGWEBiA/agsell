@@ -148,11 +148,43 @@ export function useCRMOverview() {
   });
 }
 
-export function useSalesRepPerformance() {
+export function useSalesRepPerformance(period: 'day' | 'week' | 'month' | 'all' = 'all') {
   const { currentOrganization } = useOrganization();
 
   return useQuery({
-    queryKey: ['crm-admin-reps', currentOrganization?.id],
+    queryKey: ['crm-admin-reps', currentOrganization?.id, period],
+    queryFn: async (): Promise<SalesRepPerformance[]> => {
+      if (!currentOrganization?.id) return [];
+      const orgId = currentOrganization.id;
+
+      const { data: members } = await supabase
+        .from('organization_members')
+        .select('user_id, role')
+        .eq('organization_id', orgId);
+      if (!members?.length) return [];
+
+      const userIds = members.map(m => m.user_id);
+      
+      let dealsQuery = supabase.from('deals').select('user_id, value, status, commission_value, updated_at').eq('organization_id', orgId);
+      
+      const now = new Date();
+      if (period === 'day') {
+        dealsQuery = dealsQuery.gte('updated_at', startOfDay(now).toISOString()).lte('updated_at', endOfDay(now).toISOString());
+      } else if (period === 'week') {
+        dealsQuery = dealsQuery.gte('updated_at', startOfWeek(now).toISOString()).lte('updated_at', endOfWeek(now).toISOString());
+      } else if (period === 'month') {
+        dealsQuery = dealsQuery.gte('updated_at', startOfMonth(now).toISOString()).lte('updated_at', endOfMonth(now).toISOString());
+      }
+
+      const [{ data: profiles }, { data: deals }, { data: contacts }, { data: tasks }, { data: activities }, { data: messages }] = await Promise.all([
+        supabase.from('profiles').select('user_id, full_name, avatar_url').in('user_id', userIds),
+        dealsQuery,
+        supabase.from('contacts').select('user_id').eq('organization_id', orgId),
+        supabase.from('tasks').select('user_id, status').eq('organization_id', orgId).eq('status', 'completed'),
+        supabase.from('activities').select('user_id, type').eq('organization_id', orgId).in('type', ['meeting', 'call']),
+        supabase.from('messages').select('user_id').eq('organization_id', orgId),
+      ]);
+
     queryFn: async (): Promise<SalesRepPerformance[]> => {
       if (!currentOrganization?.id) return [];
       const orgId = currentOrganization.id;
