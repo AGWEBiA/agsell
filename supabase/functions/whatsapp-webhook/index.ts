@@ -1531,17 +1531,43 @@ async function routeToInbox(
       conversationId = newConv.id;
     }
 
-    // Insert the message only if it doesn't exist by external_id
+    // Insert the message only if it doesn't exist by external_id or very recent similar content
     if (params.externalMessageId) {
       const { data: existingMsg } = await supabase
         .from("messages")
-        .select("id")
+        .select("id, delivery_status")
         .eq("external_id", params.externalMessageId)
         .maybeSingle();
       
       if (existingMsg) {
         console.log(`Message with external_id ${params.externalMessageId} already exists, skipping insert.`);
         return;
+      }
+
+      // If it's from me, try to find a message without external_id but same content/conversation
+      // that was created in the last 10 seconds (frontend race condition)
+      if (params.isFromMe) {
+        const { data: recentMsg } = await supabase
+          .from("messages")
+          .select("id")
+          .eq("conversation_id", conversationId)
+          .eq("content", messageText)
+          .is("external_id", null)
+          .gt("created_at", new Date(Date.now() - 10000).toISOString())
+          .maybeSingle();
+        
+        if (recentMsg) {
+          console.log(`Matched recent local message ${recentMsg.id} for external_id ${params.externalMessageId}, updating instead of inserting.`);
+          await supabase
+            .from("messages")
+            .update({ 
+              external_id: params.externalMessageId,
+              delivery_status: "sent",
+              instance_name: sourceInstanceName || null
+            })
+            .eq("id", recentMsg.id);
+          return;
+        }
       }
     }
 
