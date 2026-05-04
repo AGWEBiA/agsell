@@ -99,7 +99,7 @@ export function VoipPackagesAdmin() {
               <TableHead>Preço</TableHead>
               <TableHead>Kiwify Checkout URL</TableHead>
               <TableHead>Kiwify Product ID</TableHead>
-              <TableHead>Stripe Price ID</TableHead>
+              
               <TableHead className="w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
