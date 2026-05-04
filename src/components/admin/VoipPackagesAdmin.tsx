@@ -65,7 +65,7 @@ export function VoipPackagesAdmin() {
     setEditValues({
       kiwify_checkout_url: pkg.kiwify_checkout_url || '',
       kiwify_product_id: pkg.kiwify_product_id || '',
-      stripe_price_id: pkg.stripe_price_id || '',
+      
     });
   };
 
