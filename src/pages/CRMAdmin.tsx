@@ -917,7 +917,13 @@ function CRMSettingsDialog() {
   };
 
   const updateSettings = useMutation({
-    mutationFn: async (data: { target: number; commissionRate: number; repGoals: { [key: string]: number }; products: typeof products }) => {
+    mutationFn: async (data: { 
+      target: number; 
+      commissionRate: number; 
+      repGoals: { [key: string]: number }; 
+      repCommissions: { [key: string]: number };
+      products: typeof products 
+    }) => {
       // 1. Update Organization
       const { error: orgError } = await supabase
         .from('organizations')
@@ -928,14 +934,22 @@ function CRMSettingsDialog() {
         .eq('id', currentOrganization?.id);
       if (orgError) throw orgError;
 
-      // 2. Update individual goals
+      // 2. Update individual goals and seller commission rates
       const start = startOfMonth(new Date());
       const end = endOfMonth(new Date());
 
       for (const userId in data.repGoals) {
         const goalAmount = data.repGoals[userId];
+        const sellerComm = data.repCommissions[userId] || 0;
         const existing = members?.find(m => m.user_id === userId);
         
+        // Update member commission rate
+        await supabase
+          .from('organization_members')
+          .update({ commission_rate: sellerComm })
+          .eq('organization_id', currentOrganization?.id || '')
+          .eq('user_id', userId);
+
         if (existing?.goal_id) {
           await supabase
             .from('revenue_goals')
