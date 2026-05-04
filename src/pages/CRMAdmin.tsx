@@ -768,5 +768,191 @@ function ScheduledExportDialog() {
     </Dialog>
   );
 }
+function CRMSettingsDialog() {
+  const { currentOrganization } = useOrganization();
+  const queryClient = useQueryClient();
+  const [target, setTarget] = useState(Number(currentOrganization?.monthly_sales_target) || 0);
+  const [commissionRate, setCommissionRate] = useState((currentOrganization as any)?.sales_commission_rule?.default_rate || 0);
+  
+  const { data: members } = useQuery({
+    queryKey: ['org-members-goals', currentOrganization?.id],
+    queryFn: async () => {
+      const { data: membersData } = await supabase
+        .from('organization_members')
+        .select('user_id, profiles(full_name)')
+        .eq('organization_id', currentOrganization?.id || '');
+      
+      const { data: goals } = await supabase
+        .from('revenue_goals')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id || '');
+        
+      return (membersData || []).map((m: any) => ({
+        user_id: m.user_id,
+        name: m.profiles?.full_name || 'Sem nome',
+        target: goals?.find(g => g.user_id === m.user_id)?.target_amount || 0,
+        goal_id: goals?.find(g => g.user_id === m.user_id)?.id,
+      }));
+    },
+    enabled: !!currentOrganization?.id,
+  });
 
+  const [repGoals, setRepGoals] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    if (members) {
+      const goals: { [key: string]: number } = {};
+      members.forEach(m => {
+        goals[m.user_id] = m.target;
+      });
+      setRepGoals(goals);
+    }
+  }, [members]);
+
+  const updateSettings = useMutation({
+    mutationFn: async (data: { target: number; commissionRate: number; repGoals: { [key: string]: number } }) => {
+      // 1. Update Organization
+      const { error: orgError } = await supabase
+        .from('organizations')
+        .update({ 
+          monthly_sales_target: data.target,
+          sales_commission_rule: { default_rate: data.commissionRate }
+        })
+        .eq('id', currentOrganization?.id);
+      if (orgError) throw orgError;
+
+      // 2. Update individual goals
+      const start = startOfMonth(new Date());
+      const end = endOfMonth(new Date());
+
+      for (const userId in data.repGoals) {
+        const goalAmount = data.repGoals[userId];
+        const existing = members?.find(m => m.user_id === userId);
+        
+        if (existing?.goal_id) {
+          await supabase
+            .from('revenue_goals')
+            .update({ target_amount: goalAmount })
+            .eq('id', existing.goal_id);
+        } else {
+          await supabase
+            .from('revenue_goals')
+            .insert({
+              organization_id: currentOrganization?.id,
+              user_id: userId,
+              target_amount: goalAmount,
+              period_start: start.toISOString().split('T')[0],
+              period_end: end.toISOString().split('T')[0],
+              currency: 'BRL'
+            });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['org-members-goals'] });
+      toast.success('Configurações salvas!');
+    },
+    onError: (err: any) => {
+      toast.error('Erro ao salvar: ' + err.message);
+    }
+  });
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Settings className="h-4 w-4 mr-2" /> Configurações CRM
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" /> Configurações do CRM
+          </DialogTitle>
+          <DialogDescription>
+            Defina metas globais, taxas de comissão e metas individuais por vendedor.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Meta Mensal da Empresa (R$)</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  type="number" 
+                  className="pl-9"
+                  value={target} 
+                  onChange={e => setTarget(Number(e.target.value))} 
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">Valor total de vendas esperado para o mês corrente.</p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Comissão Padrão (%)</Label>
+              <div className="relative">
+                <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  type="number" 
+                  className="pl-9"
+                  value={commissionRate} 
+                  onChange={e => setCommissionRate(Number(e.target.value))} 
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">Taxa aplicada automaticamente em novos deals (calculada sobre o valor total).</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h4 className="text-sm font-semibold">Metas Individuais (Mensal)</h4>
+              <Badge variant="outline" className="text-[10px]">{members?.length || 0} vendedores</Badge>
+            </div>
+            
+            <div className="space-y-3">
+              {members?.map(m => (
+                <div key={m.user_id} className="flex items-center justify-between gap-4 bg-muted/30 p-3 rounded-lg border border-border/50">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{m.name}</p>
+                    <p className="text-[10px] text-muted-foreground">ID: ...{m.user_id.slice(-8)}</p>
+                  </div>
+                  <div className="w-40 relative">
+                    <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    <Input
+                      type="number"
+                      className="h-8 pl-6 text-xs"
+                      value={repGoals[m.user_id] || 0}
+                      onChange={e => setRepGoals({ ...repGoals, [m.user_id]: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 p-3 rounded-md flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+            <p className="text-[11px] text-blue-800 dark:text-blue-300">
+              As comissões são calculadas automaticamente quando o status de um deal é alterado para "Ganho". 
+              Valores já computados não serão alterados retroativamente ao mudar a taxa padrão.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="flex gap-2">
+          <Button variant="outline" className="flex-1">Cancelar</Button>
+          <Button 
+            className="flex-1" 
+            onClick={() => updateSettings.mutate({ target, commissionRate, repGoals })}
+            disabled={updateSettings.isPending}
+          >
+            {updateSettings.isPending ? 'Salvando...' : 'Salvar Alterações'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
