@@ -22,6 +22,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { WhatsNewSection } from '@/components/vendas/WhatsNewSection';
+import { useActivePlans, Plan } from '@/hooks/useActivePlans';
+
 
 // ─── SECTION 1: Navbar ──────────────────────────────────────
 function Navbar() {
