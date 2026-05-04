@@ -21,6 +21,8 @@ export interface Plan {
   is_active: boolean;
 }
 
+export const ALLOWED_PLAN_NAMES = ['Starter', 'Professional', 'Enterprise', 'Agência'];
+
 export function useActivePlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,9 +40,11 @@ export function useActivePlans() {
           console.error('Error fetching plans:', error);
           toast.error('Erro ao carregar planos');
         } else if (data) {
-          // Double filter to ensure only active plans are shown even if RLS/View allows others
+          // Strict filtering: only allow plans explicitly in the whitelist
+          // and ensure is_active is true. This prevents unwanted plans like "Vip Professional"
+          // from appearing even if they are marked as active in the DB.
           const activePlans = (data as any[])
-            .filter((p) => p.is_active === true)
+            .filter((p) => p.is_active === true && ALLOWED_PLAN_NAMES.includes(p.name))
             .map((p) => ({
               ...p,
               features: Array.isArray(p.features) ? p.features : [],
