@@ -41,6 +41,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDeals, usePipelineStages, type Deal } from '@/hooks/usePipeline';
 import { SacLeadsPanel } from '@/components/pipeline/SacLeadsPanel';
+import { DealDetailDialog } from '@/components/crm/DealDetailDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -54,6 +55,7 @@ const formatCurrency = (value: number | null) => {
 
 export default function Deals() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const { data: deals = [], isLoading: dealsLoading } = useDeals();
   const { data: stages = [] } = usePipelineStages();
 
@@ -154,7 +156,11 @@ export default function Deals() {
                 </TableHeader>
                 <TableBody>
                   {filteredDeals.map((deal) => (
-                    <TableRow key={deal.id}>
+                    <TableRow 
+                      key={deal.id} 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setSelectedDealId(deal.id)}
+                    >
                       <TableCell className="font-medium">{deal.title}</TableCell>
                       <TableCell>
                         {deal.contact ? (
@@ -194,8 +200,18 @@ export default function Deals() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDealId(deal.id);
+                            }}>
+                              Ver Detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={(e) => e.stopPropagation()}>
+                              Excluir
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
