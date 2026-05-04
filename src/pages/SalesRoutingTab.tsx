@@ -85,8 +85,8 @@ export default function SalesRouting() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Sales Routing</h1>
-          <p className="text-muted-foreground">Distribua leads e negócios automaticamente para sua equipe de vendas</p>
+          <h2 className="text-xl font-bold text-foreground">Roteamento de Vendas</h2>
+          <p className="text-sm text-muted-foreground">Distribua leads e negócios automaticamente para sua equipe</p>
         </div>
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogTrigger asChild>
