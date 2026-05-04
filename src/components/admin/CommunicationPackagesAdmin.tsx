@@ -140,18 +140,6 @@ export function CommunicationPackagesAdmin() {
                 </TableCell>
                 <TableCell>
                   {editingId === pkg.id ? (
-                    <Input
-                      value={editValues.stripe_price_id || ''}
-                      onChange={(e) => setEditValues({ ...editValues, stripe_price_id: e.target.value })}
-                      placeholder="price_xxx"
-                      className="w-32"
-                    />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{pkg.stripe_price_id || '-'}</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editingId === pkg.id ? (
                     <Button size="sm" onClick={() => saveEdit(pkg.id)} disabled={updateMutation.isPending}>
                       {updateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
                     </Button>
