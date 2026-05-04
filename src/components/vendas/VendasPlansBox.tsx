@@ -1,21 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Check, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useActivePlans, Plan as VendasPlan } from '@/hooks/useActivePlans';
 import { cn } from '@/lib/utils';
-
-interface VendasPlan {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  price_monthly: number;
-  price_yearly: number;
-  features: string[];
-  max_users: number;
-  max_contacts: number;
-}
 
 const FEATURE_LABEL: Record<string, string> = {
   crm_basico: 'CRM completo',
@@ -42,31 +30,9 @@ interface Props {
 }
 
 export function VendasPlansBox({ variant = 'full', className }: Props) {
-  const [plans, setPlans] = useState<VendasPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { plans, isLoading } = useActivePlans();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from('plans_public' as any)
-        .select('*')
-        .eq('is_active', true)
-        .order('price_monthly', { ascending: true });
-
-      if (data) {
-        setPlans(
-          (data as any[])
-            .filter((p) => p.is_active === true)
-            .map((p) => ({
-              ...p,
-              features: Array.isArray(p.features) ? (p.features as string[]) : [],
-            })),
-        );
-      }
-      setLoading(false);
-    })();
-  }, []);
 
   if (loading) {
     return (
