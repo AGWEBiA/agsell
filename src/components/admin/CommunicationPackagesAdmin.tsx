@@ -84,7 +84,7 @@ export function CommunicationPackagesAdmin() {
           Pacotes de Créditos de Comunicação
         </CardTitle>
         <CardDescription>
-          Configure URLs de checkout Kiwify e Stripe Price IDs para cada pacote unificado (SMS + VoIP)
+          Configure URLs de checkout Kiwify para cada pacote unificado (SMS + VoIP)
         </CardDescription>
       </CardHeader>
       <CardContent>
