@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -20,7 +20,8 @@ import {
 import {
   DollarSign, Trophy, TrendingUp, Clock, Target, Users, Briefcase,
   ShieldAlert, ArrowUpRight, BarChart3, PieChart as PieIcon,
-  Download, FileText, AlertCircle, History,
+  Download, FileText, AlertCircle, History, Calendar, Mail as MailIcon,
+  CheckCircle2,
 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import {
@@ -32,10 +33,14 @@ import {
   PieChart, Pie, Cell, LineChart, Line,
 } from '@/lib/recharts';
 import { useSalesRepDetail } from '@/hooks/useSalesRepDetail';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0);
@@ -103,6 +108,7 @@ export default function CRMAdmin() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <ScheduledExportDialog />
           <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Período" />
@@ -114,6 +120,7 @@ export default function CRMAdmin() {
               <SelectItem value="all">Todo período</SelectItem>
             </SelectContent>
           </Select>
+
           <Button asChild variant="outline" size="sm">
             <Link to="/pipeline">Ver Pipeline</Link>
           </Button>
@@ -589,6 +596,147 @@ function SalesRepDetailDialog({ userId, onClose, period }: { userId: string | nu
                           onClick={() => setSelectedDealId(sale.id)}
                         >
                           <TableCell className="text-xs font-medium">{sale.title}</TableCell>
+
+function ScheduledExportDialog() {
+  const { currentOrganization } = useOrganization();
+  const queryClient = useQueryClient();
+  const config = (currentOrganization as any)?.scheduled_export_config || {
+    enabled: false,
+    frequency: 'weekly',
+    format: 'pdf',
+    emails: [],
+  };
+
+  const [formData, setFormData] = useState(config);
+  const [emailInput, setEmailInput] = useState('');
+
+  const updateConfig = useMutation({
+    mutationFn: async (newConfig: any) => {
+      const { error } = await supabase
+        .from('organizations')
+        .update({ scheduled_export_config: newConfig })
+        .eq('id', currentOrganization?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      toast.success('Configuração de exportação atualizada!');
+    },
+  });
+
+  const handleAddEmail = () => {
+    if (emailInput && !formData.emails.includes(emailInput)) {
+      setFormData({ ...formData, emails: [...formData.emails, emailInput] });
+      setEmailInput('');
+    }
+  };
+
+  const handleRemoveEmail = (email: string) => {
+    setFormData({ ...formData, emails: formData.emails.filter((e: string) => e !== email) });
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Calendar className="h-4 w-4 mr-2" /> Exportação Agendada
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Agendar Relatórios Automáticos</DialogTitle>
+          <DialogDescription>
+            Receba relatórios de performance diretamente no e-mail dos administradores.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="export-enabled">Ativar Relatórios Automáticos</Label>
+            <Switch
+              id="export-enabled"
+              checked={formData.enabled}
+              onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Frequência</Label>
+            <Select
+              value={formData.frequency}
+              onValueChange={(val) => setFormData({ ...formData, frequency: val })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Diário</SelectItem>
+                <SelectItem value="weekly">Semanal</SelectItem>
+                <SelectItem value="monthly">Mensal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Formato</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="format"
+                  checked={formData.format === 'pdf'}
+                  onChange={() => setFormData({ ...formData, format: 'pdf' })}
+                />
+                <span className="text-sm">PDF</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="format"
+                  checked={formData.format === 'csv'}
+                  onChange={() => setFormData({ ...formData, format: 'csv' })}
+                />
+                <span className="text-sm">CSV</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>E-mails dos Destinatários</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="exemplo@email.com"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+              />
+              <Button type="button" onClick={handleAddEmail} size="sm">Adicionar</Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {formData.emails.map((email: string) => (
+                <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                  {email}
+                  <button onClick={() => handleRemoveEmail(email)} className="ml-1 hover:text-destructive">
+                    ×
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            className="w-full"
+            onClick={() => updateConfig.mutate(formData)}
+            disabled={updateConfig.isPending}
+          >
+            {updateConfig.isPending ? 'Salvando...' : 'Salvar Configuração'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
                           <TableCell className="text-right text-xs">{formatBRL(sale.value)}</TableCell>
                           <TableCell className="text-right text-xs text-orange-600">{formatBRL(sale.commission_value)}</TableCell>
