@@ -31,8 +31,9 @@ export function FormStyleEditor({ settings, onChange }: Props) {
       showBorder: false,
       shadow: 'none',
       padding: '0',
-      customCss: `.agsell-form { color: inherit; font-family: inherit; background: transparent !important; }
-.agsell-label { color: inherit; opacity: 0.85; }`,
+      customCss: `.agsell-form { color: inherit; font-family: inherit; background: transparent !important; border: none !important; box-shadow: none !important; }
+.agsell-label { color: inherit; opacity: 0.85; }
+.agsell-input { background: rgba(0,0,0,0.03) !important; border-color: rgba(0,0,0,0.1) !important; color: inherit !important; }`,
     });
   };
 
