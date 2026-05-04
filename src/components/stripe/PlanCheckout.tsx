@@ -81,22 +81,11 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
   const showProviderSelection = showStripe && showKiwify;
 
   // Determine initial provider based on platform config
-  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>(defaultGateway);
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>('kiwify');
   // Update when settings load
   React.useEffect(() => {
-    if (gatewaySettings) {
-      // If only one gateway is active, force it
-      if (showKiwify && !showStripe) {
-        setPaymentProvider('kiwify');
-      } else if (showStripe && !showKiwify) {
-        setPaymentProvider('stripe');
-      } else if (gatewaySettings.default_gateway === 'kiwify' && showKiwify) {
-        setPaymentProvider('kiwify');
-      } else if (gatewaySettings.default_gateway === 'stripe' && showStripe) {
-        setPaymentProvider('stripe');
-      }
-    }
-  }, [gatewaySettings, showKiwify, showStripe]);
+    setPaymentProvider('kiwify');
+  }, [gatewaySettings]);
 
   const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
   const monthlyEquivalent = billingCycle === 'yearly' ? plan.price_yearly / 12 : plan.price_monthly;
