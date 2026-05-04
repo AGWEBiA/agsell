@@ -1419,9 +1419,6 @@ async function routeToInbox(
   params: RouteToInboxParams
 ): Promise<{ contactId: string | null; conversationId: string | null }> {
 
-  supabase: ReturnType<typeof createClient>,
-  params: RouteToInboxParams
-) {
   try {
     const { organizationId, userId, channel, senderIdentifier, messageText, sourceInstanceId, sourceInstanceName, contactName } = params;
 
