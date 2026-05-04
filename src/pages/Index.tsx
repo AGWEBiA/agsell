@@ -722,19 +722,21 @@ function PlansSection() {
         .order('price_monthly', { ascending: true });
         
       if (!error && data) {
-        setPlans(data.map(p => ({ 
-          ...p, 
-          features: Array.isArray(p.features) ? p.features as string[] : [], 
-          price_monthly: p.price_monthly || 0, 
-          price_yearly: p.price_yearly || 0, 
-          max_users: p.max_users || 1, 
-          max_contacts: p.max_contacts || 100, 
-          max_ai_requests_per_month: p.max_ai_requests_per_month || 0, 
-          max_emails_per_month: p.max_emails_per_month || 0, 
-          max_whatsapp_messages: p.max_whatsapp_messages || 0, 
-          max_automations: p.max_automations || 0, 
-          max_forms: p.max_forms || 0 
-        })));
+        setPlans(data
+          .filter((p: any) => p.is_active === true)
+          .map(p => ({ 
+            ...p, 
+            features: Array.isArray(p.features) ? p.features as string[] : [], 
+            price_monthly: p.price_monthly || 0, 
+            price_yearly: p.price_yearly || 0, 
+            max_users: p.max_users || 1, 
+            max_contacts: p.max_contacts || 100, 
+            max_ai_requests_per_month: p.max_ai_requests_per_month || 0, 
+            max_emails_per_month: p.max_emails_per_month || 0, 
+            max_whatsapp_messages: p.max_whatsapp_messages || 0, 
+            max_automations: p.max_automations || 0, 
+            max_forms: p.max_forms || 0 
+          })));
       }
       setIsLoading(false);
     };
