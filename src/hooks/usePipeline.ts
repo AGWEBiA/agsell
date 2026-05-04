@@ -26,6 +26,11 @@ export interface Deal {
   expected_close_date: string | null;
   status: string | null;
   notes: string | null;
+  commission_rate: number | null;
+  commission_value: number | null;
+  payment_link: string | null;
+  payment_status: string | null;
+  external_sale_id: string | null;
   created_at: string;
   updated_at: string;
   contact?: { id: string; first_name: string; last_name: string | null; source: string | null } | null;
@@ -47,6 +52,8 @@ export interface CreateDealData {
   expected_close_date?: string;
   probability?: number;
   notes?: string;
+  commission_rate?: number;
+  payment_link?: string;
 }
 
 export function usePipelineStages() {
@@ -136,10 +143,12 @@ export function useCreateDeal() {
 
   return useMutation({
     mutationFn: async (data: CreateDealData) => {
+      const commission_value = (data.value || 0) * ((data.commission_rate || 0) / 100);
       const { data: result, error } = await supabase
         .from('deals')
         .insert({
           ...data,
+          commission_value,
           user_id: user!.id,
           organization_id: currentOrganization?.id || null,
         })
@@ -183,9 +192,18 @@ export function useUpdateDeal() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Deal> & { id: string }) => {
+      let finalData = { ...data };
+      if (data.value !== undefined || data.commission_rate !== undefined) {
+        // We need to fetch current values to recalculate commission if only one is updated
+        const { data: current } = await supabase.from('deals').select('value, commission_rate').eq('id', id).single();
+        const value = data.value !== undefined ? data.value : (current?.value || 0);
+        const rate = data.commission_rate !== undefined ? data.commission_rate : (current?.commission_rate || 0);
+        finalData.commission_value = Number(value) * (Number(rate) / 100);
+      }
+
       const { data: result, error } = await supabase
         .from('deals')
-        .update(data)
+        .update(finalData)
         .eq('id', id)
         .select()
         .single();
