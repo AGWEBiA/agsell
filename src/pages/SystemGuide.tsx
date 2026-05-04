@@ -273,7 +273,7 @@ const guideSections: GuideSection[] = [
     icon: LinkIcon,
     description: 'Conecte o AG Sell a outras ferramentas e plataformas.',
     features: [
-      { title: 'Provedores de pagamento', description: 'Integre com Stripe, Hotmart, Eduzz e Kiwify via webhooks.' },
+      { title: 'Provedores de pagamento', description: 'Integre com Hotmart, Eduzz e Kiwify via webhooks.' },
       { title: 'WhatsApp providers', description: 'Configure provedores de WhatsApp (Evolution API, Z-API, etc.).' },
       { title: 'Webhooks de entrada', description: 'Receba dados de sistemas externos via webhooks configuráveis.' },
     ],
@@ -293,10 +293,10 @@ const guideSections: GuideSection[] = [
     id: 'plans',
     title: 'Planos e Assinatura',
     icon: Target,
-    description: 'Gestão de planos, assinaturas e checkout com Stripe.',
+    description: 'Gestão de planos, assinaturas e checkout com Kiwify.',
     features: [
       { title: 'Planos disponíveis', description: 'Visualize e compare os planos disponíveis com seus recursos.' },
-      { title: 'Checkout integrado', description: 'Assine ou faça upgrade diretamente pela plataforma com pagamento via Stripe.' },
+      { title: 'Checkout integrado', description: 'Assine ou faça upgrade diretamente pela plataforma com pagamento via Kiwify.' },
       { title: 'Gestão de assinatura', description: 'Acompanhe status, renovação e histórico da sua assinatura.' },
     ],
   },
@@ -433,7 +433,7 @@ const guideSections: GuideSection[] = [
     features: [
       { title: 'Adição automática', description: 'Comprou? Membro é adicionado ao grupo de WhatsApp automaticamente.' },
       { title: 'Remoção automática', description: 'Cancelou, reembolsou ou expirou? Membro é removido automaticamente.' },
-      { title: '20+ Gateways', description: 'Stripe, Kiwify, Hotmart, Eduzz, Monetizze, PerfectPay, Braip, Guru e mais 12.' },
+      { title: '20+ Gateways', description: 'Kiwify, Hotmart, Eduzz, Monetizze, PerfectPay, Braip, Guru e mais 12.' },
       { title: 'Produtos e vínculos', description: 'Crie produtos internos e vincule a múltiplos grupos simultaneamente.' },
       { title: 'Dashboard de membros', description: 'Acompanhe entradas, saídas e status de cada membro.' },
     ],

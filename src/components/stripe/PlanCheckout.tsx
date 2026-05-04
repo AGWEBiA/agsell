@@ -66,7 +66,7 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
         .select('value')
         .eq('key', 'payment_gateway')
         .maybeSingle();
-      return data?.value as { stripe_enabled: boolean; kiwify_enabled: boolean; default_gateway: 'stripe' | 'kiwify' } | null;
+      return data?.value as {  kiwify_enabled: boolean; default_gateway: 'kiwify' } | null;
     },
     enabled: open,
   });

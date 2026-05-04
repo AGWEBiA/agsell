@@ -66,7 +66,7 @@ const steps = [
     details: [
       'Volte à aba "Configuração" e localize a seção "URLs de Webhook".',
       'Para cada gateway que você utiliza, copie a URL correspondente clicando no ícone de copiar.',
-      'Acesse o painel do seu gateway de pagamento (Kiwify, Hotmart, Stripe, etc.).',
+      'Acesse o painel do seu gateway de pagamento (Kiwify, Hotmart, Eduzz, etc.).',
       'Cole a URL na configuração de webhooks/postback do gateway.',
       'Configure os eventos de pagamento aprovado, reembolso e cancelamento.',
     ],

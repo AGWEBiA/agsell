@@ -28,7 +28,7 @@ export default function PrivacyPolicy() {
             <li><strong>Dados de autenticação:</strong> credenciais de acesso (senha criptografada).</li>
             <li><strong>Dados de uso:</strong> logs de acesso, ações realizadas na plataforma, endereço IP.</li>
             <li><strong>Dados de contatos e clientes:</strong> informações de contatos comerciais cadastrados pelo usuário na plataforma (nome, e-mail, telefone, empresa).</li>
-            <li><strong>Dados de pagamento:</strong> processados por meio de Stripe ou Kiwify, sem armazenamento direto de dados sensíveis na plataforma.</li>
+            <li><strong>Dados de pagamento:</strong> processados por meio de Kiwify, sem armazenamento direto de dados sensíveis na plataforma.</li>
           </ul>
 
           <h2 className="text-xl font-semibold mt-8 mb-4">2. Finalidade do Tratamento</h2>
@@ -54,7 +54,7 @@ export default function PrivacyPolicy() {
           <h2 className="text-xl font-semibold mt-8 mb-4">4. Compartilhamento de Dados</h2>
           <p>Os dados pessoais podem ser compartilhados com:</p>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Processadores de pagamento:</strong> Stripe, para processamento de transações financeiras;</li>
+            <li><strong>Processadores de pagamento:</strong> Kiwify, para processamento de transações financeiras;</li>
             <li><strong>Provedores de e-mail:</strong> SendGrid, Resend ou Amazon SES, para envio de e-mails transacionais;</li>
             <li><strong>Provedores de infraestrutura:</strong> para hospedagem e operação da plataforma;</li>
             <li><strong>Integrações configuradas pelo usuário:</strong> como Hotmart, Kiwify e Eduzz, conforme configuração do próprio usuário.</li>
