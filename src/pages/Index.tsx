@@ -869,7 +869,6 @@ function PlansSection() {
         )}
 
         <div className="flex flex-wrap justify-center gap-4 text-sm text-[hsl(0,0%,63%)] mt-8">
-          <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-green-500" />Sem cartão de crédito</span>
           <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-green-500" />Cancele quando quiser</span>
         </div>
 
