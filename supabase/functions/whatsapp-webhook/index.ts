@@ -1521,7 +1521,20 @@ async function routeToInbox(
       conversationId = newConv.id;
     }
 
-    // Insert the message
+    // Insert the message only if it doesn't exist by external_id
+    if (params.externalMessageId) {
+      const { data: existingMsg } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("external_id", params.externalMessageId)
+        .maybeSingle();
+      
+      if (existingMsg) {
+        console.log(`Message with external_id ${params.externalMessageId} already exists, skipping insert.`);
+        return;
+      }
+    }
+
     const senderType = params.isFromMe ? "user" : "contact";
     const messageInsert: Record<string, unknown> = {
       conversation_id: conversationId,

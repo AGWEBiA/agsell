@@ -332,22 +332,22 @@ export function useInbox() {
             // based on SERVER_ACK / DELIVERY_ACK / READ events. Initial state stays 'pending'.
             // In some Evolution versions/configs, the status might come as 'sent' immediately in the 200 response.
 
-            const externalId = responseData?.key?.id || responseData?.messageId || responseData?.id;
-            const instanceUsed = responseData?.instance_used || responseData?.instance;
-            const evoStatus = String(responseData?.status || responseData?.key?.status || '').toUpperCase();
+            const externalId = responseData?.data?.key?.id || responseData?.message_id || responseData?.data?.messageId || responseData?.data?.id || responseData?.id;
+            const instanceUsed = responseData?.instance_used || responseData?.data?.instance || responseData?.instance;
+            const evoStatus = String(responseData?.data?.status || responseData?.data?.key?.status || responseData?.status || '').toUpperCase();
             const updates: Record<string, any> = {};
             if (externalId) updates.external_id = externalId;
             if (instanceUsed) updates.instance_name = instanceUsed;
             
-            // If Evolution already returned an explicit error/failed status synchronously, mark failed
             if (evoStatus === 'ERROR' || evoStatus === 'FAILED') {
               updates.delivery_status = 'failed';
-            } else if (evoStatus === 'SENT' || evoStatus === 'SUCCESS' || responseData?.key?.id) {
+            } else if (evoStatus === 'SENT' || evoStatus === 'SUCCESS' || evoStatus === 'ACCEPTED' || externalId) {
               updates.delivery_status = 'sent';
             }
 
             if (Object.keys(updates).length > 0) {
-              await supabase.from('messages').update(updates).eq('id', data.id);
+              const { data: updatedData } = await supabase.from('messages').update(updates).eq('id', data.id).select().single();
+              if (updatedData) return updatedData;
             }
           }
         } catch {
