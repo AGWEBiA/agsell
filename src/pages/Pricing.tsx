@@ -357,93 +357,27 @@ function GuestCheckoutDialog({
           </div>
 
           {!isFree && (
-            <>
-              {/* Payment Provider Selection */}
-              {plan.kiwify_checkout_url && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Forma de Pagamento</Label>
-                  <RadioGroup
-                    value={formData.paymentProvider}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, paymentProvider: v as 'stripe' | 'kiwify' }))}
-                    className="grid grid-cols-2 gap-3"
-                  >
-                    <div className="relative">
-                      <RadioGroupItem value="stripe" id="guest-pay-stripe" className="peer sr-only" />
-                      <Label
-                        htmlFor="guest-pay-stripe"
-                        className="flex flex-col items-center gap-1 rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                      >
-                        <CreditCard className="h-5 w-5" />
-                        <span className="text-sm font-medium">Stripe</span>
-                        <span className="text-xs text-muted-foreground">Crédito internacional</span>
-                      </Label>
-                    </div>
-                    <div className="relative">
-                      <RadioGroupItem value="kiwify" id="guest-pay-kiwify" className="peer sr-only" />
-                      <Label
-                        htmlFor="guest-pay-kiwify"
-                        className="flex flex-col items-center gap-1 rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                      >
-                        <span className="text-lg font-bold text-primary">K</span>
-                        <span className="text-sm font-medium">Kiwify</span>
-                        <span className="text-xs text-muted-foreground">PIX, Boleto ou Cartão</span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              )}
-
-              {/* Coupon Field (only for Stripe) */}
-              {formData.paymentProvider === 'stripe' && (
-                <>
-                  {!showCouponField ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowCouponField(true)}
-                      className="flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      <Tag className="h-3 w-3" />
-                      Tenho um cupom de desconto
-                    </button>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="couponCode">Cupom de Desconto</Label>
-                      <Input
-                        id="couponCode"
-                        placeholder="Digite o código do cupom"
-                        value={formData.couponCode}
-                        onChange={(e) => setFormData(prev => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        O desconto será aplicado na próxima etapa
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className="bg-muted/50 rounded-lg p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">{plan.name}</span>
-                  <span className="font-bold">
-                    R$ {price}/{billingCycle === 'monthly' ? 'mês' : 'ano'}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {billingCycle === 'yearly' 
-                    ? 'Cobrança anual com 17% de desconto' 
-                    : 'Cobrança mensal recorrente'
-                  }
-                </p>
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{plan.name}</span>
+                <span className="font-bold">
+                  R$ {price}/{billingCycle === 'monthly' ? 'mês' : 'ano'}
+                </span>
               </div>
-            </>
+              <p className="text-sm text-muted-foreground">
+                {billingCycle === 'yearly' 
+                  ? 'Cobrança anual com 17% de desconto' 
+                  : 'Cobrança mensal recorrente'
+                }
+              </p>
+            </div>
           )}
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-4 w-4" />
             {isFree 
               ? 'Seus dados estão protegidos' 
-              : `Pagamento seguro processado ${formData.paymentProvider === 'kiwify' ? 'pela Kiwify' : 'pelo Stripe'}`
+              : 'Pagamento seguro processado pela Kiwify'
             }
           </div>
 
