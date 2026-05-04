@@ -1023,6 +1023,48 @@ export type Database = {
           },
         ]
       }
+      chatbots: {
+        Row: {
+          channel: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          nodes: Json
+          organization_id: string
+          rules: Json
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          nodes?: Json
+          organization_id: string
+          rules?: Json
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          nodes?: Json
+          organization_id?: string
+          rules?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checkout_leads: {
         Row: {
           billing_cycle: string | null
