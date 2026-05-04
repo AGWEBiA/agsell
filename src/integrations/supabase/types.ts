@@ -1705,6 +1705,41 @@ export type Database = {
           },
         ]
       }
+      crm_exports: {
+        Row: {
+          created_at: string | null
+          file_url: string | null
+          format: string
+          id: string
+          organization_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_url?: string | null
+          format: string
+          id?: string
+          organization_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_url?: string | null
+          format?: string
+          id?: string
+          organization_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_exports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       csat_responses: {
         Row: {
           agent_id: string | null
@@ -3865,6 +3900,7 @@ export type Database = {
           plan: string | null
           plan_id: string | null
           sales_commission_rule: Json | null
+          scheduled_export_config: Json | null
           settings: Json | null
           slug: string
           updated_at: string
@@ -3878,6 +3914,7 @@ export type Database = {
           plan?: string | null
           plan_id?: string | null
           sales_commission_rule?: Json | null
+          scheduled_export_config?: Json | null
           settings?: Json | null
           slug: string
           updated_at?: string
@@ -3891,6 +3928,7 @@ export type Database = {
           plan?: string | null
           plan_id?: string | null
           sales_commission_rule?: Json | null
+          scheduled_export_config?: Json | null
           settings?: Json | null
           slug?: string
           updated_at?: string
