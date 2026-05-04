@@ -482,7 +482,7 @@ const channelConfig: Record<string, {
     title: 'Fluxos Individuais',
     subtitle: 'Automações 1:1 (WhatsApp, E-mail e SMS)',
     allowedActions: [
-      'timer', 'warmup', 'send_whatsapp', 'send_whatsapp_oficial', 'send_sms', 'send_email_performance', 'send_email_marketing', 'voice_torpedo', 'send_voip_call',
+      'timer', 'warmup', 'send_whatsapp', 'send_whatsapp_oficial', 'send_sms', 'send_email_performance', 'send_email_marketing', 'voice_torpedo', 'send_voip_call', 'send_telegram', 'send_whatsapp_campaign',
       'add_tag', 'remove_tag', 'update_score', 'send_notification', 'create_task', 'wait',
       'conditional', 'tag_filter', 'list_tag',
       'sequence_lead', 'sequence_transaction', 'sequence_rewarming', 'sequence_optin',
