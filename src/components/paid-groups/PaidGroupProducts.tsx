@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 
 const ALL_GATEWAYS = [
-  { id: 'stripe', label: 'Stripe' },
+  
   { id: 'kiwify', label: 'Kiwify' },
   { id: 'hotmart', label: 'Hotmart' },
   { id: 'eduzz', label: 'Eduzz' },
