@@ -480,7 +480,7 @@ const channelConfig: Record<string, {
     triggerChannels: ['whatsapp', 'crm', 'pagamento', 'site'],
     triggerIds: undefined,
     title: 'Fluxos Individuais',
-    subtitle: 'Automações de mensagem no privado (WhatsApp, CRM, Pagamento)',
+    subtitle: 'Automações 1:1 (WhatsApp, E-mail e SMS)',
     allowedActions: [
       'timer', 'warmup', 'send_whatsapp', 'send_whatsapp_oficial', 'send_sms', 'send_email_performance', 'send_email_marketing', 'voice_torpedo', 'send_voip_call',
       'add_tag', 'remove_tag', 'update_score', 'send_notification', 'create_task', 'wait',
@@ -515,15 +515,12 @@ const channelConfig: Record<string, {
   },
   instagram: {
     triggerChannels: ['instagram'],
+    triggerIds: ['instagram_new_follower', 'instagram_comment', 'instagram_mention', 'instagram_dm'],
     title: 'Fluxos de Instagram',
-    subtitle: 'Automações para Instagram (DMs, comentários, stories)',
+    subtitle: 'Automações para Instagram DM',
     allowedActions: [
-      'timer', 'send_instagram_dm', 'send_instagram_comment_reply', 'send_instagram_story_reply',
-      'instagram_like_comment', 'instagram_follow_back',
-      'send_whatsapp', 'send_email_performance', 'send_email_marketing',
-      'add_tag', 'remove_tag', 'update_score', 'send_notification', 'create_task', 'wait',
-      'conditional', 'tag_filter', 'list_tag',
-      'note', 'link_split', 'parallel_channels',
+      'send_instagram_dm', 'add_tag', 'remove_tag', 'timer',
+      'note', // Keep note as it's a utility
     ],
   },
   telegram: {

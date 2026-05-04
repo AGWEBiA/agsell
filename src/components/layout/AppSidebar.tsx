@@ -81,12 +81,8 @@ const menuSections: MenuSection[] = [
     items: [
       { label: 'Individuais', icon: Smartphone, path: '/flow-builder?channel=whatsapp', featureRequired: 'automacoes' },
       { label: 'Grupos', icon: Users, path: '/flow-builder?channel=groups', featureRequired: 'automacoes' },
-      { label: 'Chatbot / Agente IA', icon: Bot, path: '/chatbot-builder', featureRequired: 'automacoes' },
-      { label: 'E-mail', icon: Mail, path: '/flow-builder?channel=email', featureRequired: 'automacoes' },
       { label: 'Instagram', icon: Instagram, path: '/flow-builder?channel=instagram', featureRequired: 'automacoes' },
-      { label: 'Telegram', icon: Send, path: '/flow-builder?channel=telegram', featureRequired: 'automacoes' },
-      { label: 'Campanhas WhatsApp', icon: Megaphone, path: '/whatsapp-campaigns', featureRequired: 'whatsapp' },
-      { label: 'Mensagens Grupos', icon: MessageSquare, path: '/whatsapp-group-messages', featureRequired: 'whatsapp' },
+      { label: 'Chatbot / Agente IA', icon: Bot, path: '/chatbot-builder', featureRequired: 'automacoes' },
     ],
   },
   {
@@ -236,7 +232,8 @@ function MenuItemLink({
   item: MenuItem; isActive: boolean; collapsed: boolean; onNavigate?: () => void; isLocked?: boolean; isSecondary?: boolean; sectionId?: string;
 }) {
   const Icon = item.icon;
-  const isCrmSection = sectionId === 'crm' || item.path.startsWith('/crm-') || item.path === '/deals' || item.path === '/crm-settings';
+  const isRedSection = sectionId === 'crm' || sectionId === 'automations' || item.path.startsWith('/crm-') || item.path === '/deals' || item.path === '/crm-settings' || item.path.includes('/flow-builder') || item.path === '/chatbot-builder';
+  const isCrmSection = isRedSection; // Keeping for compatibility with logic below
 
   const linkContent = (
     <Link
