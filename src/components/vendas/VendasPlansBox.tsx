@@ -34,7 +34,7 @@ export function VendasPlansBox({ variant = 'full', className }: Props) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={cn('flex justify-center py-16', className)}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
