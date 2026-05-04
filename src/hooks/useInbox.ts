@@ -342,7 +342,10 @@ export function useInbox() {
             // If Evolution already returned an explicit error/failed status synchronously, mark failed
             if (evoStatus === 'ERROR' || evoStatus === 'FAILED') {
               updates.delivery_status = 'failed';
+            } else if (evoStatus === 'SENT' || evoStatus === 'SUCCESS' || responseData?.key?.id) {
+              updates.delivery_status = 'sent';
             }
+
             if (Object.keys(updates).length > 0) {
               await supabase.from('messages').update(updates).eq('id', data.id);
             }
