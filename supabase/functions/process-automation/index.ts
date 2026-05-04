@@ -284,7 +284,9 @@ serve(async (req) => {
             }
             await logTimeline(actionType, 'WhatsApp Grupo', 'success');
             break;
+          }
           case 'send_whatsapp_campaign': {
+
             const contact = await getContact();
             const phone = (action.config.to as string) || contact?.whatsapp || contact?.phone;
             const message = replaceVars(action.config.message as string, contact);
