@@ -18,9 +18,9 @@ interface GatewaySettings {
 }
 
 const DEFAULT_SETTINGS: GatewaySettings = {
-  stripe_enabled: true,
-  kiwify_enabled: false,
-  default_gateway: 'stripe',
+  stripe_enabled: false,
+  kiwify_enabled: true,
+  default_gateway: 'kiwify',
 };
 
 interface ConnectionStatus {
