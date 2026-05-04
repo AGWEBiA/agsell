@@ -164,8 +164,8 @@ export function SmsPackagesAdmin() {
         </Table>
 
         <div className="mt-4 p-3 rounded-lg bg-muted/50 border text-sm text-muted-foreground">
-          <p><strong>💡 Dica:</strong> Para Kiwify, cole a URL completa de checkout do produto. Para Stripe, informe o Price ID (ex: <code>price_1Abc...</code>). 
-          O sistema utilizará o gateway padrão configurado em "Gateway" para processar compras de créditos SMS.</p>
+          <p><strong>💡 Dica:</strong> Cole a URL completa de checkout do produto da Kiwify. 
+          O sistema utilizará a Kiwify para processar compras de créditos SMS.</p>
         </div>
       </CardContent>
     </Card>
