@@ -251,12 +251,22 @@ export function FlowCanvas({
   const getNodePort = (nodeId: string, port: 'input' | 'default' | 'yes' | 'no'): FlowNodePosition => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node?.position) return { x: 0, y: 0 };
+    
+    // Width is constant
     const w = Math.round(180 * nodeScale);
-    const h = Math.round(70 * nodeScale);
+    
+    // Approximate height based on CanvasNode rendering logic
+    let h = 70; // Base height
+    if (node.type === 'condition') h = 100; // Conditions are taller
+    if (node.config.groups || node.config.group_jid || node.config.message) h += 10; // Extra line for summary
+    
+    // Scale the approximate height
+    const scaledH = Math.round(h * nodeScale);
+    
     if (port === 'input') return { x: node.position.x + w / 2, y: node.position.y };
-    if (port === 'yes') return { x: node.position.x + w * 0.2, y: node.position.y + h };
-    if (port === 'no') return { x: node.position.x + w * 0.8, y: node.position.y + h };
-    return { x: node.position.x + w / 2, y: node.position.y + h };
+    if (port === 'yes') return { x: node.position.x + w * 0.2, y: node.position.y + scaledH };
+    if (port === 'no') return { x: node.position.x + w * 0.8, y: node.position.y + scaledH };
+    return { x: node.position.x + w / 2, y: node.position.y + scaledH };
   };
 
   const renderConnectionPath = (from: FlowNodePosition, to: FlowNodePosition) => {

@@ -71,19 +71,36 @@ function NewCampaignModal({ open, onClose, onCreate, onImportCode }: {
 
   const handleImport = () => {
     if (!importCode.trim()) return;
+    
+    // Helper to validate flow object
+    const isValidFlow = (obj: any) => obj && (Array.isArray(obj.nodes) || Array.isArray(obj.connections));
+
     try {
-      const decoded = JSON.parse(atob(importCode.trim()));
-      if (onImportCode) onImportCode(name || decoded.name || 'Fluxo Importado', importCode.trim());
-      onClose();
-    } catch {
-      try {
-        JSON.parse(importCode.trim());
-        if (onImportCode) onImportCode(name || 'Fluxo Importado', importCode.trim());
+      // Try Base64 first
+      const decodedStr = atob(importCode.trim());
+      const decoded = JSON.parse(decodedStr);
+      if (isValidFlow(decoded)) {
+        if (onImportCode) onImportCode(name || decoded.name || 'Fluxo Importado', importCode.trim());
         onClose();
-      } catch {
-        alert('Código inválido. Verifique e tente novamente.');
+        return;
       }
+    } catch (e) {
+      // Not base64 or not valid JSON after decoding
     }
+
+    try {
+      // Try plain JSON
+      const parsed = JSON.parse(importCode.trim());
+      if (isValidFlow(parsed)) {
+        if (onImportCode) onImportCode(name || parsed.name || 'Fluxo Importado', importCode.trim());
+        onClose();
+        return;
+      }
+    } catch (e) {
+      // Not valid JSON
+    }
+
+    alert('Código inválido ou malformatado. Verifique se copiou o código completo do fluxo.');
   };
 
   return (
@@ -254,6 +271,13 @@ function NodeConfigDialog({ node, open, onClose, onSave }: {
         return (<div className="space-y-4"><div><Label>Palavra-chave (opcional)</Label><Input placeholder="Ex: OLÁ, AJUDA" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div></div>);
       case 'whatsapp_keyword':
         return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: INFO, QUERO, PROMO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div></div>);
+      case 'whatsapp_group_join':
+      case 'whatsapp_group_leave':
+        return (<div className="space-y-4"><p className="text-sm text-muted-foreground">Este gatilho é acionado quando alguém entra ou sai de um grupo.</p><GroupsManagementInline config={config} onChange={setConfig} /></div>);
+      case 'telegram_message':
+        return (<div className="space-y-4"><div><Label>Palavra-chave (opcional)</Label><Input placeholder="Ex: INFO, QUERO" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div></div>);
+      case 'telegram_keyword':
+        return (<div className="space-y-4"><div><Label>Palavra-chave *</Label><Input placeholder="Ex: PREÇO, AJUDA" value={String(config.keyword || '')} onChange={e => setConfig({ ...config, keyword: e.target.value })} /></div><div><Label>Correspondência</Label><Select value={String(config.match_type || 'contains')} onValueChange={v => setConfig({ ...config, match_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="contains">Contém</SelectItem><SelectItem value="exact">Exata</SelectItem><SelectItem value="starts_with">Começa com</SelectItem></SelectContent></Select></div></div>);
       case 'whatsapp_automation':
         return (<div className="space-y-4"><div><Label>Automação de origem *</Label><Select value={String(config.source_automation_id || '')} onValueChange={v => setConfig({ ...config, source_automation_id: v })}><SelectTrigger><SelectValue placeholder="Selecione uma automação" /></SelectTrigger><SelectContent>{automations.filter(a => a.trigger_type?.includes('whatsapp')).map(a => (<SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>))}</SelectContent></Select></div></div>);
       case 'whatsapp_message_source':

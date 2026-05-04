@@ -69,7 +69,7 @@ const menuSections: MenuSection[] = [
     label: 'CRM',
     icon: Users,
     items: [
-      { label: 'Painel CRM', icon: Briefcase, path: '/crm-admin', orgAdminOnly: true },
+      { label: 'Painel CRM', icon: BarChart3, path: '/crm-admin', orgAdminOnly: true },
       { label: 'Deals', icon: ListChecks, path: '/deals' },
       { label: 'Inteligência', icon: Brain, path: '/crm-intelligence-consolidated' },
     ],
@@ -233,7 +233,7 @@ function MenuItemLink({
 }) {
   const Icon = item.icon;
   const isRedSection = sectionId === 'crm' || sectionId === 'automations' || item.path.startsWith('/crm-') || item.path === '/deals' || item.path === '/crm-settings' || item.path.includes('/flow-builder') || item.path === '/chatbot-builder';
-  const isCrmSection = isRedSection; // Keeping for compatibility with logic below
+
 
   const linkContent = (
     <Link
@@ -245,7 +245,7 @@ function MenuItemLink({
         isLocked
           ? 'text-sidebar-foreground/35 hover:text-sidebar-foreground/55 hover:bg-sidebar-accent/40'
           : isActive
-            ? isCrmSection 
+            ? isRedSection 
               ? 'bg-[#c0392b] text-white font-semibold shadow-md'
               : 'bg-gradient-to-r from-primary/15 via-primary/5 to-transparent text-foreground font-semibold'
             : isSecondary
@@ -259,7 +259,7 @@ function MenuItemLink({
         <span
           className={cn(
             "absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full",
-            isCrmSection ? "bg-white/40" : "bg-primary"
+            isRedSection ? "bg-white/40" : "bg-primary"
           )}
           aria-hidden="true"
         />
@@ -268,7 +268,7 @@ function MenuItemLink({
         className={cn(
           'h-[18px] w-[18px] shrink-0 transition-colors',
           isActive 
-            ? isCrmSection ? 'text-white' : 'text-primary' 
+            ? isRedSection ? 'text-white' : 'text-primary' 
             : isSecondary ? 'h-4 w-4 text-sidebar-foreground/40 group-hover:text-sidebar-foreground/60' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground/90'
         )}
       />
@@ -392,7 +392,20 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onClose 
                   <MenuItemLink
                     key={item.path}
                     item={item}
-                    isActive={location.pathname === getItemPathBase(item.path) && location.search === (item.path.includes('?') ? '?' + item.path.split('?')[1] : '')}
+                    isActive={(() => {
+                      const itemBase = getItemPathBase(item.path);
+                      if (location.pathname !== itemBase) return false;
+                      
+                      // Check for required search params if they exist in item.path
+                      if (item.path.includes('?')) {
+                        const requiredParams = new URLSearchParams(item.path.split('?')[1]);
+                        const currentParams = new URLSearchParams(location.search);
+                        for (const [key, value] of requiredParams.entries()) {
+                          if (currentParams.get(key) !== value) return false;
+                        }
+                      }
+                      return true;
+                    })()}
                     collapsed={sidebarCollapsed}
                     onNavigate={navigateCallback}
                     isLocked={!!item.featureRequired && !planFeatures.includes(item.featureRequired)}

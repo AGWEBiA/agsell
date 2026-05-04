@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Loader2, RefreshCw, Search, Smartphone, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ExternalLink, Loader2, RefreshCw, Search, Smartphone, Users, Check } from 'lucide-react';
 
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,9 @@ type InlineGroup = {
   settings: Record<string, unknown> | null;
 };
 
-export function GroupsManagementInline() {
+export function GroupsManagementInline({ config, onChange }: { config: Record<string, unknown>; onChange: (config: Record<string, unknown>) => void }) {
+  const selectedGroupIds = (config.group_ids as string[]) || [];
+
   const { currentOrganization } = useOrganization();
   const [search, setSearch] = useState('');
 
@@ -63,6 +66,13 @@ export function GroupsManagementInline() {
       return searchableValues.some((value) => value.toLowerCase().includes(term));
     });
   }, [groups, search]);
+
+  const toggleGroupSelection = (groupId: string) => {
+    const newSelection = selectedGroupIds.includes(groupId)
+      ? selectedGroupIds.filter(id => id !== groupId)
+      : [...selectedGroupIds, groupId];
+    onChange({ ...config, group_ids: newSelection });
+  };
 
   return (
     <div className="space-y-4">
@@ -138,12 +148,20 @@ export function GroupsManagementInline() {
         ) : (
           <div className="divide-y">
             {filteredGroups.map((group) => {
+              const isSelected = selectedGroupIds.includes(group.id);
               const instanceName = typeof group.settings?.instance_name === 'string'
                 ? group.settings.instance_name
                 : null;
 
               return (
-                <div key={group.id} className="space-y-2 px-4 py-3">
+                <div 
+                  key={group.id} 
+                  className={cn(
+                    "space-y-2 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50",
+                    isSelected && "bg-primary/5 border-l-4 border-primary"
+                  )}
+                  onClick={() => toggleGroupSelection(group.id)}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{group.name}</p>
@@ -153,6 +171,7 @@ export function GroupsManagementInline() {
                     </div>
 
                     <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                      {isSelected && <Badge variant="default" className="bg-primary text-white">Selecionado</Badge>}
                       <Badge variant={group.is_active ? 'default' : 'secondary'}>
                         {group.is_active ? 'Ativo' : 'Inativo'}
                       </Badge>
