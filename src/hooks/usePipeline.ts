@@ -31,6 +31,7 @@ export interface Deal {
   payment_link: string | null;
   payment_status: string | null;
   external_sale_id: string | null;
+  product_id: string | null;
   created_at: string;
   updated_at: string;
   contact?: { id: string; first_name: string; last_name: string | null; source: string | null } | null;
