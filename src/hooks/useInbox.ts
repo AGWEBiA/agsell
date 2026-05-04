@@ -331,9 +331,12 @@ export function useInbox() {
             // delivered / read / failed) comes from the webhook updating delivery_status
             // based on SERVER_ACK / DELIVERY_ACK / READ events. Initial state stays 'pending'.
             const externalId = responseData?.key?.id || responseData?.messageId || responseData?.id;
+            const instanceUsed = responseData?.instance_used || responseData?.instance;
             const evoStatus = String(responseData?.status || responseData?.key?.status || '').toUpperCase();
             const updates: Record<string, any> = {};
             if (externalId) updates.external_id = externalId;
+            if (instanceUsed) updates.instance_name = instanceUsed;
+            
             // If Evolution already returned an explicit error/failed status synchronously, mark failed
             if (evoStatus === 'ERROR' || evoStatus === 'FAILED') {
               updates.delivery_status = 'failed';
