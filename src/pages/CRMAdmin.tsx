@@ -341,6 +341,8 @@ export default function CRMAdmin() {
 
         {/* Products tab */}
         <TabsContent value="produtos" className="space-y-4">
+          <ProductPerformanceTab productCommissions={productCommissions} />
+        </TabsContent>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="md:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
