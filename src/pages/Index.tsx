@@ -131,7 +131,7 @@ function HeroSection() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center mb-6 px-2 sm:px-0">
             <a href="#planos" className="w-full sm:w-auto">
               <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20 w-full">
-                Começar agora — a partir de R$ 197/mês
+                Começar agora
                 <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
               </Button>
             </a>
