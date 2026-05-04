@@ -341,40 +341,102 @@ export default function CRMAdmin() {
 
         {/* Products tab */}
         <TabsContent value="produtos" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance por Produto</CardTitle>
-              <CardDescription>
-                Acompanhamento de vendas e metas específicas por linha de produto.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {(!productCommissions || productCommissions.length === 0) ? (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">Nenhum produto com meta configurada.</p>
-                  <Button variant="link" onClick={() => toast.info('Acesse Configurações CRM para definir metas por produto.')}>
-                    Configurar agora
-                  </Button>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div>
+                  <CardTitle>Performance por Linha de Produto</CardTitle>
+                  <CardDescription>
+                    Vendas realizadas e atingimento de metas por categoria.
+                  </CardDescription>
                 </div>
-              ) : (
-                <div className="grid gap-6">
-                  {productCommissions.map((prod: any) => {
-                    const sales = trend.data?.reduce((acc, m) => acc + (m.wonValue || 0), 0) || 0; 
-                    // Note: Ideally we'd filter won deals by product_name, but for now we'll show global vs product target
-                    const target = Number(prod.monthly_target) || 0;
-                    const progress = target > 0 ? Math.min(100, (sales / target) * 100) : 0;
-                    
-                    return (
-                      <div key={prod.id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-primary" />
-                            <span className="font-medium text-sm">{prod.product_name}</span>
+                <Package className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {(!productCommissions || productCommissions.length === 0) ? (
+                  <div className="text-center py-12">
+                    <Package className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">Nenhum produto com meta configurada.</p>
+                    <Button variant="link" onClick={() => toast.info('Acesse Configurações CRM para definir metas por produto.')}>
+                      Configurar agora
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {productCommissions.map((prod: any) => {
+                      // Temporary logic: since deals aren't linked to products yet, 
+                      // we show a simulation or a placeholder note.
+                      const target = Number(prod.monthly_target) || 0;
+                      const sales = 0; // Placeholder until we have product selection in deals
+                      const progress = target > 0 ? Math.min(100, (sales / target) * 100) : 0;
+                      
+                      return (
+                        <div key={prod.id} className="space-y-3 p-4 rounded-xl border bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Package className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <span className="font-bold text-sm">{prod.product_name}</span>
+                                <p className="text-[10px] text-muted-foreground">Comissão: {prod.commission_rate}%</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold block">{formatBRL(sales)}</span>
+                              <span className="text-[10px] text-muted-foreground">Meta: {formatBRL(target)}</span>
+                            </div>
                           </div>
-                          <span className="text-xs font-semibold">{formatBRL(sales)} / {formatBRL(target)}</span>
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[10px] font-medium">
+                              <span>Progresso da Meta</span>
+                              <span>{Math.round(progress)}%</span>
+                            </div>
+                            <Progress value={progress} className="h-2 bg-secondary" />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Distribuição de Metas</CardTitle>
+                <CardDescription className="text-[10px]">Peso de cada produto na meta global.</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[250px] pt-0">
+                {productCommissions && productCommissions.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={productCommissions}
+                        dataKey="monthly_target"
+                        nameKey="product_name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={70}
+                        innerRadius={40}
+                        paddingAngle={5}
+                      >
+                        {productCommissions.map((_: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={SOURCE_COLORS[index % SOURCE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+                    Sem dados para exibir
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
                           <Progress value={progress} className="h-2" />
                           <span className="text-xs text-muted-foreground min-w-[30px]">{Math.round(progress)}%</span>
                         </div>
