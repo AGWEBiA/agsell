@@ -613,7 +613,7 @@ function SalesRepDetailDialog({ userId, onClose, period }: { userId: string | nu
                             ) : '-'}
                           </TableCell>
                         </TableRow>
-                      )
+                      ))
                     )}
                   </TableBody>
                 </Table>
