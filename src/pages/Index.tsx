@@ -131,7 +131,7 @@ function HeroSection() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center mb-6 px-2 sm:px-0">
             <a href="#planos" className="w-full sm:w-auto">
               <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20 w-full">
-                Começar agora — a partir de R$ 197/mês
+                Começar agora
                 <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
               </Button>
             </a>
@@ -229,8 +229,7 @@ function CostComparisonSection() {
             <Logo variant="red" size="sm" showText />
             <p className="text-sm text-[hsl(0,0%,63%)] mb-2 mt-3">Tudo isso junto + funcionalidades exclusivas</p>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-[hsl(2,76%,53%)]">A partir de R$ 197</span>
-              <span className="text-[hsl(0,0%,63%)]">/mês</span>
+              <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-[hsl(2,76%,53%)]">Planos flexíveis</span>
             </div>
             <p className="text-xs text-[hsl(0,0%,63%)] mt-2">
               Economize mais de <strong className="text-white">R$ 1.650/mês</strong> — em real, sem surpresas
@@ -980,7 +979,7 @@ function CTASection() {
           </p>
           <a href="#planos" className="inline-block w-full sm:w-auto px-4 sm:px-0">
             <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-10 text-sm sm:text-base font-semibold rounded-full bg-[hsl(2,76%,53%)] hover:bg-[hsl(2,76%,45%)] text-white shadow-lg shadow-[hsl(2,76%,53%)]/20 w-full sm:w-auto">
-              Começar agora — a partir de R$ 197/mês
+              Começar agora
               <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
             </Button>
           </a>

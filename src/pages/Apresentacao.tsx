@@ -319,7 +319,7 @@ export default function Apresentacao() {
             <span className="text-primary">Uma só plataforma.</span>
           </h2>
           <p className="text-white/50 text-sm mb-10 max-w-md mx-auto">
-            Planos a partir de R$ 197/mês. Sem surpresas, sem pegadinhas. Suporte dedicado desde o dia 1.
+            Planos flexíveis para sua operação. Sem surpresas, sem pegadinhas. Suporte dedicado desde o dia 1.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/pricing">
