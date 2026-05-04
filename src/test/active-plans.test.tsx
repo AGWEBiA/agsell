@@ -18,8 +18,8 @@ vi.mock('@/integrations/supabase/client', () => ({
 const mockPlans = [
   {
     id: '1',
-    name: 'Active Plan Test',
-    slug: 'active',
+    name: 'Starter',
+    slug: 'starter',
     is_active: true,
     price_monthly: 100,
     price_yearly: 1000,
@@ -27,8 +27,8 @@ const mockPlans = [
   },
   {
     id: '2',
-    name: 'Inactive Plan Test',
-    slug: 'inactive',
+    name: 'Professional',
+    slug: 'professional',
     is_active: false,
     price_monthly: 200,
     price_yearly: 2000,
@@ -69,10 +69,10 @@ describe('Active Plans Validation', () => {
     );
 
     // Check if active plan is visible after loading
-    expect(await screen.findByText('Active Plan Test')).toBeInTheDocument();
+    expect(await screen.findByText('Starter')).toBeInTheDocument();
 
     // Check if inactive plan is NOT visible
-    expect(screen.queryByText('Inactive Plan Test')).not.toBeInTheDocument();
+    expect(screen.queryByText('Professional')).not.toBeInTheDocument();
   });
 
   it('should only show active plans in VendasPlansBox', async () => {
@@ -83,10 +83,10 @@ describe('Active Plans Validation', () => {
     );
 
     // Check if active plan is visible after loading
-    expect(await screen.findByText('Active Plan Test')).toBeInTheDocument();
+    expect(await screen.findByText('Starter')).toBeInTheDocument();
 
     // Check if inactive plan is NOT visible
-    expect(screen.queryByText('Inactive Plan Test')).not.toBeInTheDocument();
+    expect(screen.queryByText('Professional')).not.toBeInTheDocument();
   });
 });
 

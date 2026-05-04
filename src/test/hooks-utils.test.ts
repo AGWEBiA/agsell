@@ -102,7 +102,7 @@ describe('Automation template validation', () => {
     const validActionTypes = [
       'send_email', 'send_whatsapp', 'send_sms', 'add_tag', 'remove_tag',
       'update_score', 'create_task', 'send_notification', 'wait',
-      'move_deal', 'update_contact', 'webhook',
+      'move_deal', 'update_contact', 'webhook', 'condition',
     ];
 
     automationTemplates.forEach(template => {
