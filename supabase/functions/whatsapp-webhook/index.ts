@@ -1117,21 +1117,28 @@ Deno.serve(async (req) => {
           // Allow group messages to be routed to the inbox
           const isBroadcast = String(remoteJid).includes("@broadcast");
           const isGroupMessage = String(remoteJid).includes("@g.us");
+          
+          // Phase 2: location & contact are not "media" but are valid inbound messages
+          const isLocation = messageType === "location";
+          const isContact = messageType === "contact";
 
-          // For group messages, we want to know who the participant was
-          if (isGroupMessage && !extraMetadata.participant) {
-            const participantJid = keyData.participant || data.participant || messageData.participant || null;
-            if (participantJid) {
-              const participantPhone = String(participantJid)
-                .replace("@s.whatsapp.net", "")
-                .replace("@c.us", "")
-                .replace("@lid", "");
-              extraMetadata.participant = {
-                jid: participantJid,
-                phone: participantPhone
-              };
-            }
+          // Ignore delivery/read status updates that are not real inbound messages
+          const isStatusOnly = !messageText && !hasMedia && !isLocation && !isContact;
+
+          // Block all group messages from reaching the SAC inbox
+          if (isGroupMessage) {
+            await supabase.from("whatsapp_webhook_logs").insert({
+              event_type: body.event || "messages.upsert",
+              instance_name: instanceName,
+              phone: senderPhone,
+              organization_id: integration.organization_id,
+              routing_status: "discarded",
+              details: { reason: "group_message_blocked", jid: String(remoteJid).slice(0, 60) },
+            }).then(() => {}).catch(() => {});
+            return;
           }
+
+          const isBroadcast = String(remoteJid).includes("@broadcast");
 
           if (senderPhone && !isStatusOnly && !isBroadcast) {
             const locName = (extraMetadata.location as Record<string, unknown> | undefined)?.name as string | undefined;
