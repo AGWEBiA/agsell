@@ -62,7 +62,11 @@ export function DealDetailDialog({ dealId, onClose }: DealDetailDialogProps) {
           </div>
         ) : deal ? (
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Produto</p>
+                <p className="text-sm font-bold">{(deal as any).product?.product_name || 'Personalizado'}</p>
+              </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">Valor da Venda</p>
                 <p className="text-lg font-bold">{formatBRL(Number(deal.value))}</p>
