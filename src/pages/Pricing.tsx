@@ -235,7 +235,7 @@ function GuestCheckoutDialog({
     email: '',
     organizationName: '',
     couponCode: '',
-    paymentProvider: 'stripe',
+    paymentProvider: 'kiwify',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showCouponField, setShowCouponField] = useState(false);
