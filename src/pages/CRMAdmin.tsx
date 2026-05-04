@@ -20,7 +20,7 @@ import {
 import {
   DollarSign, Trophy, TrendingUp, Clock, Target, Users, Briefcase,
   ShieldAlert, ArrowUpRight, BarChart3, PieChart as PieIcon,
-  Download, FileText,
+  Download, FileText, AlertCircle,
 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import {
@@ -31,6 +31,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, LineChart, Line,
 } from '@/lib/recharts';
+import { useSalesRepDetail } from '@/hooks/useSalesRepDetail';
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n || 0);
@@ -39,8 +40,6 @@ const getInitials = (name: string) =>
   name.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
 
 const SOURCE_COLORS = ['hsl(var(--primary))', '#3b82f6', '#8b5cf6', '#f59e0b', '#22c55e', '#ec4899', '#06b6d4'];
-
-import { useSalesRepDetail } from '@/hooks/useSalesRepDetail';
 
 export default function CRMAdmin() {
   const { currentOrganization, currentRole } = useOrganization();
@@ -141,27 +140,38 @@ export default function CRMAdmin() {
               icon={<Trophy className="h-5 w-5" />}
             />
             <StatCard
-              title="Receita do Mês"
-              value={formatBRL(data?.wonValueThisMonth || 0)}
-              description={`${data?.wonThisMonth || 0} ganhos este mês`}
+              title="Metas & Performance"
+              value={currentOrganization?.monthly_sales_target ? `${Math.round(((data?.wonValueThisMonth || 0) / Number(currentOrganization.monthly_sales_target)) * 100)}%` : '0%'}
+              description={currentOrganization?.monthly_sales_target ? `Meta: ${formatBRL(Number(currentOrganization.monthly_sales_target))}` : 'Meta não definida'}
               trend={data?.lastMonthWonValue ? { value: data.monthlyGrowth, label: 'vs mês passado' } : undefined}
-              icon={<TrendingUp className="h-5 w-5" />}
+              icon={<Target className="h-5 w-5 text-primary" />}
             />
             <StatCard
               title="Taxa de Conversão"
               value={`${data?.conversionRate || 0}%`}
               description={`Ciclo médio: ${data?.avgSalesCycleDays || 0} dias`}
-              icon={<Target className="h-5 w-5" />}
-            />
-            <StatCard
-              title="Total Comissões"
-              value={formatBRL(repsData.reduce((s, r) => s + (r.commissionValue || 0), 0))}
-              description="Soma das comissões de deals ganhos"
-              icon={<DollarSign className="h-5 w-5 text-orange-500" />}
+              icon={<TrendingUp className="h-5 w-5" />}
             />
           </>
         )}
       </div>
+
+      {/* Alerts / Notifications */}
+      {repsData.some(r => r.wonValue === 0 && period !== 'day') && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-400">Atenção: Vendedores sem Vendas</h4>
+                <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
+                  Existem vendedores que ainda não computaram vendas neste período. Verifique o ranking abaixo.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Secondary metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -171,9 +181,9 @@ export default function CRMAdmin() {
           icon={<DollarSign className="h-5 w-5" />}
         />
         <StatCard
-          title="Novos Deals (mês)"
-          value={data?.newDealsThisMonth || 0}
-          icon={<ArrowUpRight className="h-5 w-5" />}
+          title="Total Comissões"
+          value={formatBRL(repsData.reduce((s, r) => s + (r.commissionValue || 0), 0))}
+          icon={<DollarSign className="h-5 w-5 text-orange-500" />}
         />
         <StatCard
           title="Total Vendedores"
