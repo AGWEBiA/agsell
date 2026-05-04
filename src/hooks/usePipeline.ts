@@ -143,11 +143,16 @@ export function useCreateDeal() {
 
   return useMutation({
     mutationFn: async (data: CreateDealData) => {
-      const commission_value = (data.value || 0) * ((data.commission_rate || 0) / 100);
+      // Get default commission rate from organization
+      const defaultRate = (currentOrganization as any)?.sales_commission_rule?.default_rate || 0;
+      const rate = data.commission_rate !== undefined ? data.commission_rate : defaultRate;
+      
+      const commission_value = (data.value || 0) * (rate / 100);
       const { data: result, error } = await supabase
         .from('deals')
         .insert({
           ...data,
+          commission_rate: rate,
           commission_value,
           user_id: user!.id,
           organization_id: currentOrganization?.id || null,
