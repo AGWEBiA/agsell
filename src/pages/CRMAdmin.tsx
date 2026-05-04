@@ -803,7 +803,21 @@ function CRMSettingsDialog() {
     enabled: !!currentOrganization?.id,
   });
 
+  const { data: productCommissions } = useQuery({
+    queryKey: ['product-commissions', currentOrganization?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_commissions')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id || '');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentOrganization?.id,
+  });
+
   const [repGoals, setRepGoals] = useState<{ [key: string]: number }>({});
+  const [products, setProducts] = useState<{ id?: string; product_name: string; commission_rate: number; monthly_target: number }[]>([]);
 
   useEffect(() => {
     if (members) {
@@ -815,8 +829,28 @@ function CRMSettingsDialog() {
     }
   }, [members]);
 
+  useEffect(() => {
+    if (productCommissions) {
+      setProducts(productCommissions);
+    }
+  }, [productCommissions]);
+
+  const addProduct = () => {
+    setProducts([...products, { product_name: '', commission_rate: 0, monthly_target: 0 }]);
+  };
+
+  const removeProduct = (index: number) => {
+    setProducts(products.filter((_, i) => i !== index));
+  };
+
+  const updateProduct = (index: number, field: string, value: any) => {
+    const newProducts = [...products];
+    newProducts[index] = { ...newProducts[index], [field]: value };
+    setProducts(newProducts);
+  };
+
   const updateSettings = useMutation({
-    mutationFn: async (data: { target: number; commissionRate: number; repGoals: { [key: string]: number } }) => {
+    mutationFn: async (data: { target: number; commissionRate: number; repGoals: { [key: string]: number }; products: typeof products }) => {
       // 1. Update Organization
       const { error: orgError } = await supabase
         .from('organizations')
@@ -853,10 +887,39 @@ function CRMSettingsDialog() {
             });
         }
       }
+
+      // 3. Update product commissions
+      // First, remove ones that are no longer in the list (if they had an ID)
+      const currentIds = data.products.map(p => p.id).filter(Boolean);
+      if (productCommissions?.length) {
+        const toDelete = productCommissions.filter(p => !currentIds.includes(p.id)).map(p => p.id);
+        if (toDelete.length > 0) {
+          await supabase.from('product_commissions').delete().in('id', toDelete);
+        }
+      }
+
+      // Upsert current products
+      for (const product of data.products) {
+        if (!product.product_name) continue;
+        
+        const payload = {
+          organization_id: currentOrganization?.id,
+          product_name: product.product_name,
+          commission_rate: product.commission_rate,
+          monthly_target: product.monthly_target
+        };
+
+        if (product.id) {
+          await supabase.from('product_commissions').update(payload).eq('id', product.id);
+        } else {
+          await supabase.from('product_commissions').insert(payload);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       queryClient.invalidateQueries({ queryKey: ['org-members-goals'] });
+      queryClient.invalidateQueries({ queryKey: ['product-commissions'] });
       toast.success('Configurações salvas!');
     },
     onError: (err: any) => {
@@ -871,64 +934,94 @@ function CRMSettingsDialog() {
           <Settings className="h-4 w-4 mr-2" /> Configurações CRM
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" /> Configurações do CRM
+            <Settings className="h-5 w-5" /> Configurações Estratégicas do CRM
           </DialogTitle>
           <DialogDescription>
-            Defina metas globais, taxas de comissão e metas individuais por vendedor.
+            Gerencie metas, comissões e performance por produto e por vendedor.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Meta Mensal da Empresa (R$)</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="number" 
-                  className="pl-9"
-                  value={target} 
-                  onChange={e => setTarget(Number(e.target.value))} 
-                />
-              </div>
-              <p className="text-[10px] text-muted-foreground">Valor total de vendas esperado para o mês corrente.</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Comissão Padrão (%)</Label>
-              <div className="relative">
-                <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="number" 
-                  className="pl-9"
-                  value={commissionRate} 
-                  onChange={e => setCommissionRate(Number(e.target.value))} 
-                />
-              </div>
-              <p className="text-[10px] text-muted-foreground">Taxa aplicada automaticamente em novos deals (calculada sobre o valor total).</p>
-            </div>
-          </div>
+        <Tabs defaultValue="geral" className="w-full mt-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="geral">Geral & Metas</TabsTrigger>
+            <TabsTrigger value="vendedores">Vendedores</TabsTrigger>
+            <TabsTrigger value="produtos">Produtos</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h4 className="text-sm font-semibold">Metas Individuais (Mensal)</h4>
-              <Badge variant="outline" className="text-[10px]">{members?.length || 0} vendedores</Badge>
-            </div>
-            
-            <div className="space-y-3">
-              {members?.map(m => (
-                <div key={m.user_id} className="flex items-center justify-between gap-4 bg-muted/30 p-3 rounded-lg border border-border/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{m.name}</p>
-                    <p className="text-[10px] text-muted-foreground">ID: ...{m.user_id.slice(-8)}</p>
+          <TabsContent value="geral" className="space-y-6 py-4">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" /> Meta Global
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Meta Mensal da Empresa (R$)</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="number" 
+                        className="pl-9"
+                        value={target} 
+                        onChange={e => setTarget(Number(e.target.value))} 
+                      />
+                    </div>
                   </div>
-                  <div className="w-40 relative">
-                    <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-orange-500" /> Comissão Padrão
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Taxa Padrão (%)</Label>
+                    <div className="relative">
+                      <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="number" 
+                        className="pl-9"
+                        value={commissionRate} 
+                        onChange={e => setCommissionRate(Number(e.target.value))} 
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="vendedores" className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Metas Individuais por Vendedor</h4>
+              <Badge variant="secondary">{members?.length || 0} Membros</Badge>
+            </div>
+            <div className="grid gap-3">
+              {members?.map(m => (
+                <div key={m.user_id} className="flex items-center justify-between gap-4 bg-muted/30 p-4 rounded-xl border border-border/50 transition-all hover:bg-muted/50">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                      {m.name.substring(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{m.name}</p>
+                      <p className="text-[10px] text-muted-foreground">ID: {m.user_id.slice(-8)}</p>
+                    </div>
+                  </div>
+                  <div className="w-48 relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="number"
-                      className="h-8 pl-6 text-xs"
+                      className="h-10 pl-9"
+                      placeholder="Meta R$"
                       value={repGoals[m.user_id] || 0}
                       onChange={e => setRepGoals({ ...repGoals, [m.user_id]: Number(e.target.value) })}
                     />
@@ -936,25 +1029,95 @@ function CRMSettingsDialog() {
                 </div>
               ))}
             </div>
-          </div>
+          </TabsContent>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 p-3 rounded-md flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-            <p className="text-[11px] text-blue-800 dark:text-blue-300">
-              As comissões são calculadas automaticamente quando o status de um deal é alterado para "Ganho". 
-              Valores já computados não serão alterados retroativamente ao mudar a taxa padrão.
+          <TabsContent value="produtos" className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold">Configurações por Produto</h4>
+                <p className="text-[11px] text-muted-foreground">Defina comissões e metas específicas para cada item do seu catálogo.</p>
+              </div>
+              <Button size="sm" onClick={addProduct} className="h-8">
+                <Plus className="h-4 w-4 mr-1" /> Adicionar
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              {products.length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed rounded-xl">
+                  <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum produto configurado ainda.</p>
+                  <Button variant="link" size="sm" onClick={addProduct}>Clique para adicionar o primeiro</Button>
+                </div>
+              ) : (
+                products.map((p, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-card p-4 rounded-xl border items-end group">
+                    <div className="md:col-span-5 space-y-1.5">
+                      <Label className="text-[11px] uppercase tracking-wider font-bold opacity-70">Nome do Produto</Label>
+                      <div className="relative">
+                        <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Ex: Consultoria Premium" 
+                          className="pl-9"
+                          value={p.product_name}
+                          onChange={e => updateProduct(idx, 'product_name', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="md:col-span-3 space-y-1.5">
+                      <Label className="text-[11px] uppercase tracking-wider font-bold opacity-70">Comissão (%)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="0.00"
+                        value={p.commission_rate}
+                        onChange={e => updateProduct(idx, 'commission_rate', Number(e.target.value))}
+                      />
+                    </div>
+                    <div className="md:col-span-3 space-y-1.5">
+                      <Label className="text-[11px] uppercase tracking-wider font-bold opacity-70">Meta Mensal (R$)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="0.00"
+                        value={p.monthly_target}
+                        onChange={e => updateProduct(idx, 'monthly_target', Number(e.target.value))}
+                      />
+                    </div>
+                    <div className="md:col-span-1 flex justify-center pb-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => removeProduct(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 p-4 rounded-xl flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-400">Dica Estratégica</p>
+            <p className="text-[11px] text-amber-800/80 dark:text-amber-500">
+              Configurar metas por produto ajuda a focar o comercial nos itens de maior margem. 
+              As comissões por produto têm prioridade sobre a comissão padrão da organização.
             </p>
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" className="flex-1">Cancelar</Button>
+        <DialogFooter className="mt-6 gap-2">
+          <Button variant="outline" className="flex-1 rounded-lg">Cancelar</Button>
           <Button 
-            className="flex-1" 
-            onClick={() => updateSettings.mutate({ target, commissionRate, repGoals })}
+            className="flex-1 rounded-lg shadow-lg shadow-primary/20" 
+            onClick={() => updateSettings.mutate({ target, commissionRate, repGoals, products })}
             disabled={updateSettings.isPending}
           >
-            {updateSettings.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            {updateSettings.isPending ? 'Sincronizando...' : 'Salvar Estratégia'}
           </Button>
         </DialogFooter>
       </DialogContent>
