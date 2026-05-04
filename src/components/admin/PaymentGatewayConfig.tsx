@@ -390,7 +390,7 @@ export function PaymentGatewayConfig() {
                     </div>
                     <div>
                       <p className="font-semibold">Kiwify</p>
-                      <p className="text-xs text-muted-foreground">PIX, Boleto, Cartão nacional</p>
+                      <p className="text-xs text-muted-foreground">PIX, Boleto ou Cartão</p>
                     </div>
                   </div>
                   <Switch
