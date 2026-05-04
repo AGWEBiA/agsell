@@ -45,7 +45,7 @@ export function CommunicationPackagesAdmin() {
         .update({
           kiwify_checkout_url: values.kiwify_checkout_url || null,
           kiwify_product_id: values.kiwify_product_id || null,
-          stripe_price_id: values.stripe_price_id || null,
+          
         })
         .eq('id', id);
       if (error) throw error;
