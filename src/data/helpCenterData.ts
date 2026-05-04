@@ -171,7 +171,7 @@ O AG Sell oferece planos com diferentes níveis de recursos e limites.
 2. Compare os recursos de cada plano (número de contatos, envios, automações, etc.)
 3. Selecione o plano ideal para seu negócio
 4. Clique em **"Assinar"**
-5. Complete o pagamento via **Stripe** (cartão de crédito)
+5. Complete o pagamento via **Stripe** ou **Kiwify** (Pix, Boleto ou Cartão)
 6. Os recursos são liberados **imediatamente**
 
 💡 **Dica**: Comece com o plano que atende suas necessidades atuais. Você pode fazer upgrade a qualquer momento sem perder dados.
@@ -3360,7 +3360,7 @@ Cada organização mantém seus dados **completamente isolados**:
 
 1. Selecione o plano desejado
 2. Clique em **"Assinar"** ou **"Upgrade"**
-3. Complete o pagamento via **Stripe** (cartão de crédito)
+3. Complete o pagamento via **Stripe** ou **Kiwify** (Pix, Boleto ou Cartão)
 4. Os recursos são liberados **imediatamente**
 5. Você recebe confirmação por e-mail
 
@@ -3398,7 +3398,7 @@ Recursos que não fazem parte do seu plano são protegidos por **Feature Gate**:
 - 📊 **Comece pelo plano que atende hoje** — Upgrade é fácil e imediato
 - 📅 **Planos anuais** têm desconto significativo
 - 🔔 **Monitore o uso** — Próximo de atingir limites? Considere upgrade
-- 💳 **Mantenha cartão atualizado** — Evite interrupção por falha de pagamento
+- 💳 **Mantenha os dados de pagamento atualizados** — Evite interrupção por falha de pagamento
 
 💡 **Dica**: Comece com o plano que atende suas necessidades atuais. Você pode fazer upgrade a qualquer momento sem perder dados ou configurações.`,
   },

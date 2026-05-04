@@ -222,7 +222,7 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
                     className="flex flex-col items-center gap-2 rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                   >
                     <CreditCard className="h-5 w-5" />
-                    <span className="text-sm font-medium">Cartão / Stripe</span>
+                    <span className="text-sm font-medium">Stripe</span>
                     <span className="text-xs text-muted-foreground">Crédito internacional</span>
                   </Label>
                 </div>
@@ -235,7 +235,7 @@ export function PlanCheckout({ plan, open, onOpenChange }: PlanCheckoutProps) {
                   >
                     <span className="text-lg font-bold text-green-600">K</span>
                     <span className="text-sm font-medium">Kiwify</span>
-                    <span className="text-xs text-muted-foreground">PIX, Boleto, Cartão</span>
+                    <span className="text-xs text-muted-foreground">PIX, Boleto ou Cartão</span>
                   </Label>
                 </div>
               </RadioGroup>

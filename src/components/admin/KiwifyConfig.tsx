@@ -228,7 +228,7 @@ export function KiwifyConfig() {
               <h4 className="font-semibold">Preencher os IDs e URLs na Tabela Abaixo</h4>
               <p className="text-sm text-muted-foreground">
                 Cole o <strong>ID do produto</strong> e a <strong>URL de checkout</strong> de cada plano na tabela abaixo. 
-                Após salvar, a opção Kiwify aparecerá automaticamente no checkout dos planos configurados.
+                Após salvar, a opção Kiwify aparecerá automaticamente no checkout.
               </p>
             </div>
           </div>

@@ -28,7 +28,7 @@ export default function PrivacyPolicy() {
             <li><strong>Dados de autenticação:</strong> credenciais de acesso (senha criptografada).</li>
             <li><strong>Dados de uso:</strong> logs de acesso, ações realizadas na plataforma, endereço IP.</li>
             <li><strong>Dados de contatos e clientes:</strong> informações de contatos comerciais cadastrados pelo usuário na plataforma (nome, e-mail, telefone, empresa).</li>
-            <li><strong>Dados de pagamento:</strong> processados por meio do Stripe, sem armazenamento direto de dados de cartão.</li>
+            <li><strong>Dados de pagamento:</strong> processados por meio de Stripe ou Kiwify, sem armazenamento direto de dados sensíveis na plataforma.</li>
           </ul>
 
           <h2 className="text-xl font-semibold mt-8 mb-4">2. Finalidade do Tratamento</h2>
