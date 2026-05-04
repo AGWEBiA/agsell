@@ -1114,31 +1114,22 @@ Deno.serve(async (req) => {
           // Ignore delivery/read status updates that are not real inbound messages
           const isStatusOnly = !messageText && !hasMedia && !isLocation && !isContact;
 
-          // Allow group messages to be routed to the inbox
-          const isBroadcast = String(remoteJid).includes("@broadcast");
+          // Block group and broadcast messages from reaching the SAC inbox
+          const isBroadcast = String(remoteJid).includes("@broadcast") || String(remoteJid).includes("@newsletter");
           const isGroupMessage = String(remoteJid).includes("@g.us");
           
-          // Phase 2: location & contact are not "media" but are valid inbound messages
-          const isLocation = messageType === "location";
-          const isContact = messageType === "contact";
-
-          // Ignore delivery/read status updates that are not real inbound messages
-          const isStatusOnly = !messageText && !hasMedia && !isLocation && !isContact;
-
-          // Block all group messages from reaching the SAC inbox
-          if (isGroupMessage) {
-            await supabase.from("whatsapp_webhook_logs").insert({
-              event_type: body.event || "messages.upsert",
-              instance_name: instanceName,
-              phone: senderPhone,
-              organization_id: integration.organization_id,
-              routing_status: "discarded",
-              details: { reason: "group_message_blocked", jid: String(remoteJid).slice(0, 60) },
-            }).then(() => {}).catch(() => {});
+          if (isGroupMessage || isBroadcast) {
+            await logPhase3Event(
+              "skipped",
+              "mention", // reusing kind or adding a new one
+              { reason: isGroupMessage ? "group_message_blocked" : "broadcast_blocked", jid: String(remoteJid).slice(0, 60) },
+              integration.organization_id,
+              instanceName,
+              senderPhone
+            );
             return;
           }
 
-          const isBroadcast = String(remoteJid).includes("@broadcast");
 
           if (senderPhone && !isStatusOnly && !isBroadcast) {
             const locName = (extraMetadata.location as Record<string, unknown> | undefined)?.name as string | undefined;
@@ -1298,6 +1289,12 @@ async function routeToInbox(
 ) {
   try {
     const { organizationId, userId, channel, senderIdentifier, messageText, sourceInstanceId, sourceInstanceName, contactName } = params;
+
+    // Safety check: skip group or broadcast messages
+    if (String(senderIdentifier).includes("@g.us") || String(senderIdentifier).includes("@broadcast") || String(senderIdentifier).includes("@newsletter")) {
+      console.log(`[routeToInbox] Skipping group/broadcast identifier: ${senderIdentifier}`);
+      return;
+    }
 
     // Sanitize inbound display name (push notification name from WhatsApp)
     const isPhoneLikeName = (name: string | null | undefined) =>

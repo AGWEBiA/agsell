@@ -32,6 +32,7 @@ interface DealCardProps {
   onMove: (dealId: string, stageId: string) => void;
   onDelete: (dealId: string) => void;
   onEdit: (deal: Deal) => void;
+  onClick?: (deal: Deal) => void;
 }
 
 export function DealCard({
@@ -44,6 +45,7 @@ export function DealCard({
   onMove,
   onDelete,
   onEdit,
+  onClick,
 }: DealCardProps) {
   const contactName = deal.contact
     ? `${deal.contact.first_name} ${deal.contact.last_name || ''}`.trim()
@@ -59,6 +61,7 @@ export function DealCard({
         'cursor-grab active:cursor-grabbing hover:shadow-md transition-all border-2 border-transparent',
         isDragged ? 'opacity-40 scale-95 border-primary/30' : 'opacity-100'
       )}
+      onClick={() => onClick?.(deal)}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
