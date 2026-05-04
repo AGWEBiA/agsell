@@ -131,14 +131,13 @@ Deno.serve(async (req) => {
     // Handle Evolution API message status updates (delivered/read)
     if (body.event === "messages.update" || body.event === "MESSAGES_UPDATE") {
       const updates = Array.isArray(body.data) ? body.data : [body.data];
+      const instanceName = body.instance;
+      
       for (const update of updates) {
         const msgId = update?.key?.id || update?.id;
         const status = update?.status;
         if (!msgId || !status) continue;
 
-        // Map Evolution / WA status to our delivery_status.
-        // WhatsApp ack levels: 0=ERROR, 1=PENDING, 2=SERVER_ACK (sent ✓),
-        // 3=DELIVERY_ACK (delivered ✓✓), 4=READ (azul), 5=PLAYED.
         let deliveryStatus: string | null = null;
         const s = typeof status === 'string' ? status.toUpperCase() : status;
         if (s === "SERVER_ACK" || s === "sent" || s === "SENT" || s === 2) {
@@ -156,10 +155,16 @@ Deno.serve(async (req) => {
         }
 
         if (deliveryStatus) {
-          await supabase
+          let updateQuery = supabase
             .from("messages")
             .update({ delivery_status: deliveryStatus })
             .eq("external_id", msgId);
+            
+          if (instanceName) {
+            updateQuery = updateQuery.eq("instance_name", instanceName);
+          }
+          
+          await updateQuery;
         }
       }
     }
