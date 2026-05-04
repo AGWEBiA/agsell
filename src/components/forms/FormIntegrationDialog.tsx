@@ -350,10 +350,8 @@ Content-Type: application/json
                 💡 <strong>Elementor / WordPress / Wix:</strong> Use o widget "HTML" e cole o código acima. A altura ajusta automaticamente.
               </p>
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                ✨ <strong>Dica:</strong> Para o formulário se adaptar 100% à sua página (herdar fonte e cores), abra o editor do formulário → aba <strong>Aparência → Presets</strong> e selecione <strong>"Transparente (Embed)"</strong>.
+                ✨ <strong>Customização Avançada:</strong> Para herdar fonte/cores use <strong>"Transparente"</strong>. Para controle total via CSS, use <strong>"Layout Livre (Raw)"</strong>. Ambos em <strong>Aparência → Presets</strong>.
               </p>
-            </div>
-          </TabsContent>
 
           {/* SCRIPT JS */}
           <TabsContent value="script" className="space-y-4 mt-4">
