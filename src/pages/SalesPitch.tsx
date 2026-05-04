@@ -740,7 +740,7 @@ function CTASlide({ active }: { active: boolean }) {
         </AnimatedItem>
         <AnimatedItem active={active} delay={300}>
           <p className="text-white/50 text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-10">
-            Planos a partir de R$ 197/mês. Suporte dedicado desde o primeiro dia.
+            Planos flexíveis para sua operação. Suporte dedicado desde o primeiro dia.
             Migração assistida sem custo adicional.
           </p>
         </AnimatedItem>
