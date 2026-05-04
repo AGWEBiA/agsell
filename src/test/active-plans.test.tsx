@@ -9,13 +9,16 @@ import { VendasPlansBox } from '@/components/vendas/VendasPlansBox';
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
+    },
   },
 }));
 
 const mockPlans = [
   {
     id: '1',
-    name: 'Active Plan',
+    name: 'Active Plan Test',
     slug: 'active',
     is_active: true,
     price_monthly: 100,
@@ -24,7 +27,7 @@ const mockPlans = [
   },
   {
     id: '2',
-    name: 'Inactive Plan',
+    name: 'Inactive Plan Test',
     slug: 'inactive',
     is_active: false,
     price_monthly: 200,
@@ -36,59 +39,54 @@ const mockPlans = [
 describe('Active Plans Validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Default mock implementation
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'plans_public') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: mockPlans, error: null }),
+            }),
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      };
+    });
   });
 
   it('should only show active plans on the Pricing page', async () => {
-    (supabase.from as any).mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockPlans, error: null }),
-        }),
-      }),
-    });
-
     render(
       <MemoryRouter>
         <Pricing />
       </MemoryRouter>
     );
 
-    // Wait for loading to finish
-    await waitFor(() => {
-      expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
-    });
-
-    // Check if active plan is visible
-    expect(await screen.findByText('Active Plan')).toBeInTheDocument();
+    // Check if active plan is visible after loading
+    expect(await screen.findByText('Active Plan Test')).toBeInTheDocument();
 
     // Check if inactive plan is NOT visible
-    expect(screen.queryByText('Inactive Plan')).not.toBeInTheDocument();
+    expect(screen.queryByText('Inactive Plan Test')).not.toBeInTheDocument();
   });
 
   it('should only show active plans in VendasPlansBox', async () => {
-    (supabase.from as any).mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockPlans, error: null }),
-        }),
-      }),
-    });
-
     render(
       <MemoryRouter>
         <VendasPlansBox />
       </MemoryRouter>
     );
 
-    // Wait for loading to finish
-    await waitFor(() => {
-      expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
-    });
-
-    // Check if active plan is visible
-    expect(await screen.findByText('Active Plan')).toBeInTheDocument();
+    // Check if active plan is visible after loading
+    expect(await screen.findByText('Active Plan Test')).toBeInTheDocument();
 
     // Check if inactive plan is NOT visible
-    expect(screen.queryByText('Inactive Plan')).not.toBeInTheDocument();
+    expect(screen.queryByText('Inactive Plan Test')).not.toBeInTheDocument();
   });
 });
+
