@@ -498,20 +498,22 @@ export default function Pricing() {
         console.error('Error fetching plans:', error);
         toast.error('Erro ao carregar planos');
       } else {
-        setPlans(((data as any[]) || []).map((p: any) => ({
-          ...p,
-          features: Array.isArray(p.features) ? p.features as string[] : [],
-          price_monthly: p.price_monthly || 0,
-          price_yearly: p.price_yearly || 0,
-          max_users: p.max_users || 1,
-          max_contacts: p.max_contacts || 100,
-          max_emails_per_month: p.max_emails_per_month || 500,
-          max_whatsapp_messages: p.max_whatsapp_messages || 100,
-          max_automations: p.max_automations || 5,
-          max_forms: p.max_forms || 3,
-          max_ai_requests_per_month: (p as any).max_ai_requests_per_month || 0,
-          kiwify_checkout_url: (p as any).kiwify_checkout_url || null,
-        })));
+        setPlans(((data as any[]) || [])
+          .filter((p: any) => p.is_active === true)
+          .map((p: any) => ({
+            ...p,
+            features: Array.isArray(p.features) ? p.features as string[] : [],
+            price_monthly: p.price_monthly || 0,
+            price_yearly: p.price_yearly || 0,
+            max_users: p.max_users || 1,
+            max_contacts: p.max_contacts || 100,
+            max_emails_per_month: p.max_emails_per_month || 500,
+            max_whatsapp_messages: p.max_whatsapp_messages || 100,
+            max_automations: p.max_automations || 5,
+            max_forms: p.max_forms || 3,
+            max_ai_requests_per_month: (p as any).max_ai_requests_per_month || 0,
+            kiwify_checkout_url: (p as any).kiwify_checkout_url || null,
+          })));
       }
       setIsLoading(false);
     };

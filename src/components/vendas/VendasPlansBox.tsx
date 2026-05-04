@@ -56,10 +56,12 @@ export function VendasPlansBox({ variant = 'full', className }: Props) {
 
       if (data) {
         setPlans(
-          (data as any[]).map((p) => ({
-            ...p,
-            features: Array.isArray(p.features) ? (p.features as string[]) : [],
-          })),
+          (data as any[])
+            .filter((p) => p.is_active === true)
+            .map((p) => ({
+              ...p,
+              features: Array.isArray(p.features) ? (p.features as string[]) : [],
+            })),
         );
       }
       setLoading(false);
