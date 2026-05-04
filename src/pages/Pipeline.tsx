@@ -76,7 +76,7 @@ import {
 } from '@/hooks/usePipeline';
 import { useContacts } from '@/hooks/useContacts';
 import { useContactLastSacMessage } from '@/hooks/useSacLeads';
-import { SacLeadsPanel } from '@/components/pipeline/SacLeadsPanel';
+// SacLeadsPanel moved to Deals page
 import { DealSourceBadge } from '@/components/pipeline/DealSourceBadge';
 import { DealCard } from '@/components/pipeline/DealCard';
 import { PageHeader, FormField } from '@/components/ui/help-tooltip';
@@ -255,10 +255,18 @@ export default function Pipeline() {
         description="Gerencie suas oportunidades de negócio"
         helpText="Arraste os deals entre colunas ou use o menu para mover. Cada coluna representa um estágio do seu funil de vendas."
       >
-        <Button variant="outline" onClick={() => setIsHelpOpen(true)}>
-          <HelpCircle className="h-4 w-4 mr-2" />
-          Como funciona
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link to="/deals">
+              Ver em Lista
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={() => setIsHelpOpen(true)}>
+            <HelpCircle className="h-4 w-4 mr-2" />
+            Como funciona
+          </Button>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -445,8 +453,7 @@ export default function Pipeline() {
         </Dialog>
       </PageHeader>
 
-      {/* SAC Leads Panel */}
-      <SacLeadsPanel defaultStageId={stages[0]?.id} />
+      {/* SAC Leads Panel moved to /deals */}
 
       {/* Pipeline Kanban */}
       <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-3 px-3 sm:mx-0 sm:px-0 snap-x snap-mandatory sm:snap-none">
