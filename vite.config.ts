@@ -25,7 +25,7 @@ export default defineConfig({
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-supabase": ["@supabase/supabase-js"],
-          "vendor-query": ["@tanstack/react-query", "@tanstack/query-core"],
+          "vendor-query": ["@tanstack/react-query"],
           "vendor-radix": [
             "@radix-ui/react-dialog",
             "@radix-ui/react-dropdown-menu",

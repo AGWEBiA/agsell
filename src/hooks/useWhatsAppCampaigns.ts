@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Json } from '@/integrations/supabase/types';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface WhatsAppCampaign {
   id: string;
