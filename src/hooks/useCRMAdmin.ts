@@ -177,13 +177,14 @@ export function useSalesRepPerformance(period: 'day' | 'week' | 'month' | 'all' 
         dealsQuery = dealsQuery.gte('updated_at', startOfMonth(now).toISOString()).lte('updated_at', endOfMonth(now).toISOString());
       }
 
-      const [{ data: profiles }, { data: deals }, { data: contacts }, { data: tasks }, { data: activities }, { data: messages }] = await Promise.all([
+      const [{ data: profiles }, { data: deals }, { data: contacts }, { data: tasks }, { data: activities }, { data: messages }, { data: goals }] = await Promise.all([
         supabase.from('profiles').select('user_id, full_name, avatar_url').in('user_id', userIds),
         dealsQuery,
         supabase.from('contacts').select('user_id').eq('organization_id', orgId),
         supabase.from('tasks').select('user_id, status').eq('organization_id', orgId).eq('status', 'completed'),
         supabase.from('activities').select('user_id, type').eq('organization_id', orgId).in('type', ['meeting', 'call']),
         supabase.from('messages').select('user_id').eq('organization_id', orgId),
+        supabase.from('revenue_goals').select('user_id, target_amount').eq('organization_id', orgId),
       ]);
 
       const defaultOrgRate = (currentOrganization as any)?.sales_commission_rule?.default_rate || 0;
