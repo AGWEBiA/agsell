@@ -364,13 +364,49 @@ export default function Pipeline() {
                   onChange={(e) => setNewDeal({ ...newDeal, expected_close_date: e.target.value })}
                 />
               </div>
+              <div className="grid gap-2 border-t pt-4 mt-2">
+                <Label className="flex items-center gap-2">
+                  <Package className="h-4 w-4" /> Configuração por Produto
+                </Label>
+                <Select
+                  value={selectedProduct}
+                  onValueChange={(value) => {
+                    setSelectedProduct(value);
+                    if (value !== 'custom') {
+                      const prod = productCommissions.find(p => p.id === value);
+                      if (prod) {
+                        setNewDeal({
+                          ...newDeal,
+                          title: prod.product_name,
+                          commission_rate: Number(prod.commission_rate)
+                        });
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Aplicar regra de produto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="custom">Valor Personalizado</SelectItem>
+                    {productCommissions.map((prod) => (
+                      <SelectItem key={prod.id} value={prod.id}>
+                        {prod.product_name} ({prod.commission_rate}%)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="commission">Taxa de Comissão (%)</Label>
                 <Input
                   id="commission"
                   type="number"
                   value={newDeal.commission_rate}
-                  onChange={(e) => setNewDeal({ ...newDeal, commission_rate: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    setNewDeal({ ...newDeal, commission_rate: parseFloat(e.target.value) || 0 });
+                    setSelectedProduct('custom');
+                  }}
                   placeholder="0"
                 />
               </div>
