@@ -332,22 +332,40 @@ export function useInbox() {
             // based on SERVER_ACK / DELIVERY_ACK / READ events. Initial state stays 'pending'.
             // In some Evolution versions/configs, the status might come as 'sent' immediately in the 200 response.
 
-            const externalId = responseData?.data?.key?.id || responseData?.message_id || responseData?.data?.messageId || responseData?.data?.id || responseData?.id;
+            const externalId = responseData?.data?.key?.id || responseData?.message_id || responseData?.data?.messageId || responseData?.data?.id || responseData?.id || responseData?.data?.key?.remoteJid; // Fallback to any ID
             const instanceUsed = responseData?.instance_used || responseData?.data?.instance || responseData?.instance;
             const evoStatus = String(responseData?.data?.status || responseData?.data?.key?.status || responseData?.status || '').toUpperCase();
-            const updates: Record<string, any> = {};
-            if (externalId) updates.external_id = externalId;
+            
+            console.log('[useInbox] WhatsApp response:', { externalId, evoStatus, responseData });
+
+            const updates: Record<string, any> = {
+              updated_at: new Date().toISOString()
+            };
+            
+            if (externalId) updates.external_id = String(externalId);
             if (instanceUsed) updates.instance_name = instanceUsed;
             
+            // Always move from 'pending' to 'sent' if we got a successful response from the edge function
+            // unless it's an explicit error from Evolution
             if (evoStatus === 'ERROR' || evoStatus === 'FAILED') {
               updates.delivery_status = 'failed';
-            } else if (evoStatus === 'SENT' || evoStatus === 'SUCCESS' || evoStatus === 'ACCEPTED' || externalId) {
+            } else {
               updates.delivery_status = 'sent';
             }
 
-            if (Object.keys(updates).length > 0) {
-              const { data: updatedData } = await supabase.from('messages').update(updates).eq('id', data.id).select().single();
-              if (updatedData) return updatedData;
+            console.log('[useInbox] Updating message with:', updates);
+            const { data: updatedData, error: updateErr } = await supabase
+              .from('messages')
+              .update(updates)
+              .eq('id', data.id)
+              .select()
+              .single();
+              
+            if (updateErr) {
+              console.error('[useInbox] Error updating message status:', updateErr);
+            } else if (updatedData) {
+              console.log('[useInbox] Message updated successfully:', updatedData);
+              return updatedData;
             }
           }
         } catch {
