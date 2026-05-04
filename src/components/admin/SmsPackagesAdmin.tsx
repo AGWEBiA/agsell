@@ -139,18 +139,6 @@ export function SmsPackagesAdmin() {
                   </TableCell>
                   <TableCell>
                     {isEditing ? (
-                      <Input
-                        value={editValues.stripe_price_id || ''}
-                        onChange={(e) => setEditValues((v) => ({ ...v, stripe_price_id: e.target.value }))}
-                        placeholder="price_..."
-                        className="text-xs"
-                      />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">{pkg.stripe_price_id || '—'}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
                       <div className="flex gap-1">
                         <Button
                           size="sm"
