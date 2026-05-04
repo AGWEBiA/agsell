@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ptBR } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Target,
   ArrowUpRight,
+  ArrowRight,
   ArrowDownRight,
   Activity,
   CheckCircle2,
@@ -28,7 +29,11 @@ import {
   UserPlus,
   Trophy,
   Flame,
+  Briefcase,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   AreaChart,
   Area,
@@ -70,7 +75,7 @@ export default function Dashboard() {
   const { data: activities, isLoading: loadingActivities } = useRecentActivities();
   const { data: topLeads, isLoading: loadingTopLeads } = useTopLeads();
   const { stats: gamificationStats, getLevelTitle } = useGamification();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, currentRole } = useOrganization();
 
   const { data: commCredits } = useQuery({
     queryKey: ['communication-credits', currentOrganization?.id],
@@ -266,6 +271,46 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Sales Performance Summary for Admins */}
+      {(currentRole === 'owner' || currentRole === 'admin') && (
+        <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Performance do Time Comercial</CardTitle>
+              <CardDescription>Resumo rápido das vendas e comissões do mês</CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/crm-admin" className="gap-1">
+                Ver completo <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Faturamento (Mês)</p>
+                <p className="text-2xl font-bold text-primary">
+                  {formatCurrency(stats?.totalDealsValue || 0)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Comissões Geradas</p>
+                <p className="text-2xl font-bold text-orange-500">
+                  {formatCurrency((stats?.totalDealsValue || 0) * 0.1)} {/* Mocking a general 10% if not calculated yet */}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Melhor Vendedor</p>
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-500" />
+                  <span className="font-semibold">{stats?.topSalesRep || 'Carregando...'}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Row */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">

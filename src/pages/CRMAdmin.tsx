@@ -130,6 +130,12 @@ export default function CRMAdmin() {
               description={`Ciclo médio: ${data?.avgSalesCycleDays || 0} dias`}
               icon={<Target className="h-5 w-5" />}
             />
+            <StatCard
+              title="Total Comissões"
+              value={formatBRL(repsData.reduce((s, r) => s + (r.commissionValue || 0), 0))}
+              description="Soma das comissões de deals ganhos"
+              icon={<DollarSign className="h-5 w-5 text-orange-500" />}
+            />
           </>
         )}
       </div>
@@ -192,9 +198,12 @@ export default function CRMAdmin() {
                         <TableHead>Vendedor</TableHead>
                         <TableHead className="text-right">Pipeline</TableHead>
                         <TableHead className="text-right">Ganho</TableHead>
+                        <TableHead className="text-right">Comissão</TableHead>
                         <TableHead className="text-right">Deals</TableHead>
                         <TableHead className="text-right">Conv.</TableHead>
                         <TableHead className="text-right">Ticket Médio</TableHead>
+                        <TableHead className="text-right">Interações</TableHead>
+                        <TableHead className="text-right">Reuniões</TableHead>
                         <TableHead className="text-right">Contatos</TableHead>
                         <TableHead className="text-right">Tarefas ✓</TableHead>
                         <TableHead className="min-w-[140px]">% do Total</TableHead>
@@ -218,9 +227,12 @@ export default function CRMAdmin() {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right text-sm">{formatBRL(rep.pipelineValue)}</TableCell>
+                             <TableCell className="text-right text-sm">{formatBRL(rep.pipelineValue)}</TableCell>
                             <TableCell className="text-right text-sm font-semibold text-green-600 dark:text-green-400">
                               {formatBRL(rep.wonValue)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium text-orange-600 dark:text-orange-400">
+                              {formatBRL(rep.commissionValue)}
                             </TableCell>
                             <TableCell className="text-right text-sm">
                               <span className="text-green-600 dark:text-green-400">{rep.wonDeals}</span>
@@ -229,6 +241,8 @@ export default function CRMAdmin() {
                             </TableCell>
                             <TableCell className="text-right text-sm">{rep.conversionRate}%</TableCell>
                             <TableCell className="text-right text-sm">{formatBRL(rep.avgDealValue)}</TableCell>
+                            <TableCell className="text-right text-sm font-medium">{rep.interactionsCount}</TableCell>
+                            <TableCell className="text-right text-sm font-medium">{rep.meetingsCount}</TableCell>
                             <TableCell className="text-right text-sm">{rep.contactsOwned}</TableCell>
                             <TableCell className="text-right text-sm">{rep.tasksCompleted}</TableCell>
                             <TableCell>

@@ -90,6 +90,7 @@ const formatCurrency = (value: number | null) => {
 
 export default function Pipeline() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
@@ -100,6 +101,8 @@ export default function Pipeline() {
     stage_id: '',
     contact_id: '',
     expected_close_date: '',
+    commission_rate: 0,
+    payment_link: '',
   });
 
   const { data: stages = [], isLoading: stagesLoading } = usePipelineStages();
@@ -134,7 +137,21 @@ export default function Pipeline() {
       contact_id: newDeal.contact_id || undefined,
     });
     setIsDialogOpen(false);
-    setNewDeal({ title: '', value: 0, stage_id: '', contact_id: '', expected_close_date: '' });
+    setNewDeal({ title: '', value: 0, stage_id: '', contact_id: '', expected_close_date: '', commission_rate: 0, payment_link: '' });
+  };
+
+  const handleUpdateDeal = async () => {
+    if (!editingDeal) return;
+    await updateDeal.mutateAsync({
+      id: editingDeal.id,
+      title: editingDeal.title,
+      value: editingDeal.value || 0,
+      commission_rate: editingDeal.commission_rate || 0,
+      payment_link: editingDeal.payment_link || '',
+      expected_close_date: editingDeal.expected_close_date || undefined,
+      contact_id: editingDeal.contact_id || undefined,
+    });
+    setEditingDeal(null);
   };
 
   const handleMoveDeal = async (dealId: string, newStageId: string) => {
@@ -321,6 +338,25 @@ export default function Pipeline() {
                   onChange={(e) => setNewDeal({ ...newDeal, expected_close_date: e.target.value })}
                 />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="commission">Taxa de Comissão (%)</Label>
+                <Input
+                  id="commission"
+                  type="number"
+                  value={newDeal.commission_rate}
+                  onChange={(e) => setNewDeal({ ...newDeal, commission_rate: parseFloat(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="paymentLink">Link de Pagamento</Label>
+                <Input
+                  id="paymentLink"
+                  value={newDeal.payment_link}
+                  onChange={(e) => setNewDeal({ ...newDeal, payment_link: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -332,6 +368,77 @@ export default function Pipeline() {
               >
                 {createDeal.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Criar Deal
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Deal Dialog */}
+        <Dialog open={!!editingDeal} onOpenChange={(open) => !open && setEditingDeal(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Deal</DialogTitle>
+              <DialogDescription>
+                Atualize as informações desta oportunidade
+              </DialogDescription>
+            </DialogHeader>
+            {editingDeal && (
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-name">Nome do Deal *</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingDeal.title}
+                    onChange={(e) => setEditingDeal({ ...editingDeal, title: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-value">Valor</Label>
+                  <Input
+                    id="edit-value"
+                    type="number"
+                    value={editingDeal.value || 0}
+                    onChange={(e) => setEditingDeal({ ...editingDeal, value: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-commission">Taxa de Comissão (%)</Label>
+                  <Input
+                    id="edit-commission"
+                    type="number"
+                    value={editingDeal.commission_rate || 0}
+                    onChange={(e) => setEditingDeal({ ...editingDeal, commission_rate: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-paymentLink">Link de Pagamento</Label>
+                  <Input
+                    id="edit-paymentLink"
+                    value={editingDeal.payment_link || ''}
+                    onChange={(e) => setEditingDeal({ ...editingDeal, payment_link: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-closeDate">Previsão de Fechamento</Label>
+                  <Input
+                    id="edit-closeDate"
+                    type="date"
+                    value={editingDeal.expected_close_date || ''}
+                    onChange={(e) => setEditingDeal({ ...editingDeal, expected_close_date: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingDeal(null)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleUpdateDeal} 
+                disabled={updateDeal.isPending}
+              >
+                {updateDeal.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Alterações
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -406,6 +513,7 @@ export default function Pipeline() {
                             onDragEnd={handleDragEnd}
                             onMove={handleMoveDeal}
                             onDelete={(id) => setDeleteId(id)}
+                            onEdit={(deal) => setEditingDeal(deal)}
                           />
                         ))
                       )}

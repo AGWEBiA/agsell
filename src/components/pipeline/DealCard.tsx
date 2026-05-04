@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GripVertical, DollarSign, Calendar, MoreHorizontal, MessageSquareText } from 'lucide-react';
+import { GripVertical, DollarSign, Calendar, MoreHorizontal, MessageSquareText, Percent, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Deal, PipelineStage } from '@/hooks/usePipeline';
 import { useContactLastSacMessage } from '@/hooks/useSacLeads';
@@ -31,6 +31,7 @@ interface DealCardProps {
   onDragEnd: () => void;
   onMove: (dealId: string, stageId: string) => void;
   onDelete: (dealId: string) => void;
+  onEdit: (deal: Deal) => void;
 }
 
 export function DealCard({
@@ -42,6 +43,7 @@ export function DealCard({
   onDragEnd,
   onMove,
   onDelete,
+  onEdit,
 }: DealCardProps) {
   const contactName = deal.contact
     ? `${deal.contact.first_name} ${deal.contact.last_name || ''}`.trim()
@@ -71,7 +73,7 @@ export function DealCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled>Editar</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(deal)}>Editar</DropdownMenuItem>
               {stages
                 .filter((s) => s.id !== stage.id)
                 .map((s) => (
@@ -94,6 +96,26 @@ export function DealCard({
             <DollarSign className="h-4 w-4" />
             {formatCurrency(deal.value)}
           </div>
+
+          {(deal.commission_rate || 0) > 0 && (
+            <div className="flex items-center gap-2 text-xs text-orange-600 font-medium">
+              <Percent className="h-3 w-3" />
+              Comissão: {deal.commission_rate}% ({formatCurrency(deal.commission_value)})
+            </div>
+          )}
+
+          {deal.payment_link && (
+            <a 
+              href={deal.payment_link} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-2.5 w-2.5" />
+              Link de Pagamento
+            </a>
+          )}
 
           {/* Source badge — origem do lead */}
           {(deal.contact?.source || lastMsg?.channel) && (

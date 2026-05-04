@@ -31,10 +31,13 @@ export interface SalesRepPerformance {
   lostDeals: number;
   pipelineValue: number;
   wonValue: number;
+  commissionValue: number;
   conversionRate: number;
   avgDealValue: number;
   contactsOwned: number;
   tasksCompleted: number;
+  meetingsCount: number;
+  interactionsCount: number;
 }
 
 export interface DealsByStageAdmin {
@@ -161,11 +164,13 @@ export function useSalesRepPerformance() {
       if (!members?.length) return [];
 
       const userIds = members.map(m => m.user_id);
-      const [{ data: profiles }, { data: deals }, { data: contacts }, { data: tasks }] = await Promise.all([
+      const [{ data: profiles }, { data: deals }, { data: contacts }, { data: tasks }, { data: activities }, { data: messages }] = await Promise.all([
         supabase.from('profiles').select('user_id, full_name, avatar_url').in('user_id', userIds),
-        supabase.from('deals').select('user_id, value, status').eq('organization_id', orgId),
+        supabase.from('deals').select('user_id, value, status, commission_value').eq('organization_id', orgId),
         supabase.from('contacts').select('user_id').eq('organization_id', orgId),
         supabase.from('tasks').select('user_id, status').eq('organization_id', orgId).eq('status', 'completed'),
+        supabase.from('activities').select('user_id, type').eq('organization_id', orgId).in('type', ['meeting', 'call']),
+        supabase.from('messages').select('user_id').eq('organization_id', orgId),
       ]);
 
       return members.map(m => {
@@ -176,6 +181,7 @@ export function useSalesRepPerformance() {
         const lost = userDeals.filter(d => d.status === 'lost');
         const pipelineValue = open.reduce((s, d) => s + (d.value || 0), 0);
         const wonValue = won.reduce((s, d) => s + (d.value || 0), 0);
+        const commissionValue = won.reduce((s, d) => s + (Number(d.commission_value) || 0), 0);
         const decided = won.length + lost.length;
         return {
           user_id: m.user_id,
@@ -188,10 +194,14 @@ export function useSalesRepPerformance() {
           lostDeals: lost.length,
           pipelineValue,
           wonValue,
+          commissionValue,
           conversionRate: decided > 0 ? Math.round((won.length / decided) * 100) : 0,
           avgDealValue: won.length > 0 ? Math.round(wonValue / won.length) : 0,
           contactsOwned: (contacts || []).filter(c => c.user_id === m.user_id).length,
           tasksCompleted: (tasks || []).filter(t => t.user_id === m.user_id).length,
+          meetingsCount: (activities || []).filter(a => a.user_id === m.user_id && a.type === 'meeting').length,
+          interactionsCount: (messages || []).filter(msg => msg.user_id === m.user_id).length + 
+                           (activities || []).filter(a => a.user_id === m.user_id && a.type === 'call').length,
         };
       }).sort((a, b) => b.wonValue - a.wonValue);
     },

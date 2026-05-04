@@ -2010,17 +2010,22 @@ export type Database = {
       }
       deals: {
         Row: {
+          commission_rate: number | null
+          commission_value: number | null
           company_id: string | null
           contact_id: string | null
           created_at: string
           currency: string | null
           expected_close_date: string | null
+          external_sale_id: string | null
           id: string
           last_stage_change_at: string | null
           lost_reason: string | null
           notes: string | null
           organization_id: string | null
           owner_id: string | null
+          payment_link: string | null
+          payment_status: string | null
           probability: number | null
           stage_id: string | null
           status: string | null
@@ -2030,17 +2035,22 @@ export type Database = {
           value: number | null
         }
         Insert: {
+          commission_rate?: number | null
+          commission_value?: number | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
           currency?: string | null
           expected_close_date?: string | null
+          external_sale_id?: string | null
           id?: string
           last_stage_change_at?: string | null
           lost_reason?: string | null
           notes?: string | null
           organization_id?: string | null
           owner_id?: string | null
+          payment_link?: string | null
+          payment_status?: string | null
           probability?: number | null
           stage_id?: string | null
           status?: string | null
@@ -2050,17 +2060,22 @@ export type Database = {
           value?: number | null
         }
         Update: {
+          commission_rate?: number | null
+          commission_value?: number | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
           currency?: string | null
           expected_close_date?: string | null
+          external_sale_id?: string | null
           id?: string
           last_stage_change_at?: string | null
           lost_reason?: string | null
           notes?: string | null
           organization_id?: string | null
           owner_id?: string | null
+          payment_link?: string | null
+          payment_status?: string | null
           probability?: number | null
           stage_id?: string | null
           status?: string | null
