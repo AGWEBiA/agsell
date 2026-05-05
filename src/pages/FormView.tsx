@@ -15,8 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { FormSettings } from '@/components/forms/FormTemplates';
-import { DEFAULT_SETTINGS } from '@/components/forms/FormTemplates';
+import { type FormSettings, DEFAULT_SETTINGS } from '@/components/forms/FormTemplates';
 import { PhoneFieldWithDDI } from '@/components/forms/PhoneFieldWithDDI';
 
 interface FormField {

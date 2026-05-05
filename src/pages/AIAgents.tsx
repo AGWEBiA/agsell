@@ -12,10 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, Plus, Trash2, Edit, Brain, MessageSquare, Zap, BookOpen, Loader2, BarChart3, LayoutTemplate } from 'lucide-react';
-import { useAIAgents, useCreateAIAgent, useUpdateAIAgent, useDeleteAIAgent, useAIAgentKnowledge, useAddKnowledge, useDeleteKnowledge } from '@/hooks/useAIAgents';
-import type { AIAgent } from '@/hooks/useAIAgents';
-import { AgentTemplates } from '@/components/ai-agents/AgentTemplates';
-import type { AgentTemplate } from '@/components/ai-agents/AgentTemplates';
+import { useAIAgents, useCreateAIAgent, useUpdateAIAgent, useDeleteAIAgent, useAIAgentKnowledge, useAddKnowledge, useDeleteKnowledge, type AIAgent } from '@/hooks/useAIAgents';
+import { AgentTemplates, type AgentTemplate } from '@/components/ai-agents/AgentTemplates';
 import { AgentPerformanceDashboard } from '@/components/ai-agents/AgentPerformanceDashboard';
 
 const AVAILABLE_MODELS = [

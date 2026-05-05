@@ -1,10 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Copy, ArrowLeft, Loader2 } from 'lucide-react';
 
 const MANUAL_CONTENT = `# MANUAL TÉCNICO COMPLETO — AG SELL
 ## Plataforma CRM + Automação Omnichannel + IA
