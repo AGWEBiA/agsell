@@ -18,22 +18,29 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: "esnext",
+    target: "es2020",
     minify: "esbuild",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 5000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@radix-ui')) return 'vendor-ui';
-            if (id.includes('lucide-react')) return 'vendor-icons';
-            if (id.includes('recharts')) return 'vendor-charts';
-            if (id.includes('date-fns')) return 'vendor-date';
-            return 'vendor';
-          }
-        },
-      },
-    },
+        manualChunks: {
+          'vendor': [
+            'react', 
+            'react-dom', 
+            'react-router-dom', 
+            '@tanstack/react-query',
+            '@supabase/supabase-js'
+          ],
+          'ui-core': [
+            '@radix-ui/react-slot',
+            '@radix-ui/react-label',
+            'class-variance-authority',
+            'tailwind-merge',
+            'clsx'
+          ]
+        }
+      }
+    }
   },
 }));
