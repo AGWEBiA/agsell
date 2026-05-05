@@ -26,6 +26,14 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Self-healing: unlock tasks stuck in processing for more than 10 minutes
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60000).toISOString();
+    await supabase
+      .from("wa_sync_queue")
+      .update({ status: "pending", last_error: "Timeout/Stuck reset" })
+      .eq("status", "processing")
+      .lt("updated_at", tenMinutesAgo);
+
     // Get pending items from queue
     const { data: queueItems, error: fetchError } = await supabase
       .from("wa_sync_queue")
