@@ -1257,11 +1257,10 @@ export default function FlowBuilder() {
                 <p className="text-[7px] font-semibold text-white/30 uppercase tracking-wider text-center mb-1 mt-3">— Agendamento —</p>
                 <div
                   draggable="true"
-                  
                   onDragStart={e => handleDragStart(e, 'action', 'timer')}
                   onDragEnd={handleDragEnd}
                   onClick={() => handleClickToAdd('action', 'timer')}
-                  className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/10 transition-all cursor-pointer group select-none"
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/10 transition-all cursor-grab active:cursor-grabbing group select-none relative z-[5]"
                   title="Timer — Clique ou arraste"
                 >
                   <div className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0 bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 pointer-events-none">
