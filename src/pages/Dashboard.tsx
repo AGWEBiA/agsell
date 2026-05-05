@@ -91,6 +91,36 @@ export default function Dashboard() {
     enabled: !!currentOrganization?.id,
   });
 
+  const { data: healthStatus } = useQuery({
+    queryKey: ['automation-health', currentOrganization?.id],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+      
+      const { data: recentLogs } = await supabase
+        .from('wa_sync_logs')
+        .select('status')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const { count: pendingQueue } = await supabase
+        .from('wa_sync_queue')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', currentOrganization.id)
+        .eq('status', 'pending');
+
+      const errors = recentLogs?.filter(l => l.status === 'error').length || 0;
+      
+      return {
+        status: errors > 3 ? 'critical' : errors > 0 ? 'warning' : 'operational',
+        pending: pendingQueue || 0,
+        errors
+      };
+    },
+    enabled: !!currentOrganization?.id,
+    refetchInterval: 30000,
+  });
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
