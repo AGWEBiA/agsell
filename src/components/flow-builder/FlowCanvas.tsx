@@ -178,37 +178,46 @@ export function FlowCanvas({
     e.stopPropagation();
     setDragOverCanvas(false);
 
+    console.log('[FlowCanvas] Drop event received', {
+      types: e.dataTransfer.types,
+      sidebarPayload: sidebarDragPayload
+    });
+
     // Try multiple data transfer formats
     let raw = '';
     try {
+      // Priority 1: application/flow-node
       raw = e.dataTransfer.getData('application/flow-node');
-    } catch {}
-    if (!raw) {
-      try {
+      if (!raw) {
+        // Priority 2: text/plain
         raw = e.dataTransfer.getData('text/plain');
-      } catch {}
-    }
-    if (!raw) {
-      try {
+      }
+      if (!raw) {
+        // Priority 3: text
         raw = e.dataTransfer.getData('text');
-      } catch {}
+      }
+    } catch (err) {
+      console.error('[FlowCanvas] Error getting dataTransfer data:', err);
     }
 
     let droppedNode: { nodeType: FlowNode['type']; subtype: string } | null = null;
 
     try {
       if (raw) {
-        const parsed = JSON.parse(raw) as { nodeType: FlowNode['type']; subtype: string };
+        // Some browsers wrap the data in quotes if it's not a standard type
+        const cleanRaw = raw.trim().startsWith('{') ? raw : raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
+        const parsed = JSON.parse(cleanRaw) as { nodeType: FlowNode['type']; subtype: string };
         if (parsed?.nodeType && parsed?.subtype) {
           droppedNode = parsed;
         }
       }
-    } catch {
-      console.warn('[FlowCanvas] Failed to parse drop data:', raw);
+    } catch (err) {
+      console.warn('[FlowCanvas] Failed to parse drop data:', raw, err);
     }
 
-    // Fallback to sidebar payload state
+    // Fallback to sidebar payload state if dataTransfer is empty (common in some React DnD scenarios)
     if (!droppedNode && sidebarDragPayload) {
+      console.log('[FlowCanvas] Falling back to sidebarDragPayload state');
       droppedNode = sidebarDragPayload;
     }
 
@@ -232,6 +241,8 @@ export function FlowCanvas({
       config: {},
       position: { x: pos.x - 90, y: pos.y - 30 },
     };
+    
+    console.log('[FlowCanvas] Adding new node from drop:', newNode);
     onNodesChange(currentNodes => [...currentNodes, newNode]);
     onSidebarDragConsume?.();
   }, [screenToCanvas, onNodesChange, onSidebarDragConsume, sidebarDragPayload]);
@@ -239,9 +250,23 @@ export function FlowCanvas({
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = 'copy';
+    
+    // Explicitly set dropEffect to allow drop
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    
     if (!dragOverCanvas) setDragOverCanvas(true);
   }, [dragOverCanvas]);
+
+  const handleCanvasDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setDragOverCanvas(true);
+  }, []);
 
   const handleDeleteConnection = useCallback((connId: string) => {
     onConnectionsChange(currentConnections => currentConnections.filter(c => c.id !== connId));
@@ -296,6 +321,7 @@ export function FlowCanvas({
       onWheel={handleWheel}
       onDrop={handleCanvasDrop}
       onDragOver={handleCanvasDragOver}
+      onDragEnter={handleCanvasDragEnter}
       onDragLeave={() => setDragOverCanvas(false)}
     >
       {/* Transform layer — drops handled by outer canvas div only */}

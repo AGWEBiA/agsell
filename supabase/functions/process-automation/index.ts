@@ -700,30 +700,22 @@ serve(async (req) => {
             const contact = await getContact();
             const phoneNumber = contact?.whatsapp || contact?.phone;
             if (phoneNumber && action.config.group_id) {
-              const { data: groupData } = await supabase
-                .from('whatsapp_groups')
-                .select('external_group_id, settings')
-                .eq('id', action.config.group_id as string)
-                .single();
-
-              if (groupData?.external_group_id) {
-                const { data: platformSettings } = await supabase
-                  .from('platform_settings').select('value').eq('key', 'evolution_api').single();
-                const evoConfig = platformSettings?.value as { api_url?: string; api_key?: string } | null;
-                if (evoConfig?.api_url && evoConfig?.api_key) {
-                  let digits = phoneNumber.replace(/\D/g, '');
-                  if (digits.length >= 10 && digits.length <= 11 && !digits.startsWith('55')) digits = '55' + digits;
-                  const instanceName = (action.config.instance_name as string) || ((groupData.settings as Record<string, string>)?.instance_name) || '';
-                  const resp = await fetch(`${evoConfig.api_url.replace(/\/+$/, '')}/group/updateParticipant/${instanceName}`, {
-                    method: 'PUT',
-                    headers: { apikey: evoConfig.api_key, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ groupJid: groupData.external_group_id, action: 'add', participants: [`${digits}@s.whatsapp.net`] }),
-                  });
-                  actionResult = { success: resp.ok };
-                }
-              }
+              // Push to asynchronous queue (Etapa 3)
+              const { error: queueError } = await supabase.from('wa_sync_queue').insert({
+                organization_id: automation.organization_id,
+                action_type: 'add_member',
+                group_id: action.config.group_id as string,
+                user_id: contact_id, // Contact ID is treated as user_id in this context
+                phone_number: phoneNumber,
+                status: 'pending'
+              });
+              
+              actionResult = { success: !queueError, queued: true };
+              await logTimeline('add_to_group', 'Grupo WA', 'success', { queued: true });
+            } else {
+              actionResult = { success: false, reason: 'Missing phone or group_id' };
+              await logTimeline('add_to_group', 'Grupo WA', 'failed', { reason: 'Missing data' });
             }
-            await logTimeline('add_to_group', 'Grupo WA', 'success');
             break;
           }
 
