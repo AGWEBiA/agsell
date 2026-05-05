@@ -6751,6 +6751,118 @@ export type Database = {
           },
         ]
       }
+      wa_sync_logs: {
+        Row: {
+          action_type: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          organization_id: string | null
+          queue_id: string | null
+          status: string | null
+        }
+        Insert: {
+          action_type?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          organization_id?: string | null
+          queue_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          action_type?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          organization_id?: string | null
+          queue_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_sync_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_sync_logs_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "wa_sync_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_sync_queue: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          group_id: string | null
+          id: string
+          last_error: string | null
+          organization_id: string | null
+          phone_number: string | null
+          retry_count: number | null
+          scheduled_for: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          last_error?: string | null
+          organization_id?: string | null
+          phone_number?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          last_error?: string | null
+          organization_id?: string | null
+          phone_number?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_sync_queue_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "plan_whatsapp_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_sync_queue_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_sync_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       webhook_deliveries: {
         Row: {
           attempts: number | null
