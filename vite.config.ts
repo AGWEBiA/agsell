@@ -19,21 +19,15 @@ export default defineConfig(({ mode }) => ({
   },
   logLevel: 'info', // Ativa logs detalhados
   build: {
-    target: "es2020",
+    target: "esnext",
     minify: "esbuild",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 2500, // Aumentado para evitar avisos em projetos grandes
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // Unificamos tudo em um vendor para garantir que o Vite resolva
-            // as dependências corretamente sem circularidade
-            return 'vendor';
-          }
-        },
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
+        // Desativamos manualChunks para deixar o Vite/Rollup gerenciar as dependências
+        // Isso elimina erros de circularidade que travam a publicação
+        manualChunks: undefined,
       }
     }
   },
