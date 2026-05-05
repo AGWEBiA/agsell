@@ -14,8 +14,8 @@ import {
   BreadcrumbSeparator 
 } from '@/components/ui/breadcrumb';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DealsList from './Deals'; // I will rename the current Deals.tsx to DealsList.tsx
-import Pipeline from './Pipeline'; // This is the Kanban view
+import DealsList from './DealsList';
+import DealsKanban from './DealsKanban';
 
 export default function DealsConsolidated() {
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>(() => {
@@ -63,7 +63,7 @@ export default function DealsConsolidated() {
         </div>
       </div>
 
-      {viewMode === 'list' ? <DealsList /> : <Pipeline />}
+      {viewMode === 'list' ? <DealsList /> : <DealsKanban />}
     </div>
   );
 }
