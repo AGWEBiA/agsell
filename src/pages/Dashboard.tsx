@@ -19,6 +19,8 @@ import {
   ArrowDownRight,
   Activity,
   CheckCircle2,
+  AlertTriangle,
+  XCircle,
   Clock,
   Mail,
   Phone, PhoneCall, Wallet,
