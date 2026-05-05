@@ -79,7 +79,7 @@ export default function SystemLogs() {
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-medium uppercase text-muted-foreground">Nível</label>
               <Select value={level} onValueChange={setLevel}>
@@ -97,11 +97,9 @@ export default function SystemLogs() {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-medium uppercase text-muted-foreground">Origem</label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <div className="flex gap-2">
                 <Input 
                   placeholder="Ex: webhook-kiwify" 
-                  className="pl-9"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                 />
@@ -117,6 +115,13 @@ export default function SystemLogs() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
+              </div>
+            </div>
+            <div className="space-y-2 flex flex-col justify-end">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSource('kiwify')} className="text-[10px] h-7 px-2">Kiwify</Button>
+                <Button variant="outline" size="sm" onClick={() => setSource('wa-sync')} className="text-[10px] h-7 px-2">WhatsApp</Button>
+                <Button variant="outline" size="sm" onClick={() => {setSource(''); setLevel('all'); setSearch('');}} className="text-[10px] h-7 px-2">Limpar</Button>
               </div>
             </div>
           </div>

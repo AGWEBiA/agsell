@@ -19,6 +19,8 @@ import {
   ArrowDownRight,
   Activity,
   CheckCircle2,
+  AlertTriangle,
+  XCircle,
   Clock,
   Mail,
   Phone, PhoneCall, Wallet,
@@ -89,6 +91,36 @@ export default function Dashboard() {
       return data;
     },
     enabled: !!currentOrganization?.id,
+  });
+
+  const { data: healthStatus } = useQuery({
+    queryKey: ['automation-health', currentOrganization?.id],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+      
+      const { data: recentLogs } = await supabase
+        .from('wa_sync_logs')
+        .select('status')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const { count: pendingQueue } = await supabase
+        .from('wa_sync_queue')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', currentOrganization.id)
+        .eq('status', 'pending');
+
+      const errors = recentLogs?.filter(l => l.status === 'error').length || 0;
+      
+      return {
+        status: errors > 3 ? 'critical' : errors > 0 ? 'warning' : 'operational',
+        pending: pendingQueue || 0,
+        errors
+      };
+    },
+    enabled: !!currentOrganization?.id,
+    refetchInterval: 30000,
   });
 
   const formatCurrency = (value: number) => {
@@ -243,34 +275,72 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Saldo de Créditos Unificado */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Créditos de Comunicação (SMS + VoIP)
-          </CardTitle>
-          <Wallet className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {(commCredits?.balance ?? 0).toLocaleString('pt-BR')}
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground">
-              Comprados: {(commCredits?.total_purchased ?? 0).toLocaleString('pt-BR')}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Usados: {(commCredits?.total_used ?? 0).toLocaleString('pt-BR')}
-            </span>
-          </div>
-          {(commCredits?.total_purchased ?? 0) > 0 && (
-            <Progress
-              value={((commCredits?.balance ?? 0) / (commCredits?.total_purchased ?? 1)) * 100}
-              className="h-1.5 mt-2"
-            />
-          )}
-        </CardContent>
-      </Card>
+      {/* Health & Queue Status */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className={`border-2 ${healthStatus?.status === 'critical' ? 'border-red-500 bg-red-50/50' : healthStatus?.status === 'warning' ? 'border-amber-500 bg-amber-50/50' : 'border-green-500/20'}`}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Status da Sincronização WhatsApp</CardTitle>
+            {healthStatus?.status === 'operational' ? (
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            ) : healthStatus?.status === 'warning' ? (
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+            ) : (
+              <XCircle className="h-4 w-4 text-red-600" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-lg font-bold ${healthStatus?.status === 'operational' ? 'text-green-600' : healthStatus?.status === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
+                  {healthStatus?.status === 'operational' ? 'Operacional' : healthStatus?.status === 'warning' ? 'Atenção' : 'Falha Detectada'}
+                </p>
+                <p className="text-xs text-muted-foreground">Fila inteligente processando</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold">{healthStatus?.pending || 0}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">Na Fila</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Saldo de Créditos
+            </CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(commCredits?.balance ?? 0).toLocaleString('pt-BR')}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-muted-foreground">
+                Usados: {(commCredits?.total_used ?? 0).toLocaleString('pt-BR')}
+              </span>
+              <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
+                <Link to="/settings?tab=billing">Recarregar</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Atalhos Rápidos</CardTitle>
+            <Zap className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-2">
+            <Button asChild variant="outline" size="sm" className="text-[10px] h-8">
+              <Link to="/automations">Ver Fluxos</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="text-[10px] h-8">
+              <Link to="/automation-metrics">Ver Métricas</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Sales Performance Summary for Admins */}
       {(currentRole === 'owner' || currentRole === 'admin') && (
