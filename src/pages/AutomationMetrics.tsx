@@ -1,42 +1,88 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAutomations } from '@/hooks/useAutomations';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { CheckCircle2, XCircle, Clock, AlertTriangle, MessageSquare, Mail, Phone, TrendingUp } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, MessageSquare, Mail, Phone, TrendingUp, Loader2 } from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 const COLORS = ['hsl(142, 76%, 36%)', 'hsl(0, 84%, 60%)', 'hsl(45, 93%, 47%)', 'hsl(220, 90%, 56%)'];
 
 export default function AutomationMetrics() {
+  const { currentOrganization } = useOrganization();
   const { automations } = useAutomations();
   const [selectedAutomation, setSelectedAutomation] = useState<string>('all');
 
-  // Mock granular metrics per step/channel
-  const stepMetrics = [
-    { step: 'Enviar WhatsApp', channel: 'whatsapp', sent: 1250, delivered: 1180, failed: 70, opened: 980, clicked: 320, successRate: 94.4 },
-    { step: 'Enviar E-mail', channel: 'email', sent: 1250, delivered: 1200, failed: 50, opened: 640, clicked: 180, successRate: 96.0 },
-    { step: 'Enviar SMS', channel: 'sms', sent: 800, delivered: 760, failed: 40, opened: 0, clicked: 0, successRate: 95.0 },
-    { step: 'Aguardar 24h', channel: 'system', sent: 1250, delivered: 1250, failed: 0, opened: 0, clicked: 0, successRate: 100 },
-    { step: 'Adicionar Tag', channel: 'system', sent: 980, delivered: 980, failed: 0, opened: 0, clicked: 0, successRate: 100 },
-    { step: 'Condição: Score > 50', channel: 'system', sent: 980, delivered: 620, failed: 360, opened: 0, clicked: 0, successRate: 63.3 },
-  ];
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ['automation-real-metrics', currentOrganization?.id, selectedAutomation],
+    queryFn: async () => {
+      if (!currentOrganization?.id) return null;
+
+      let query = supabase
+        .from('wa_sync_logs')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
+
+      const { data: logs, error } = await query;
+      if (error) throw error;
+
+      // Group by action type and status
+      const summary = {
+        whatsapp: { total: 0, success: 0, fail: 0 },
+        system: { total: 0, success: 0, fail: 0 }
+      };
+
+      logs?.forEach(log => {
+        const cat = log.action_type?.includes('whatsapp') ? 'whatsapp' : 'system';
+        summary[cat].total++;
+        if (log.status === 'success' || log.status === 'completed') summary[cat].success++;
+        else if (log.status === 'error' || log.status === 'failed') summary[cat].fail++;
+      });
+
+      return summary;
+    },
+    enabled: !!currentOrganization?.id
+  });
 
   const channelSummary = [
-    { channel: 'WhatsApp', icon: MessageSquare, total: 1250, success: 1180, fail: 70, rate: 94.4, color: 'text-green-600' },
-    { channel: 'E-mail', icon: Mail, total: 1250, success: 1200, fail: 50, rate: 96.0, color: 'text-blue-600' },
-    { channel: 'SMS', icon: Phone, total: 800, success: 760, fail: 40, rate: 95.0, color: 'text-purple-600' },
+    { 
+      channel: 'WhatsApp Sync', 
+      icon: MessageSquare, 
+      total: metrics?.whatsapp.total || 0, 
+      success: metrics?.whatsapp.success || 0, 
+      fail: metrics?.whatsapp.fail || 0, 
+      rate: metrics?.whatsapp.total ? Math.round((metrics.whatsapp.success / metrics.whatsapp.total) * 100) : 0, 
+      color: 'text-green-600' 
+    },
+    { 
+      channel: 'Processamento', 
+      icon: TrendingUp, 
+      total: metrics?.system.total || 0, 
+      success: metrics?.system.success || 0, 
+      fail: metrics?.system.fail || 0, 
+      rate: metrics?.system.total ? Math.round((metrics.system.success / metrics.system.total) * 100) : 0, 
+      color: 'text-blue-600' 
+    },
   ];
 
   const pieData = [
-    { name: 'Sucesso', value: 3140 },
-    { name: 'Falha', value: 160 },
-    { name: 'Pendente', value: 80 },
+    { name: 'Sucesso', value: metrics?.whatsapp.success || 0 + (metrics?.system.success || 0) },
+    { name: 'Falha', value: metrics?.whatsapp.fail || 0 + (metrics?.system.fail || 0) },
   ];
 
-  const chartData = stepMetrics.filter(s => s.channel !== 'system');
+  if (isLoading) {
+    return (
+      <div className=\"flex h-[400px] items-center justify-center\">
+        <Loader2 className=\"h-8 w-8 animate-spin text-primary\" />
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6">
