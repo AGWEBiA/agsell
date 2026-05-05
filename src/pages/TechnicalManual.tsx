@@ -13,7 +13,7 @@ const MANUAL_CONTENT = `# MANUAL TÉCNICO COMPLETO — AG SELL
 **Data:** Maio 2026  
 **Classificação:** Documentação Interna — Uso Técnico e Estratégico
 
-> **Novidades 2.2:** Dashboards de BI com dados reais (Funnel BI e Métricas de Automação), RPCs para agregação de métricas, hardening de segurança com `search_path` em funções PostgreSQL e índices de performance em tabelas críticas (deals, webhooks, wa_sync_queue). SAC com cópia de mensagens, exportação PDF e Agente de Suporte AG Sell (RAG) integrados.
+> **Novidades 2.2:** Dashboards de BI com dados reais (Funnel BI e Métricas de Automação), RPCs para agregação de métricas, hardening de segurança com \`search_path\` em funções PostgreSQL e índices de performance em tabelas críticas (deals, webhooks, wa_sync_queue). SAC com cópia de mensagens, exportação PDF e Agente de Suporte AG Sell (RAG) integrados.
 
 ---
 
