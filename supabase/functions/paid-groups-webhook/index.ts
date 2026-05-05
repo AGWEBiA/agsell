@@ -251,13 +251,30 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    console.log(`[paid-groups-webhook] gateway=${gateway}, org=${config.organization_id}`, JSON.stringify(body).slice(0, 500));
+    const webhookEventId = req.headers.get("X-Webhook-Event-Id");
+    
+    console.log(`[paid-groups-webhook] gateway=${gateway}, org=${config.organization_id}, event_id=${webhookEventId}`, JSON.stringify(body).slice(0, 500));
+
+    // Update the event with correct source and org if needed
+    if (webhookEventId) {
+      await supabase.from("webhook_events").update({
+        organization_id: config.organization_id,
+        source: `paid-groups-${gateway}`
+      }).eq("id", webhookEventId);
+    }
 
     const parser = PARSERS[gateway] || PARSERS.generic;
     const parsed = parser(body);
 
     if (!parsed) {
       console.log("Could not parse event, ignoring");
+      if (webhookEventId) {
+        await supabase.from("webhook_events").update({ 
+          processed: true, 
+          processed_at: new Date().toISOString(),
+          error_message: "Event ignored: could not parse"
+        }).eq("id", webhookEventId);
+      }
       return new Response(JSON.stringify({ ok: true, message: "Event ignored" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -277,6 +294,13 @@ Deno.serve(async (req) => {
 
     if (!matchedProduct) {
       console.log(`No product matched for gateway=${parsed.gateway}, externalId=${parsed.externalProductId}`);
+      if (webhookEventId) {
+        await supabase.from("webhook_events").update({ 
+          processed: true, 
+          processed_at: new Date().toISOString(),
+          error_message: `No product matched for externalId: ${parsed.externalProductId}`
+        }).eq("id", webhookEventId);
+      }
       return new Response(JSON.stringify({ ok: true, message: "No matching product" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -321,6 +345,66 @@ Deno.serve(async (req) => {
           const resp = await fetch(`${evolutionUrl}/group/updateParticipant/${instanceName}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", apikey: evolutionKey },
+            body: JSON.stringify({
+              groupJid: group.group_jid,
+              action: "add",
+              participants: [jid],
+            }),
+          });
+        } catch (err) {
+          console.error("Error updating participant:", err);
+        }
+      } else {
+        // Remove from group
+        try {
+          await fetch(`${evolutionUrl}/group/updateParticipant/${instanceName}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", apikey: evolutionKey },
+            body: JSON.stringify({
+              groupJid: group.group_jid,
+              action: "remove",
+              participants: [jid],
+            }),
+          });
+        } catch (err) {
+          console.error("Error removing participant:", err);
+        }
+      }
+      
+      // Update local membership cache
+      if (parsed.action === "add") {
+        await supabase.from("paid_group_members").upsert({
+          organization_id: config.organization_id,
+          group_id: group.id,
+          customer_phone: phone,
+          customer_name: parsed.customerName,
+          customer_email: parsed.customerEmail,
+          status: "active",
+          joined_at: new Date().toISOString(),
+          last_synced_at: new Date().toISOString(),
+        }, { onConflict: "organization_id,group_id,customer_phone" });
+      } else {
+        await supabase.from("paid_group_members")
+          .update({ status: "removed", left_at: new Date().toISOString(), last_synced_at: new Date().toISOString() })
+          .eq("organization_id", config.organization_id)
+          .eq("group_id", group.id)
+          .eq("customer_phone", phone);
+      }
+    }
+
+    if (webhookEventId) {
+      await supabase.from("webhook_events").update({
+        processed: true,
+        processed_at: new Date().toISOString()
+      }).eq("id", webhookEventId);
+    }
+
+    return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (error: any) {
+    console.error("[paid-groups-webhook] Error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+});
             body: JSON.stringify({ groupJid: group.group_jid, action: "add", participants: [jid] }),
           });
           const result = await resp.json();

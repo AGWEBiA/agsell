@@ -83,33 +83,30 @@ Deno.serve(async (req) => {
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  let webhookEventId: string | undefined;
-
-  try {
-    const url = new URL(req.url);
-    const rawBody = await req.text();
-    const payload = JSON.parse(rawBody) as KiwifyPayload;
-    const signature = req.headers.get("x-kiwify-signature");
-
     const productId = extractProductId(payload);
     const customerEmail = payload.Customer?.email?.toLowerCase();
+    
+    // Check if we already have an event ID from unified-webhook
+    webhookEventId = req.headers.get("X-Webhook-Event-Id") || undefined;
 
-    // --- Store webhook event early ---
-    const { data: webhookEvent, error: webhookError } = await supabase
-      .from("webhook_events")
-      .insert({
-        source: "kiwify",
-        event_type: "received",
-        payload: payload,
-        processed: false,
-      })
-      .select()
-      .single();
+    if (!webhookEventId) {
+      // --- Store webhook event early (if not already stored by unified-webhook) ---
+      const { data: webhookEvent, error: webhookError } = await supabase
+        .from("webhook_events")
+        .insert({
+          source: "kiwify",
+          event_type: "received",
+          payload: payload,
+          processed: false,
+        })
+        .select()
+        .single();
 
-    if (webhookError) throw webhookError;
-    webhookEventId = webhookEvent.id;
+      if (webhookError) throw webhookError;
+      webhookEventId = webhookEvent.id;
+    }
 
-    await logStep(supabase, "Webhook received", { status: payload.order_status, email: customerEmail, product: productId, checkoutLink: payload.checkout_link });
+    await logStep(supabase, "Webhook processing started", { status: payload.order_status, email: customerEmail, product: productId, event_id: webhookEventId });
 
     // --- Signature verification ---
     const kiwifySecret = Deno.env.get("KIWIFY_WEBHOOK_SECRET");
@@ -230,21 +227,15 @@ Deno.serve(async (req) => {
 
     logStep("Plan lookup", { productId, found: !!plan, planName: plan?.name });
 
-    // --- Store webhook event ---
-    const { data: webhookEvent, error: webhookError } = await supabase
-      .from("webhook_events")
-      .insert({
-        source: "kiwify",
-        event_type: eventType,
-        payload: payload,
-        processed: false,
-      })
-      .select()
-      .single();
-
-    if (webhookError) {
-      logStep("ERROR storing webhook", webhookError);
-      throw webhookError;
+    // --- Update webhook event with mapped type ---
+    if (webhookEventId) {
+      await supabase
+        .from("webhook_events")
+        .update({
+          event_type: eventType,
+          payload: payload, // Update payload in case it was modified or to ensure consistency
+        })
+        .eq("id", webhookEventId);
     }
 
     // --- Early exit: ignore products that are not AG Sell plans ---
@@ -263,11 +254,13 @@ Deno.serve(async (req) => {
         orderId: payload.order_id,
         email: customerEmail,
       });
-      await supabase.from("webhook_events").update({
-        processed: true,
-        processed_at: new Date().toISOString(),
-        error_message: "Skipped: product is not an AG Sell plan",
-      }).eq("id", webhookEvent.id);
+      if (webhookEventId) {
+        await supabase.from("webhook_events").update({
+          processed: true,
+          processed_at: new Date().toISOString(),
+          error_message: "Skipped: product is not an AG Sell plan",
+        }).eq("id", webhookEventId);
+      }
       return new Response(
         JSON.stringify({ success: true, event_id: webhookEvent.id, skipped: true, reason: "not_an_agsell_plan" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -366,12 +359,11 @@ Deno.serve(async (req) => {
 
     // --- Process based on event type ---
     if ((payload.order_status === "paid" || payload.order_status === "completed") && customerEmail) {
-      // Idempotency: check if this order was already processed successfully
       const { data: alreadyProcessed } = await supabase
         .from("webhook_events")
         .select("id")
         .eq("source", "kiwify")
-        .neq("id", webhookEvent.id)
+        .neq("id", webhookEventId)
         .eq("processed", true)
         .contains("payload", { order_id: payload.order_id })
         .limit(1)
@@ -379,9 +371,9 @@ Deno.serve(async (req) => {
 
       if (alreadyProcessed) {
         logStep("SKIPPED: order already processed (idempotency)", { orderId: payload.order_id });
-        await supabase.from("webhook_events").update({ processed: true, processed_at: new Date().toISOString() }).eq("id", webhookEvent.id);
+        if (webhookEventId) await supabase.from("webhook_events").update({ processed: true, processed_at: new Date().toISOString() }).eq("id", webhookEventId);
         return new Response(
-          JSON.stringify({ success: true, event_id: webhookEvent.id, skipped: true }),
+          JSON.stringify({ success: true, event_id: webhookEventId, skipped: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -588,10 +580,12 @@ Deno.serve(async (req) => {
         await upsertContact(supabase, payload, plan.name);
       }
 
-      await supabase.from("webhook_events").update({
-        processed: true,
-        processed_at: new Date().toISOString(),
-      }).eq("id", webhookEvent.id);
+      if (webhookEventId) {
+        await supabase.from("webhook_events").update({
+          processed: true,
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
 
       // Sync WhatsApp groups
       if (existingUser) {
@@ -697,14 +691,16 @@ Deno.serve(async (req) => {
         logStep("WARNING: No matching subscription found for refund/chargeback", { orderId, subscriptionId });
       }
 
-      await supabase.from("webhook_events").update({
-        processed: true,
-        processed_at: new Date().toISOString(),
-      }).eq("id", webhookEvent.id);
+      if (webhookEventId) {
+        await supabase.from("webhook_events").update({
+          processed: true,
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
     }
 
     return new Response(
-      JSON.stringify({ success: true, event_id: webhookEvent.id }),
+      JSON.stringify({ success: true, event_id: webhookEventId }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
