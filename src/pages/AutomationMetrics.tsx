@@ -99,7 +99,7 @@ export default function AutomationMetrics() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {channelSummary.map(ch => {
           const Icon = ch.icon;
           return (
@@ -123,6 +123,30 @@ export default function AutomationMetrics() {
             </Card>
           );
         })}
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-muted"><Globe className="h-6 w-6 text-purple-600" /></div>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Webhooks Ativos</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-bold">
+                    {webhookStats.data?.reduce((acc, curr) => acc + Number(curr.out_event_count), 0) || 0}
+                  </p>
+                  <span className="text-xs text-muted-foreground">eventos totais</span>
+                </div>
+                <div className="flex gap-2 mt-1 text-[10px] overflow-hidden truncate">
+                  {webhookStats.data?.map(s => (
+                    <span key={s.out_status} className={s.out_status === 'Success' ? 'text-green-600' : 'text-amber-600'}>
+                      {s.out_status}: {s.out_event_count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
