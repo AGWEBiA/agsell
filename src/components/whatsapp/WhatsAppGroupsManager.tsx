@@ -72,7 +72,7 @@ export function WhatsAppGroupsManager({ filterInstanceName, onClearFilter }: { f
   const [filterTag, setFilterTag] = useState<string>('all');
   const [deleteConfirmGroup, setDeleteConfirmGroup] = useState<WhatsAppGroup | null>(null);
   const [editingGroup, setEditingGroup] = useState<WhatsAppGroup | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', description: '', tags: [] as string[] });
+  const [editForm, setEditForm] = useState({ name: '', description: '', tags: [] as string[], external_group_id: '' });
   const [newTagInput, setNewTagInput] = useState('');
   const [editTagInput, setEditTagInput] = useState('');
   const [sendMessageText, setSendMessageText] = useState('');
