@@ -28,26 +28,10 @@ export default defineConfig(({ mode }) => ({
     target: "es2020",
     minify: "esbuild",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes("node_modules")) {
-            if (id.includes("lucide-react")) {
-              return "vendor-icons";
-            }
-            if (id.includes("recharts")) {
-              return "vendor-charts";
-            }
-            if (id.includes("@radix-ui")) {
-              return "vendor-radix";
-            }
-            if (id.includes("@supabase")) {
-              return "vendor-supabase";
-            }
-            return "vendor";
-          }
-        },
+        manualChunks: undefined,
       },
     },
   },
