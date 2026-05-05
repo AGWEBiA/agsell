@@ -837,32 +837,48 @@ export default function FlowBuilder() {
     const payload = { nodeType: nodeType as FlowNode['type'], subtype };
     isDraggingFromSidebarRef.current = true;
 
+    console.log('[FlowBuilder] Drag start from sidebar', payload);
+
     // Set drag data immediately — this MUST happen synchronously in dragstart
-    e.dataTransfer.setData('application/flow-node', JSON.stringify(payload));
-    e.dataTransfer.setData('text/plain', JSON.stringify(payload));
-    e.dataTransfer.effectAllowed = 'copyMove';
+    try {
+      const payloadStr = JSON.stringify(payload);
+      e.dataTransfer.setData('application/flow-node', payloadStr);
+      e.dataTransfer.setData('text/plain', payloadStr);
+      e.dataTransfer.effectAllowed = 'copyMove';
+    } catch (err) {
+      console.error('[FlowBuilder] Error setting drag data:', err);
+    }
 
     // Create a visible drag image from the dragged element
     const el = e.currentTarget as HTMLElement;
-    const clone = el.cloneNode(true) as HTMLElement;
-    clone.style.position = 'absolute';
-    clone.style.top = '-9999px';
-    clone.style.opacity = '0.8';
-    document.body.appendChild(clone);
-    e.dataTransfer.setDragImage(clone, 20, 20);
-    requestAnimationFrame(() => {
-      document.body.removeChild(clone);
-    });
+    try {
+      const clone = el.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.opacity = '0.8';
+      clone.style.zIndex = '1000';
+      document.body.appendChild(clone);
+      e.dataTransfer.setDragImage(clone, 20, 20);
+      
+      // Remove clone after a short delay so browser can use it
+      setTimeout(() => {
+        if (document.body.contains(clone)) {
+          document.body.removeChild(clone);
+        }
+      }, 0);
+    } catch (err) {
+      console.warn('[FlowBuilder] Failed to set drag image', err);
+    }
 
-    // Defer React state updates
-    requestAnimationFrame(() => {
-      setSidebarDragPayload(payload);
-      if (showTriggerSelector) setShowTriggerSelector(false);
-    });
+    // Defer React state updates to avoid interfering with synchronous drag start
+    setSidebarDragPayload(payload);
+    if (showTriggerSelector) setShowTriggerSelector(false);
   };
 
-  const handleDragEnd = () => {
-    resetSidebarDragState(100);
+  const handleDragEnd = (e: React.DragEvent) => {
+    console.log('[FlowBuilder] Drag end');
+    resetSidebarDragState(50);
   };
 
   // Click to add node (fallback for drag-and-drop)
