@@ -1,3 +1,4 @@
+# Deployment target: Dokploy / Docker-compatible hosting.
 FROM oven/bun:1 AS deps
 WORKDIR /app
 
