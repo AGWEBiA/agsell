@@ -76,7 +76,7 @@ export function UsersManagement() {
     },
   });
 
-  const invokeMutation = (actionName: string, successMsg: string) =>
+  const useAdminMutation = (actionName: string, successMsg: string) =>
     useMutation({
       mutationFn: async (body: Record<string, unknown>) => {
         const { data, error } = await supabase.functions.invoke('admin-manage-users', {
@@ -93,12 +93,12 @@ export function UsersManagement() {
       onError: (error: Error) => toast.error(error.message),
     });
 
-  const createUserMutation = invokeMutation('create_user', 'Usuário criado com sucesso!');
-  const updateRoleMutation = invokeMutation('update_role', 'Permissão atualizada!');
-  const deleteUserMutation = invokeMutation('delete_user', 'Usuário excluído!');
-  const updateUserMutation = invokeMutation('update_user', 'Usuário atualizado!');
-  const addToOrgMutation = invokeMutation('add_to_organization', 'Usuário adicionado à organização!');
-  const removeFromOrgMutation = invokeMutation('remove_from_organization', 'Usuário removido da organização!');
+  const createUserMutation = useAdminMutation('create_user', 'Usuário criado com sucesso!');
+  const updateRoleMutation = useAdminMutation('update_role', 'Permissão atualizada!');
+  const deleteUserMutation = useAdminMutation('delete_user', 'Usuário excluído!');
+  const updateUserMutation = useAdminMutation('update_user', 'Usuário atualizado!');
+  const addToOrgMutation = useAdminMutation('add_to_organization', 'Usuário adicionado à organização!');
+  const removeFromOrgMutation = useAdminMutation('remove_from_organization', 'Usuário removido da organização!');
 
   const { data: availablePlans = [] } = useQuery({
     queryKey: ['admin_plans_list'],
